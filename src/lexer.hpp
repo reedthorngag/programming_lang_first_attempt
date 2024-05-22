@@ -15,24 +15,6 @@ namespace Lexer {
         f16, f32, f64
     };
 
-    const char* maxStr[] = {
-        "127", "32_767", "2_147_483_647", "9_223_372_036_854_775_807", "170_141_183_460_469_231_731_687_303_715_884_105_727",
-        "255", "65_535","4_294_967_295", "18_446_744_073_709_551_615", "340_282_366_920_938_463_463_374_607_431_768_211_455"
-    };
-
-    const char* minStr[] = {
-        "-127", "-32_768", "-2_147_483_648", "-9_223_372_036_854_775_808", "-170_141_183_460_469_231_731_687_303_715_884_105_728",
-        "0", "0", "0", "0", "0"
-    };
-
-    struct Number {
-        bool hasMinMax;
-        const char* minStr;
-        const char* maxStr;
-    };
-
-
-
     enum Keyword {
         FUNC,
         VAR,
@@ -58,7 +40,6 @@ namespace Lexer {
     struct Token {
         TokenType type;
         union {
-            char c[4];
             char* value;
             Keyword keyword;
         };
@@ -75,13 +56,21 @@ namespace Lexer {
         int* column;
         int* symbolLen;
         char* symbolBuf;
+
+        bool* isOperator;
+        bool* isLiteral;
+        bool* isSymbol;
     };
 
-    bool symbolChar(unsigned char c, int pos);
+    bool symbolChar(char c, int pos);
+    inline bool validSymbol(char* c, int len);
     bool operatorChar(char c);
+    inline bool validOperation(char* c, int len);
+    inline bool validNumberLiteral(char c);
     bool validLiteral(char* c, int len);
-    void endSymbol(std::vector<Token>* tokens, Context* context);
-    int typeLexer(std::vector<Token>* tokens, Context* context);
+    inline char* newString(char* c, int len);
+    bool endSymbol(std::vector<Token>* tokens, Context* context);
+    bool typeLexer(std::vector<Token>* tokens, Context* context);
     std::vector<Token>* lexerParse(char* file, char* input);
 
 }

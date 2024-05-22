@@ -63,6 +63,22 @@ namespace Lexer {
         {">>>",true},
     };
 
+    const char* maxStr[] {
+        "127", "32_767", "2_147_483_647", "9_223_372_036_854_775_807", "170_141_183_460_469_231_731_687_303_715_884_105_727",
+        "255", "65_535","4_294_967_295", "18_446_744_073_709_551_615", "340_282_366_920_938_463_463_374_607_431_768_211_455"
+    };
+
+    const char* minStr[] {
+        "-127", "-32_768", "-2_147_483_648", "-9_223_372_036_854_775_808", "-170_141_183_460_469_231_731_687_303_715_884_105_728",
+        "0", "0", "0", "0", "0"
+    };
+
+    struct Number {
+        bool hasMinMax;
+        const char* minStr;
+        const char* maxStr;
+    };
+
     std::unordered_map<std::string, Number> numberTypes = {
         {"i8",Number{true,minStr[NumberType::i8],maxStr[NumberType::i8]}},
         {"i16",Number{true,minStr[NumberType::i16],maxStr[NumberType::i16]}},
@@ -91,10 +107,24 @@ namespace Lexer {
         std::vector<Token>* tokens = new std::vector<Token>;
         
         char* ptr = input;
-        int line = 0;
-        int col = 0;
+        int line = 1;
+        int col = 1;
         int symbolLen = 0;
         char symbolBuf[MAX_SYMBOL_LEN];
+
+        int commentLevel = 0;
+        bool notMultiLine = true;
+        bool firstEndChar = false;
+        bool firstStartChar = false;
+
+        bool isInString = false;
+        bool escaped = false;
+        int stringLine;
+        int stringCol;
+
+        bool isOperator = false;
+        bool isLiteral = false;
+        bool isSymbol = false;
 
         struct Context context = {
             file,
@@ -104,17 +134,16 @@ namespace Lexer {
             &col,
             &symbolLen,
             symbolBuf,
+            &isOperator,
+            &isLiteral,
+            &isSymbol
         };
-
-        int commentLevel = 0;
-        bool notMultiLine = true;
-        bool firstEndChar = false;
-        bool firstStartChar = false;
 
         while (*ptr) {
 
-            while (commentLevel) {
-                switch (*(ptr++)) {
+            while (commentLevel && *(++ptr)) {
+                col++;
+                switch (*ptr) {
                     case '*':
                         commentLevel += firstStartChar;
                         firstEndChar = true;
@@ -125,6 +154,8 @@ namespace Lexer {
                         break;
                     case '\n':
                         commentLevel -= notMultiLine;
+                        line++;
+                        col = 0;
                         break;
                     default:
                         firstEndChar = false;
@@ -133,113 +164,196 @@ namespace Lexer {
                 }
             }
 
-            switch (*ptr) {
-                case '\r':
-                    ptr++;
-                    continue;
-                
-                default:
-                    if (symbolLen == MAX_SYMBOL_LEN) {
-                        printf("ERROR: %s:%d:%d: symbol too long!",file,line,col-MAX_SYMBOL_LEN);
-                        return nullptr;
-                    }
-                    symbolBuf[symbolLen++] = *ptr;
+            if (commentLevel) {
+                printf("ERROR: %s:%d:0: unexpected EOF, expecting '*/'\n",file,line);
+                return nullptr;
             }
 
+            if (isInString) {
+                if (escaped) symbolLen++;
+                else if (*ptr == '\\') {
+                    escaped = true;
+                    symbolLen++;
 
-            switch (*ptr) {
-                case '\r': 
-                    ptr++;
-                    continue;
-                case '\n':
-                    endSymbol(tokens,&context);
-                    line++;
-                    col = 0;
-                    break;
-                case ':':
-                    endSymbol(tokens,&context);
-                    if (typeLexer(tokens,&context)) return nullptr;
-                    continue;
-                case ';':
-                    endSymbol(tokens,&context);
-                    tokens->push_back(Token{TokenType::ENDLINE,{},file,line,col});
-                    break;
-                case '(':
-                case ')':
-                    endSymbol(tokens,&context);
-                    tokens->push_back(Token{*ptr=='('?TokenType::GROUPING_START:TokenType::GROUPING_END,{},file,line,col});
-                    break;
-                case '{':
-                case '}':
-                    endSymbol(tokens,&context);
-                    tokens->push_back(Token{*ptr=='{'?TokenType::SCOPE_START:TokenType::SCOPE_END,{},file,line,col});
-                    break;
-                case ' ':
-                    endSymbol(tokens,&context);
-                    break;
-                default:
-                    if (auto op = operatorMap.find(*ptr); op != operatorMap.end()) {
-                        endSymbol(tokens,&context);
-                        tokens->push_back(Token{TokenType::OPERATOR,{.c={*ptr}},file,line,col});
-                    } else {
+                } else if (*ptr == '"') {
+                    tokens->push_back(Token{TokenType::LITERAL,{.value={newString(ptr-symbolLen,symbolLen+1)}},file,stringLine,stringCol});
+                    symbolLen = 0;
+                    isInString = false;
+                } else
+                    symbolLen++;
+
+            } else {
+
+                switch (*ptr) {
+                    case '/':
+                        if (firstStartChar) {
+                            notMultiLine = true;
+                            commentLevel++;
+                            symbolLen = 0;
+                            continue;
+                        }
+                        firstStartChar = true;
+                        goto addChar;
+                    case '*':
+                        if (firstStartChar) {
+                            notMultiLine = false;
+                            commentLevel++;
+                            symbolLen = 0;
+                            continue;
+                        }
+                        goto addChar;
+
+                    case '\r':
+                        ptr++;
+                        continue;
+                    
+                    case '\n':
+                        line++;
+                        col = 0;
+                        break;
+
+                    case ':':
+                        if (!endSymbol(tokens,&context)) return nullptr;
+                        if (!typeLexer(tokens,&context)) return nullptr;
+                        continue;
+
+                    case ';':
+                        if (!endSymbol(tokens,&context)) return nullptr;
+                        tokens->push_back(Token{TokenType::ENDLINE,{},file,line,col});
+                        break;
+                    
+                    case '(':
+                    case ')':
+                        if (!endSymbol(tokens,&context)) return nullptr;
+                        tokens->push_back(Token{*ptr=='('?TokenType::GROUPING_START:TokenType::GROUPING_END,{},file,line,col});
+                        break;
+                    
+                    case '{':
+                    case '}':
+                        if (!endSymbol(tokens,&context)) return nullptr;
+                        tokens->push_back(Token{*ptr=='{'?TokenType::SCOPE_START:TokenType::SCOPE_END,{},file,line,col});
+                        break;
+                    
+                    case ' ':
+                        if (!endSymbol(tokens,&context)) return nullptr;
+                        break;
+
+                    case '\\':
+                        printf("ERROR: %s:%d:%d: unexpected backslash!\n",file,line,col);
+                        return nullptr;
+
+                    case '"':
+                        if (symbolLen) {
+                            printf("ERROR: %s:%d:%d: unexpected string literal!\n",file,line,col);
+                            return nullptr;
+                        }
+                        isInString = true;
+                        stringLine = line;
+                        stringCol = col;
+                        [[fallthrough]];
+                    default:
+                        addChar:
+                        if (operatorChar(*ptr)) {
+                            isOperator = true;
+                        } else if (isOperator) {
+                            isOperator = false;
+                            if (!endSymbol(tokens,&context)) return nullptr;
+                        }
+                        if (symbolChar(*ptr,1)) {
+                            isSymbol = true;
+                        } else if (isSymbol) {
+                            isSymbol = false;
+                            if (!endSymbol(tokens,&context)) return nullptr;
+                        }
+                        if (validNumberLiteral(*ptr)) {
+                            isLiteral = true;
+                        } else if (isLiteral) {
+                            isLiteral = false;
+                            if (validLiteral(symbolBuf,symbolLen))
+                                if (!endSymbol(tokens,&context)) return nullptr;
+                        }
                         if (symbolLen == MAX_SYMBOL_LEN) {
-                            printf("ERROR: %s:%d:%d: symbol too long!",file,line,col-MAX_SYMBOL_LEN);
+                            printf("ERROR: %s:%d:%d: symbol too long!\n",file,line,col-MAX_SYMBOL_LEN);
+                            return nullptr;
                         }
                         symbolBuf[symbolLen++] = *ptr;
-                    }
-                    break;
+                        escaped = false;
+                }
             }
             ptr++;
             col++;
         }
+
+        if (symbolLen) {
+            printf("ERROR: %s:%d:0: unexpected EOF!\n",file,line+1);
+            return nullptr;
+        }
         return tokens;
     }
 
-    void endSymbol(std::vector<Token>* tokens, Context* context) {
+    bool endSymbol(std::vector<Token>* tokens, Context* context) {
         int len = *context->symbolLen;
-        if (!len) return;
-        char* symbol = new char[len+1];
-        symbol[len] = 0;
-        while (len--) symbol[len] = context->symbolBuf[len];
+        if (!len) return true;
+        char* str = new char[len+1];
+        str[len] = 0;
+        while (len--) str[len] = context->symbolBuf[len];
+        len = *context->symbolLen;
+
+        if (validOperation(str,len)) {
+            tokens->push_back(Token{TokenType::OPERATOR,{.value={str}},context->file,*context->line,*context->column-len});
+        }
+        else if (validLiteral(str,len)) {
+            tokens->push_back(Token{TokenType::LITERAL,{.value={str}},context->file,*context->line,*context->column-len});
+        } 
+        else if (auto key = keywordMap.find(str); key != keywordMap.end())
+            tokens->push_back(Token{TokenType::KEYWORD,{.keyword={key->second}},context->file,*context->line,*context->column-len});
+        else if (validSymbol(str,len))
+            tokens->push_back(Token{TokenType::SYMBOL,{.value={str}},context->file,*context->line,*context->column-len});
+        else {
+            printf("ERROR: %s:%d:%d: invalid symbol: '%s'\n",context->file,*context->line,*context->column-len,str);
+            return false;
+        }
         *context->symbolLen = 0;
-        if (auto key = keywordMap.find(symbol); key != keywordMap.end())
-            tokens->push_back(Token{TokenType::KEYWORD,{.keyword={key->second}},context->file,*context->line,*context->column});
-        else
-            tokens->push_back(Token{TokenType::SYMBOL,{.value={symbol}},context->file,*context->line,*context->column});
+        return true;
     }
 
-    int typeLexer(std::vector<Token>* tokens, Context* context) {
+    bool typeLexer(std::vector<Token>* tokens, Context* context) {
         char* ptr = *context->ptr;
         ptr++;
         (*context->column)++;
         int typeLen = 0;
         while (true) {
             switch (*ptr) {
+                case '\n':
+                    (*context->line)++;
+                    if (typeLen) goto endType;
+                    [[fallthrough]];
                 case ' ':
                     if (!typeLen) {
                         break;
                     }
                     [[fallthrough]];
-                case '\n':
-                    (*context->line)++;
-                    [[fallthrough]];
+                case '(':
                 case ')':
-                case '=':
+                case '{':
+                case '}':
                 case ',': {
-                        if (!typeLen) {
-                            printf("ERROR: %s:%d:%d: expected type!",context->file,*context->line,*context->column);
-                            return -1;
-                        }
-                        char* str = new char[typeLen+1];
-                        str[typeLen] = 0;
-                        while (typeLen--) str[typeLen] = context->symbolBuf[typeLen];
-                        tokens->push_back(Token{TokenType::TYPE,{.value={str}},context->file,*context->line,*context->column});
-                        *context->ptr = ptr;
-                        return 0;
+                    endType:
+                    if (!typeLen) {
+                        printf("ERROR: %s:%d:%d: expected type!\n",context->file,*context->line,*context->column);
+                        return false;
                     }
+                    char* str = new char[typeLen+1];
+                    str[typeLen] = 0;
+                    while (typeLen--) str[typeLen] = context->symbolBuf[typeLen];
+                    tokens->push_back(Token{TokenType::TYPE,{.value={str}},context->file,*context->line,*context->column});
+                    *context->ptr = ptr;
+                    return true;
+                }
                 default:
+                    if (operatorChar(*ptr)) goto endType;
                     if (typeLen == MAX_SYMBOL_LEN) {
-                        printf("ERROR: %s:%d:%d: type too long!",context->file,*context->line,*context->column);
+                        printf("ERROR: %s:%d:%d: type too long!\n",context->file,*context->line,*context->column);
                     }
                     context->symbolBuf[typeLen++] = *ptr;
                     break;
@@ -249,17 +363,29 @@ namespace Lexer {
         }
     }
 
+    inline char* newString(char* c, int len) {
+        char* str = new char[len+1];
+        str[len] = 0;
+        while (len--) str[len] = c[len];
+        return str;
+    }
+
     inline bool isNumber(char c) {
         return c >= 48 && c <= 57;
     }
 
-    inline bool symbolChar(unsigned char c, int pos) {
+    inline bool symbolChar(char c, int pos) {
         if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c == 96) return true;
         if (isNumber(c) && pos) return true;
         return false;
     }
 
-    inline bool operatorChar(char c) {
+    inline bool validSymbol(char* c, int len) {
+        while (len--) if (!symbolChar(c[len],len)) return false;
+        return true;
+    }
+
+    bool operatorChar(char c) {
         switch (c) {
             case '+':
             case '-':
@@ -294,6 +420,11 @@ namespace Lexer {
         return false;
     }
 
+    inline bool validNumberLiteral(char c) {
+        if (isNumber(c)) return true;
+        return c == 'x' || c == 'b' || c == 'o' || c == '_';
+    }
+
     inline bool numberLiteral(char* c, int len) {
 
         if (!isNumber(c[0])) return false;
@@ -310,17 +441,17 @@ namespace Lexer {
             } else 
                 return false;
         } else
-            return isNumber(c[1]);
+            return len == 1 || isNumber(c[1]);
     }
 
-    bool validLiteral(char* c, int len) {
-        if (!len) return false;
-        if (numberLiteral(c,len)) return true;
-
-        if (c[0] == '\'' || c[0] == '"') {
-            return (c[len-1] == c[0] && c[len-2]);
+    inline bool validCharLiteral(char* c, int len) {
+        if (c[0] == '\'') { // add support for stuff like \0x0 and check valid
+            return c[len] == '\'';
         }
+        return false;
+    }
 
+    bool validBuiltInLiteral(char* c, int len) {
         char* type = new char[len];
         char* literal = new char[len];
         char* ptr = type;
@@ -337,6 +468,18 @@ namespace Lexer {
                 return true;
             }
         }
+
+        return false;
+    }
+
+    bool validLiteral(char* c, int len) {
+        if (!len) return false;
+
+        if (numberLiteral(c,len)) return true;
+
+        if (validCharLiteral(c,len)) return true;
+
+        if (validBuiltInLiteral(c,len)) return true;
 
         return false;
     }

@@ -36,19 +36,21 @@ int main(int argc, char** argv) {
 
     const char* TokenTypeMap[]{
         "ENDLINE",
-        "BRACE",
-        "BRACKET",
+        "SCOPE_START",
+        "SCOPE_END",
+        "GROUPING_START",
+        "GROUPING_END",
         "KEYWORD",
-        "TYPE",
         "SYMBOL",
+        "TYPE",
         "OPERATOR",
         "LITERAL"
     };
 
     const char* SymbolTypeMap[]{
-        "FUNCTION",
-        "VARIABLE",
-        "CONSTANT",
+        "FUNC",
+        "VAR",
+        "CONST",
         "IF",
         "ELSE",
         "WHILE"
@@ -64,7 +66,7 @@ int main(int argc, char** argv) {
                 token.type == Lexer::TokenType::KEYWORD ? SymbolTypeMap[token.keyword] : 
                 token.type == Lexer::TokenType::LITERAL ? token.value : 
                 token.type == Lexer::TokenType::TYPE ? token.value : 
-                token.type == Lexer::TokenType::OPERATOR ? token.c : ""
+                token.type == Lexer::TokenType::OPERATOR ? token.value : ""
             );
     }
 
