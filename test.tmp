@@ -1,6 +1,9 @@
 
 func main(default: u32): u32 {
-    const yourMum: u32 = 5;
+    const yourMum: u32 = 5; // this is a single line comment test
     print(yourMum+8);
+    /* this is a multi line
+    comment test
+    */
 }
 

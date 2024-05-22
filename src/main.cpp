@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
                 token.type == Lexer::TokenType::KEYWORD ? SymbolTypeMap[token.keyword] : 
                 token.type == Lexer::TokenType::LITERAL ? token.value : 
                 token.type == Lexer::TokenType::TYPE ? token.value : 
-                token.type == Lexer::TokenType::OPERATOR ? &token.c : ""
+                token.type == Lexer::TokenType::OPERATOR ? token.c : ""
             );
     }
 

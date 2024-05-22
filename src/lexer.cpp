@@ -106,13 +106,51 @@ namespace Lexer {
             symbolBuf,
         };
 
+        int commentLevel = 0;
+        bool notMultiLine = true;
+        bool firstEndChar = false;
+        bool firstStartChar = false;
+
         while (*ptr) {
 
+            while (commentLevel) {
+                switch (*(ptr++)) {
+                    case '*':
+                        commentLevel += firstStartChar;
+                        firstEndChar = true;
+                        break;
+                    case '/':
+                        commentLevel -= firstEndChar;
+                        firstStartChar = !notMultiLine;
+                        break;
+                    case '\n':
+                        commentLevel -= notMultiLine;
+                        break;
+                    default:
+                        firstEndChar = false;
+                        firstStartChar = false;
+                        break;
+                }
+            }
 
+            switch (*ptr) {
+                case '\r':
+                    ptr++;
+                    continue;
+                
+                default:
+                    if (symbolLen == MAX_SYMBOL_LEN) {
+                        printf("ERROR: %s:%d:%d: symbol too long!",file,line,col-MAX_SYMBOL_LEN);
+                        return nullptr;
+                    }
+                    symbolBuf[symbolLen++] = *ptr;
+            }
 
 
             switch (*ptr) {
-                case '\r': break;
+                case '\r': 
+                    ptr++;
+                    continue;
                 case '\n':
                     endSymbol(tokens,&context);
                     line++;

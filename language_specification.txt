@@ -88,6 +88,7 @@ ng"
 commenting:
     // for single line
     /* */ for partial line or multi line
+    // */ is valid for partial line
 
 valid line starts:
     decleration
