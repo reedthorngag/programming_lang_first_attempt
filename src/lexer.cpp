@@ -5,13 +5,13 @@ namespace Lexer {
 
     std::unordered_map<std::string,Keyword> keywordMap = {
         {
-            "func",Keyword::FUNCTION
+            "func",Keyword::FUNC
         },
         {
-            "var",Keyword::VARIABLE
+            "var",Keyword::VAR
         },
         {
-            "const",Keyword::CONSTANT
+            "const",Keyword::CONST
         },
         {
             "if",Keyword::IF
@@ -25,22 +25,65 @@ namespace Lexer {
         
     };
 
-    std::unordered_map<char,bool> operatorMap = {
-        {
-            '+',true
-        },
-        {
-            '-',true
-        },
-        {
-            '*',true
-        },
-        {
-            '/',true
-        },
-        {
-            '=',true
-        },
+    std::unordered_map<std::string,bool> operations = {
+        {"+",true},
+        {"-",true},
+        {"*",true},
+        {"/",true},
+        {"=",true},
+        {"+=",true},
+        {"-=",true},
+        {"/=",true},
+        {"*=",true},
+        {"%=",true},
+        {"<<=",true},
+        {">>=",true},
+        {"^=",true},
+        {"&=",true},
+        {"|=",true},
+        {"%",true},
+        {"&",true},
+        {"!",true},
+        {"~",true},
+        {"|",true},
+        {"^",true},
+        {"&",true},
+        {"||",true},
+        {"&&",true},
+        {"==",true},
+        {"!=",true},
+        {"<=",true},
+        {">=",true},
+        {">",true},
+        {"<",true},
+        {"++",true},
+        {"--",true},
+        {"<<",true},
+        {">>",true},
+        {">>>",true},
+    };
+
+    std::unordered_map<std::string, Number> numberTypes = {
+        {"i8",Number{true,minStr[NumberType::i8],maxStr[NumberType::i8]}},
+        {"i16",Number{true,minStr[NumberType::i16],maxStr[NumberType::i16]}},
+        {"i32",Number{true,minStr[NumberType::i32],maxStr[NumberType::i32]}},
+        {"i64",Number{true,minStr[NumberType::i64],maxStr[NumberType::i64]}},
+        {"i128",Number{true,minStr[NumberType::i128],maxStr[NumberType::i128]}},
+
+        {"u8",Number{true,minStr[NumberType::u8],maxStr[NumberType::u8]}},
+        {"u16",Number{true,minStr[NumberType::u16],maxStr[NumberType::u16]}},
+        {"u32",Number{true,minStr[NumberType::u32],maxStr[NumberType::u32]}},
+        {"u64",Number{true,minStr[NumberType::u64],maxStr[NumberType::u64]}},
+        {"u128",Number{true,minStr[NumberType::u128],maxStr[NumberType::u128]}},
+
+        {"f16",Number{false}},
+        {"f32",Number{false}},
+        {"f64",Number{false}},
+    };
+
+    std::unordered_map<std::string, int> literalTypesMap = {
+        {"MIN",0},
+        {"MAX",1}
     };
 
     std::vector<Token>* lexerParse(char* file, char* input) {
@@ -65,6 +108,9 @@ namespace Lexer {
 
         while (*ptr) {
 
+
+
+
             switch (*ptr) {
                 case '\r': break;
                 case '\n':
@@ -83,12 +129,12 @@ namespace Lexer {
                 case '(':
                 case ')':
                     endSymbol(tokens,&context);
-                    tokens->push_back(Token{TokenType::BRACKET,{.c={*ptr}},file,line,col});
+                    tokens->push_back(Token{*ptr=='('?TokenType::GROUPING_START:TokenType::GROUPING_END,{},file,line,col});
                     break;
                 case '{':
                 case '}':
                     endSymbol(tokens,&context);
-                    tokens->push_back(Token{TokenType::BRACE,{.c={*ptr}},file,line,col});
+                    tokens->push_back(Token{*ptr=='{'?TokenType::SCOPE_START:TokenType::SCOPE_END,{},file,line,col});
                     break;
                 case ' ':
                     endSymbol(tokens,&context);
@@ -163,6 +209,98 @@ namespace Lexer {
             ptr++;
             (*context->column)++;
         }
+    }
+
+    inline bool isNumber(char c) {
+        return c >= 48 && c <= 57;
+    }
+
+    inline bool symbolChar(unsigned char c, int pos) {
+        if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c == 96) return true;
+        if (isNumber(c) && pos) return true;
+        return false;
+    }
+
+    inline bool operatorChar(char c) {
+        switch (c) {
+            case '+':
+            case '-':
+            case '*':
+            case '/':
+            case '>':
+            case '<':
+            case '=':
+            case '%':
+            case '^':
+            case '&':
+            case '|':
+            case '~':
+            case '!':
+            case '.':
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    inline bool validOperation(char* c, int len) {
+        char* str = new char[len+1];
+        str[len] = 0;
+        while (len--) {
+            if (!operatorChar(c[len])) return false;
+            str[len] = c[len];
+        }
+        if (auto key = operations.find(str); key != operations.end()) {
+            return true;
+        }
+        return false;
+    }
+
+    inline bool numberLiteral(char* c, int len) {
+
+        if (!isNumber(c[0])) return false;
+
+        if (len > 2) {
+
+            if (isNumber(c[1]) || c[1] == 'x' || c[1] == 'b' || c[1] == 'o') {
+
+                for (int i = 2; i < len; i++)
+                    if (!isNumber(c[i]) && c[i] != '_') return false;
+
+                return c[len-1] != '_';
+
+            } else 
+                return false;
+        } else
+            return isNumber(c[1]);
+    }
+
+    bool validLiteral(char* c, int len) {
+        if (!len) return false;
+        if (numberLiteral(c,len)) return true;
+
+        if (c[0] == '\'' || c[0] == '"') {
+            return (c[len-1] == c[0] && c[len-2]);
+        }
+
+        char* type = new char[len];
+        char* literal = new char[len];
+        char* ptr = type;
+        int i = 0;
+        for (; i < len; i++) {
+            if (c[i] == '_') ptr = literal;
+            else ptr[i] = c[i];
+        }
+
+        if (ptr != literal) return false;
+
+        if (auto key = numberTypes.find(type); key != numberTypes.end()) {
+            if (auto key2 = literalTypesMap.find(type); key2 != literalTypesMap.end()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }

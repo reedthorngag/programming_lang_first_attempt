@@ -9,10 +9,6 @@ namespace Parser {
 
     int parseTokens(std::vector<Token>* tokens) {
 
-        for () {
-            
-        }
-
         return 0;
     }
 

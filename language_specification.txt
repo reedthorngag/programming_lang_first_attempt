@@ -1,9 +1,10 @@
 
 keywords:
-func var const struct enum
-if else elif switch
-while for do?
-alloc free
+    func var const struct enum
+    if else elif switch
+    while for do?
+    alloc free
+    return continue break
 
 operators:
     mathmatical: + - / * % ++ --
@@ -30,7 +31,7 @@ pointers and fields:
 built in data types:
     i8, i16, i32, i64, i128
     u8, u16, u32, u64, u128
-    f16?, f32, f64
+    f16, f32, f64
     char
     string - implemented as u8[] with null terminator
     bool
@@ -74,7 +75,26 @@ operator precedence: (from least to most)
         var++ var--
         (type) *var ++var --var  (so you can do ++(type)var or (type)++var, may change this is future though)
         func()
-        {} () . ->
+        ( ) . ->
+
+string literals:
+    "string"
+    "stri
+ng"
+    "stri\
+    ng" backslash means ignore any spaces, tabs or newlines that immediatly
 
 
+commenting:
+    // for single line
+    /* */ for partial line or multi line
+
+valid line starts:
+    decleration
+    assignment
+    function call
+
+changes that indicate new token:
+    symbol name char -> anything else
+    operator char -> anything else
 
