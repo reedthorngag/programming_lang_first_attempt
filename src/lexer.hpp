@@ -57,9 +57,10 @@ namespace Lexer {
         int* symbolLen;
         char* symbolBuf;
 
-        bool* isOperator;
-        bool* isLiteral;
-        bool* isSymbol;
+        bool* specialType;
+        int* isOperator;
+        int* isLiteral;
+        int* isSymbol;
     };
 
     bool symbolChar(char c, int pos);

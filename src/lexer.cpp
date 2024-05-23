@@ -122,9 +122,11 @@ namespace Lexer {
         int stringLine;
         int stringCol;
 
-        bool isOperator = false;
-        bool isLiteral = false;
-        bool isSymbol = false;
+        int isOperator = 0;
+        int isLiteral = 0;
+        int isSymbol = 0;
+
+        bool specialType = false; // currently only for '
 
         struct Context context = {
             file,
@@ -134,6 +136,7 @@ namespace Lexer {
             &col,
             &symbolLen,
             symbolBuf,
+            &specialType,
             &isOperator,
             &isLiteral,
             &isSymbol
@@ -141,7 +144,7 @@ namespace Lexer {
 
         while (*ptr) {
 
-            while (commentLevel && *(++ptr)) {
+            while (commentLevel && *ptr) {
                 col++;
                 switch (*ptr) {
                     case '*':
@@ -162,6 +165,7 @@ namespace Lexer {
                         firstStartChar = false;
                         break;
                 }
+                ptr++;
             }
 
             if (commentLevel) {
@@ -170,8 +174,10 @@ namespace Lexer {
             }
 
             if (isInString) {
-                if (escaped) symbolLen++;
-                else if (*ptr == '\\') {
+                if (escaped) {
+                    escaped = false;
+                    symbolLen++;
+                } else if (*ptr == '\\') {
                     escaped = true;
                     symbolLen++;
 
@@ -179,6 +185,10 @@ namespace Lexer {
                     tokens->push_back(Token{TokenType::LITERAL,{.value={newString(ptr-symbolLen,symbolLen+1)}},file,stringLine,stringCol});
                     symbolLen = 0;
                     isInString = false;
+                } else if (*ptr == '\n') {
+                    symbolLen++;
+                    line++;
+                    col = 0;
                 } else
                     symbolLen++;
 
@@ -190,6 +200,7 @@ namespace Lexer {
                             notMultiLine = true;
                             commentLevel++;
                             symbolLen = 0;
+                            ptr++;
                             continue;
                         }
                         firstStartChar = true;
@@ -199,6 +210,7 @@ namespace Lexer {
                             notMultiLine = false;
                             commentLevel++;
                             symbolLen = 0;
+                            ptr++;
                             continue;
                         }
                         goto addChar;
@@ -211,6 +223,10 @@ namespace Lexer {
                         line++;
                         col = 0;
                         break;
+
+                    case '\'':
+                        specialType = true;
+                        goto addChar;
 
                     case ':':
                         if (!endSymbol(tokens,&context)) return nullptr;
@@ -234,6 +250,7 @@ namespace Lexer {
                         tokens->push_back(Token{*ptr=='{'?TokenType::SCOPE_START:TokenType::SCOPE_END,{},file,line,col});
                         break;
                     
+                    case '\t':
                     case ' ':
                         if (!endSymbol(tokens,&context)) return nullptr;
                         break;
@@ -253,24 +270,27 @@ namespace Lexer {
                         [[fallthrough]];
                     default:
                         addChar:
-                        if (operatorChar(*ptr)) {
-                            isOperator = true;
-                        } else if (isOperator) {
-                            isOperator = false;
-                            if (!endSymbol(tokens,&context)) return nullptr;
-                        }
-                        if (symbolChar(*ptr,1)) {
-                            isSymbol = true;
-                        } else if (isSymbol) {
-                            isSymbol = false;
-                            if (!endSymbol(tokens,&context)) return nullptr;
-                        }
-                        if (validNumberLiteral(*ptr)) {
-                            isLiteral = true;
-                        } else if (isLiteral) {
-                            isLiteral = false;
-                            if (validLiteral(symbolBuf,symbolLen))
+                        //printf("%c %d%d %d%d %d%d  %d\n",*ptr,operatorChar(*ptr),isOperator,symbolChar(*ptr,isSymbol),isSymbol,validNumberLiteral(*ptr),isLiteral,symbolLen);
+                        if (!specialType) {
+                            if (operatorChar(*ptr)) {
+                                isOperator++;
+                            } else if (isOperator == symbolLen) {
+                                isOperator = 0;
                                 if (!endSymbol(tokens,&context)) return nullptr;
+                            }
+                            if (symbolChar(*ptr,isSymbol)) {
+                                isSymbol++;
+                            } else if (isSymbol == symbolLen) {
+                                isSymbol = 0;
+                                if (!endSymbol(tokens,&context)) return nullptr;
+                            }
+                            if (validNumberLiteral(*ptr)) {
+                                isLiteral++;
+                            } else if (isLiteral == symbolLen) {
+                                isLiteral = 0;
+                                if (validLiteral(symbolBuf,symbolLen))
+                                    if (!endSymbol(tokens,&context)) return nullptr;
+                            }
                         }
                         if (symbolLen == MAX_SYMBOL_LEN) {
                             printf("ERROR: %s:%d:%d: symbol too long!\n",file,line,col-MAX_SYMBOL_LEN);
@@ -292,6 +312,8 @@ namespace Lexer {
     }
 
     bool endSymbol(std::vector<Token>* tokens, Context* context) {
+        *context->specialType = false;
+
         int len = *context->symbolLen;
         if (!len) return true;
         char* str = new char[len+1];
@@ -300,16 +322,20 @@ namespace Lexer {
         len = *context->symbolLen;
 
         if (validOperation(str,len)) {
+            *context->isOperator = 0;
             tokens->push_back(Token{TokenType::OPERATOR,{.value={str}},context->file,*context->line,*context->column-len});
         }
         else if (validLiteral(str,len)) {
+            *context->isLiteral = 0;
             tokens->push_back(Token{TokenType::LITERAL,{.value={str}},context->file,*context->line,*context->column-len});
         } 
-        else if (auto key = keywordMap.find(str); key != keywordMap.end())
+        else if (auto key = keywordMap.find(str); key != keywordMap.end()) {
+            *context->isSymbol = 0;
             tokens->push_back(Token{TokenType::KEYWORD,{.keyword={key->second}},context->file,*context->line,*context->column-len});
-        else if (validSymbol(str,len))
+        } else if (validSymbol(str,len)) {
+            *context->isSymbol = 0;
             tokens->push_back(Token{TokenType::SYMBOL,{.value={str}},context->file,*context->line,*context->column-len});
-        else {
+        } else {
             printf("ERROR: %s:%d:%d: invalid symbol: '%s'\n",context->file,*context->line,*context->column-len,str);
             return false;
         }
@@ -345,8 +371,9 @@ namespace Lexer {
                     }
                     char* str = new char[typeLen+1];
                     str[typeLen] = 0;
+                    int len = typeLen;
                     while (typeLen--) str[typeLen] = context->symbolBuf[typeLen];
-                    tokens->push_back(Token{TokenType::TYPE,{.value={str}},context->file,*context->line,*context->column});
+                    tokens->push_back(Token{TokenType::TYPE,{.value={str}},context->file,*context->line,*context->column-len});
                     *context->ptr = ptr;
                     return true;
                 }
@@ -446,7 +473,7 @@ namespace Lexer {
 
     inline bool validCharLiteral(char* c, int len) {
         if (c[0] == '\'') { // add support for stuff like \0x0 and check valid
-            return c[len] == '\'';
+            return c[len-1] == '\'';
         }
         return false;
     }
