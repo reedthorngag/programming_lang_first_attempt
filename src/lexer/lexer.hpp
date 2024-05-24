@@ -26,6 +26,7 @@ namespace Lexer {
 
     enum TokenType {
         ENDLINE,
+        COMMA,
         SCOPE_START,
         SCOPE_END,
         GROUPING_START,
@@ -34,7 +35,8 @@ namespace Lexer {
         SYMBOL,
         TYPE,
         OPERATOR,
-        LITERAL
+        LITERAL,
+        FILE_END
     };
 
     struct Token {

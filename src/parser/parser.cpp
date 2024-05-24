@@ -8,6 +8,7 @@ namespace Parser {
 
     const char* TokenTypeMap[]{
         "';'", // ENDLINE
+        "','", // COMMA
         "'{'", // SCOPE_START
         "'}'", // SCOPE_END
         "'('", // GROUPING_START
@@ -16,7 +17,31 @@ namespace Parser {
         "symbol", // SYMBOL
         "':'", // TYPE
         "operator", // OPERATOR
-        "literal" // LITERAL
+        "literal", // LITERAL
+        "EOF", // FILE_END
+    };
+
+    std::unordered_map<std::string, Type> typeMap = {
+        {"null",Type::null},
+
+        {"i8",Type::u8},
+        {"i16",Type::u16},
+        {"i32",Type::u32},
+        {"i64",Type::u64},
+        {"i128",Type::u128},
+
+        {"u8",Type::u8},
+        {"u16",Type::u16},
+        {"u32",Type::u32},
+        {"u64",Type::u64},
+        {"u128",Type::u128},
+
+        {"f16",Type::u16},
+        {"f32",Type::u32},
+        {"f64",Type::u64},
+
+        {"char",Type::c},
+        {"string",Type::string},
     };
 
     std::unordered_map<std::string, Node*> globals;
@@ -29,15 +54,44 @@ namespace Parser {
     std::vector<Token>* tokens;
     long long unsigned int index = 0;
 
+    bool checkSymbolDeclared(char* name, Node* parent) {
+
+        if (auto key = globals.find(name); key != globals.end())
+            return true;
+
+        Node* node = parent;
+        while (node) {
+            if (auto key = node->symbolMap->find(name); key != node->symbolMap->end())
+                return true;
+            
+            node = node->parent;
+        }
+
+        return false;
+    }
 
     Node* processKeyword(Token token) {
 
         switch (token.keyword) {
             case Keyword::FUNC:
-                
+                depth++;
+                buildFunctionNode();
+                printf("here!\n");
+                return nullptr;
+            case Keyword::IF:
+                depth++;
+                return buildIfNode();
+            case Keyword::WHILE:
+                depth++;
+                return buildWhileNode();
+            case Keyword::CONST:
+                return buildConstNode();
+            case Keyword::VAR:
+                return buildVarNode();
+            default:
+                printf("ERROR: %s:%d:%d: keyword not yet implemented!\n",token.file,token.line,token.column);
+                return nullptr;
         }
-
-        return nullptr;
     }
 
     Node* processSymbol(Token token) {
@@ -73,6 +127,8 @@ namespace Parser {
                     break;
                 case TokenType::SCOPE_START:
                     parent = newScope(token);
+                    break;
+                case TokenType::FILE_END:
                     break;
                 default:
                     printf("ERROR: %s:%d:%d: unexpected %s\n",token.file,token.line,token.column,TokenTypeMap[token.type]);

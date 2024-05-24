@@ -56,6 +56,7 @@ int main(int argc, char** argv) {
 
     const char* TokenTypeMap[]{
         "ENDLINE",
+        "COMMA",
         "SCOPE_START",
         "SCOPE_END",
         "GROUPING_START",
@@ -64,7 +65,8 @@ int main(int argc, char** argv) {
         "SYMBOL",
         "TYPE",
         "OPERATOR",
-        "LITERAL"
+        "LITERAL",
+        "EOF"
     };
 
     const char* SymbolTypeMap[]{
@@ -168,6 +170,13 @@ int main(int argc, char** argv) {
                 pad(token,&line,&col);
                 printf(";");
                 col++;
+                break;
+            case Lexer::TokenType::COMMA:
+                pad(token,&line,&col);
+                printf(",");
+                col++;
+                break;
+            case Lexer::TokenType::FILE_END:
                 break;
         }
 

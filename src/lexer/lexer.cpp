@@ -228,6 +228,11 @@ namespace Lexer {
                         specialType = true;
                         goto addChar;
 
+                    case ',':
+                        if (!endSymbol(tokens,&context)) return nullptr;
+                        tokens->push_back(Token{TokenType::COMMA,{},file,line,col});
+                        break;
+
                     case ':':
                         if (!endSymbol(tokens,&context)) return nullptr;
                         if (!typeLexer(tokens,&context)) return nullptr;
@@ -308,6 +313,8 @@ namespace Lexer {
             printf("ERROR: %s:%d:0: unexpected EOF!\n",file,line+1);
             return nullptr;
         }
+
+        tokens->push_back(Token{TokenType::FILE_END,{},file,line+1,0});
         return tokens;
     }
 
@@ -373,7 +380,7 @@ namespace Lexer {
                     str[typeLen] = 0;
                     int len = typeLen;
                     while (typeLen--) str[typeLen] = context->symbolBuf[typeLen];
-                    tokens->push_back(Token{TokenType::TYPE,{.value={str}},context->file,*context->line,*context->column-len-1});
+                    tokens->push_back(Token{TokenType::TYPE,{.value={str}},context->file,*context->line,*context->column-len});
                     *context->ptr = ptr;
                     return true;
                 }

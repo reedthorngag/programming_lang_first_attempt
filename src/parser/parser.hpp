@@ -29,7 +29,21 @@ namespace Parser {
         f16, f32, f64,
         c, // fucking c++ wont let me use 'char' and it seems there is no way to fix 
            // it ffs, *this* is the sort of thing that makes me want to write my own language
-        string
+        string,
+        null
+    };
+
+    extern std::unordered_map<std::string, Type> typeMap;
+
+    struct Param {
+        char* name;
+        Type type;
+    };
+
+    struct Function {
+        char* name;
+        std::vector<Param> params;
+        Type returnType;
     };
 
     // think of a better name
@@ -50,17 +64,38 @@ namespace Parser {
     struct Node {
         NodeType type;
         Node* parent;
-        Node* firatChild;
+        Node* firstChild;
         Node* nextSibling;
         union {
+            Function* function;
             Symbol symbol;
             Literal literal;
             Operator op;
-            std::unordered_map<std::string, Symbol>* symbolMap;
         };
+        std::unordered_map<std::string, Symbol>* symbolMap;
     };
 
-    std::unordered_map<std::string, Node*>* parseTokens(std::vector<Token>* tokens);
-}
+    extern const char* TokenTypeMap[];
 
+    extern std::unordered_map<std::string, Node*> globals;
+
+    extern std::vector<Node*> unresolvedReferences;
+
+    extern Node* parent;
+    extern int depth;
+
+    extern std::vector<Token>* tokens;
+    extern long long unsigned int index;
+
+
+    std::unordered_map<std::string, Node*>* parseTokens(std::vector<Token>* tokens);
+
+    bool checkSymbolDeclared(char* name, Node* parent);
+
+    Node* buildFunctionNode();
+    Node* buildIfNode();
+    Node* buildWhileNode();
+    Node* buildConstNode();
+    Node* buildVarNode();
+}
 

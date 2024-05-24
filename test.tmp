@@ -1,5 +1,5 @@
 
-func main(default: u32): u32 {
+func main(default: u32): u8 {
     const yourMum: u32 = 5;  // this is a single line comment test
     print(yourMum+8);
     /* this is a multi line
