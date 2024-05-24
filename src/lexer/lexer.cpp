@@ -373,7 +373,7 @@ namespace Lexer {
                     str[typeLen] = 0;
                     int len = typeLen;
                     while (typeLen--) str[typeLen] = context->symbolBuf[typeLen];
-                    tokens->push_back(Token{TokenType::TYPE,{.value={str}},context->file,*context->line,*context->column-len});
+                    tokens->push_back(Token{TokenType::TYPE,{.value={str}},context->file,*context->line,*context->column-len-1});
                     *context->ptr = ptr;
                     return true;
                 }

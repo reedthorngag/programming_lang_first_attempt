@@ -1,8 +1,8 @@
 #include <fstream>
 #include <stdio.h>
 
-#include "lexer.hpp"
-#include "parser.hpp"
+#include "lexer/lexer.hpp"
+#include "parser/parser.hpp"
 
 void pad(Lexer::Token token, int* line, int* col) {
     while (*line < token.line) {
@@ -160,8 +160,9 @@ int main(int argc, char** argv) {
                 break;
             case Lexer::TokenType::SCOPE_END:
                 pad(token,&line,&col);
-                printf("}");
-                col++;
+                printf("}\n");
+                col = 1;
+                line++;
                 break;
             case Lexer::TokenType::ENDLINE:
                 pad(token,&line,&col);
@@ -173,7 +174,10 @@ int main(int argc, char** argv) {
     }
     fflush(stdout);
 
-    if (Parser::parseTokens(tokens)) return 1;
+    std::unordered_map<std::string, Parser::Node*>* tree = Parser::parseTokens(tokens);
+
+    if (!tree) return 1;
+
 
     return 0;
 }
