@@ -1,13 +1,14 @@
 
 language goals:
-  * 1. have my own language that I can adjust to how I like
-  * 2. fast compilation times
-  * 3. let you do pretty much whatever the fuck you want (while not giving you *too* many foot guns)
-  * 4. easily integratable with system libraries and stuff
+  * have my own language that I can adjust to how I like
+  * fast compilation times
+  * let you do pretty much whatever you want (while not giving you *too* many foot guns)
+  * easily integratable with system libraries and stuff
 
 
 current language vision:
   * typescript crossed with c++
+
 
 
 ```
