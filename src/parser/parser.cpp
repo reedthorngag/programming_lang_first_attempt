@@ -44,7 +44,7 @@ namespace Parser {
         {"string",Type::string},
     };
 
-    std::unordered_map<std::string, Node*> globals;
+    std::unordered_map<std::string, Symbol> globals;
 
     std::vector<Node*> unresolvedReferences(1024);
 
@@ -54,28 +54,43 @@ namespace Parser {
     std::vector<Token>* tokens;
     long long unsigned int index = 0;
 
-    bool symbolDeclared(char* name, Node* parent) {
-
-        return symbolDeclaredGlobal(name) || symbolDeclaredInScope(name,parent);
+    void appendChild(Node* parent, Node* child) {
+        Node* sibling = parent->firstChild;
+        if (sibling) {
+            while (sibling->nextSibling) sibling = sibling->nextSibling;
+            child->parent = parent;
+            sibling->nextSibling = child;
+        } else {
+            child->parent = parent;
+            parent->firstChild = child;
+        }
     }
 
-    inline bool symbolDeclaredInScope(char* name, Node* parent) {
+    bool symbolDeclared(char* name, Node* parent, Symbol* symbol) {
+        return symbolDeclaredGlobal(name,symbol) || symbolDeclaredInScope(name,parent,symbol);
+    }
+
+    inline bool symbolDeclaredInScope(char* name, Node* parent, Symbol* symbol) {
 
         Node* node = parent;
         while (node) {
-            if (auto key = node->symbolMap->find(name); key != node->symbolMap->end())
+            if (auto key = node->symbolMap->find(name); key != node->symbolMap->end()) {
+                if (symbol) *symbol = key->second;
                 return true;
-            
+            }
             node = node->parent;
         }
 
         return false;
     }
 
-    inline bool symbolDeclaredGlobal(char* name) {
+    inline bool symbolDeclaredGlobal(char* name, Symbol* symbol) {
 
-        auto key = globals.find(name); 
-        return key != globals.end();
+        if (auto key = globals.find(name); key != globals.end()) {
+            if (symbol) *symbol = key->second;
+            return true;
+        }
+        return false;
     }
 
     Node* processKeyword(Token token) {
@@ -84,15 +99,27 @@ namespace Parser {
             case Keyword::FUNC:
                 depth++;
                 return buildFunctionNode();
+
             case Keyword::IF:
                 depth++;
                 return buildIfNode();
+
             case Keyword::WHILE:
                 depth++;
                 return buildWhileNode();
+
+            case Keyword::GLOBAL:
+                Token t = tokens->at(index);
+                if (t.type != TokenType::SYMBOL) {
+                    printf("ERROR: %s:%d:%d: expecting name, found %s!\n",t.file,t.line,t.column,TokenTypeMap[token.type]);
+                    return nullptr;
+                }
+                return assignment(token) ? parent : nullptr;
+
             case Keyword::VAR:
-                buildDeclerationNode(token.keyword);
-                return parent;
+            case Keyword::CONST:
+                return buildDeclerationNode(token.keyword) ? parent : nullptr;
+
             default:
                 printf("ERROR: %s:%d:%d: keyword not yet implemented!\n",token.file,token.line,token.column);
                 return nullptr;
@@ -114,7 +141,7 @@ namespace Parser {
         return nullptr;
     }
 
-    std::unordered_map<std::string, Node*>* parseTokens(std::vector<Token>* _tokens) {
+    std::unordered_map<std::string, Symbol>* parseTokens(std::vector<Token>* _tokens) {
         tokens = _tokens;
 
         while (index < tokens->size()) {

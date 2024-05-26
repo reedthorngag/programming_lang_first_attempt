@@ -75,7 +75,8 @@ int main(int argc, char** argv) {
         "CONST",
         "IF",
         "ELSE",
-        "WHILE"
+        "WHILE",
+        "GLOBAL"
     };
 
     printf("Input file: %s\n%s\n",inputFile,buf);

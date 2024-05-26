@@ -14,7 +14,7 @@ current language vision:
 ```
 keywords:
     func var const struct enum
-    global  // this explicitly specifies the global scope for name overlaps in local scope
+    global  // this explicitly specifies the global scope for name overlaps in local scope (default is local scope)
     if else elif switch
     while for do?
     alloc free
@@ -68,28 +68,29 @@ symbol name rules: (variable, function and type names)
 
 operator precedence: (from least to most)
     associate right to left:
-        = 
-        += -= 
-        /= *= %=
-        <<= >>= 
-        &= ^= |=
-        ?:
+        =           0
+        += -=       1
+        /= *= %=    2
+        <<= >>=     3
+        &= ^= |=    4
+        ?:          5
     left to right:
-        ||
-        &&
-        == !=
-        < > <= >=
-        |
-        ^
-        &
-        << >> >>>
-        + -
-        * / %
-        - ! ~
-        var++ var--
-        (type) *var ++var --var  (so you can do ++(type)var or (type)++var, may change this is future though)
-        func()
-        ( ) . ->
+        ||          6
+        &&          7
+        == !=       8
+        < > <= >=   9
+        |           10
+        ^           11
+        &           12
+        << >> >>>   13
+        + -         14
+        * / %       15
+        - ! ~       16
+        var++ var-- 17 (effectively lower than pre-increment/dereference/cast because it always comes after)
+        ++var --var 17
+        (type) *var 17
+        func()      18
+        ( ) . ->    19
 
 valid string literals:
     "string"
@@ -110,8 +111,5 @@ valid line starts:
     assignment
     function call
 
-changes that indicate new token:
-    symbol name char -> anything else
-    operator char -> anything else
 
 ```

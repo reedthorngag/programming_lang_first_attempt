@@ -54,5 +54,6 @@
         "unordered_map": "cpp",
         "vector": "cpp"
     },
-    "C_Cpp.errorSquiggles": "enabled"
+    "C_Cpp.errorSquiggles": "enabled",
+    "todo-tree.tree.scanMode": "workspace"
 }

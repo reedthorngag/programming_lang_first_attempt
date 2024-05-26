@@ -10,7 +10,7 @@ namespace Parser {
     enum class NodeType {
         FUNCTION,
         BLOCK,
-        DECLERATION,
+        LITERAL,
         ASSIGNMENT,
         OPERATION,
         INVOCATION,
@@ -35,6 +35,9 @@ namespace Parser {
 
     extern std::unordered_map<std::string, Type> typeMap;
 
+    extern std::unordered_map<std::string, bool> assignmentOps;
+    extern std::unordered_map<std::string, int> mathmaticalOps; // boolean and bitwise too
+
     struct Param {
         char* name;
         Type type;
@@ -54,7 +57,6 @@ namespace Parser {
             Type t;
             Function* func;
         };
-        
     };
 
     struct Literal {
@@ -79,6 +81,20 @@ namespace Parser {
         std::unordered_map<std::string, Symbol>* symbolMap;
     };
 
+    enum LvalueType {
+        OPERATION,
+        SYMBOL,
+        LITERAL
+    };
+
+    struct Lvalue {
+        LvalueType type;
+        union {
+            Node* node;
+            Symbol* symbol;
+        };
+    };
+
     extern const char* TokenTypeMap[];
 
     extern std::unordered_map<std::string, Symbol> globals;
@@ -92,19 +108,23 @@ namespace Parser {
     extern long long unsigned int index;
 
 
-    std::unordered_map<std::string, Node*>* parseTokens(std::vector<Token>* tokens);
+    std::unordered_map<std::string, Symbol>* parseTokens(std::vector<Token>* tokens);
 
-    bool symbolDeclared(char* name, Node* parent);
-    bool symbolDeclaredInScope(char* name, Node* parent);
-    bool symbolDeclaredGlobal(char* name);
+
+    void appendChild(Node* parent, Node* child);
+
+    bool symbolDeclared(char* name, Node* parent, Symbol* symbol);
+    bool symbolDeclaredInScope(char* name, Node* parent, Symbol* symbol);
+    bool symbolDeclaredGlobal(char* name, Symbol* symbol);
 
 
     Node* buildFunctionNode();
     Node* buildIfNode();
     Node* buildWhileNode();
-    Node* buildDeclerationNode(Keyword type);
+    bool buildDeclerationNode(Keyword type);
 
-    bool assingment(Token symbol);
+    bool assignment(Token token);
+    Node* operation(Lvalue lvalue, Token op);
 
 }
 

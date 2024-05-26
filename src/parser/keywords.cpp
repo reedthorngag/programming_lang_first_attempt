@@ -20,7 +20,7 @@ namespace Parser {
             return nullptr;
         }
 
-        if (symbolDeclared(token.value, parent)) {
+        if (symbolDeclared(token.value, parent, nullptr)) {
             printf("ERROR: %s:%d:%d: function name ('%s') already in use!\n",token.file,token.line,token.column,token.value);
             return nullptr;
         }
@@ -50,7 +50,7 @@ namespace Parser {
                 return nullptr;
             }
 
-            if (symbolDeclared(token.value, node)) {
+            if (symbolDeclared(token.value, node, nullptr)) {
                 printf("ERROR: %s:%d:%d: paramater name ('%s') already in use!\n",token.file,token.line,token.column,token.value);
                 return nullptr;
             }
@@ -94,15 +94,7 @@ namespace Parser {
 
 
         if (parent) {
-            Node* sibling = parent->firstChild;
-            if (sibling) {
-                while (sibling->nextSibling) sibling = sibling->nextSibling;
-                node->parent = parent;
-                sibling->nextSibling = node;
-            } else {
-                node->parent = parent;
-                parent->firstChild = node;
-            }
+            appendChild(parent,node);
         } else {
             globals.insert(std::make_pair(node->function->name,Symbol{SymbolType::FUNC,node->function->name,{.func = {node->function}}}));
         }
@@ -120,31 +112,31 @@ namespace Parser {
         return nullptr;
     }
 
-    Node* buildDeclerationNode(Keyword type) {
+    bool buildDeclerationNode(Keyword type) {
 
         const char* typeStr = type==Keyword::VAR?"variable":"constant";
 
         Token token = tokens->at(index++);
         if (token.type != TokenType::SYMBOL) {
             printf("ERROR: %s:%d:%d: expecting %s name, found %s!\n",token.file,token.line,token.column,typeStr,TokenTypeMap[token.type]);
-            return nullptr;
+            return false;
         }
 
-        if (symbolDeclared(token.value, parent)) {
+        if (symbolDeclared(token.value, parent, nullptr)) {
             printf("ERROR: %s:%d:%d: %s name %s already in use!\n",token.file,token.line,token.column,typeStr,token.value);
-            return nullptr;
+            return false;
         }
 
         Token typeToken = tokens->at(index++);
         if (token.type != TokenType::TYPE) {
             printf("ERROR: %s:%d:%d: expecting type, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
-            return nullptr;
+            return false;
         }
 
         Type t;
         if (auto type = typeMap.find(token.value); type == typeMap.end()) {
             printf("ERROR: %s:%d:%d: unknown type '%s'!\n",token.file,token.line,token.column,token.value);
-            return nullptr;
+            return false;
         } else {
             t = type->second;
         }
@@ -155,9 +147,7 @@ namespace Parser {
             globals.insert(std::make_pair(token.value,Symbol{type==Keyword::VAR?SymbolType::VAR:SymbolType::CONST,token.value,{.t={t}}}));
         }
 
-        
-
-        return nullptr;
+        return assignment(token);
     }
 
 }
