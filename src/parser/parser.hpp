@@ -10,6 +10,7 @@ namespace Parser {
     enum class NodeType {
         FUNCTION,
         BLOCK,
+        SYMBOL,
         LITERAL,
         ASSIGNMENT,
         OPERATION,
@@ -63,8 +64,15 @@ namespace Parser {
         char* value;
     };
 
+    enum OpType {
+        ASSIGNMENT,
+        SINGLEOPERAND,
+        MATH
+    };
+
     struct Operator {
         char* value;
+        OpType type;
     };
 
     struct Node {
@@ -81,19 +89,6 @@ namespace Parser {
         std::unordered_map<std::string, Symbol>* symbolMap;
     };
 
-    enum LvalueType {
-        OPERATION,
-        SYMBOL,
-        LITERAL
-    };
-
-    struct Lvalue {
-        LvalueType type;
-        union {
-            Node* node;
-            Symbol* symbol;
-        };
-    };
 
     extern const char* TokenTypeMap[];
 
@@ -124,7 +119,7 @@ namespace Parser {
     bool buildDeclerationNode(Keyword type);
 
     bool assignment(Token token);
-    Node* operation(Lvalue lvalue, Token op);
+    Node* operation(Node* lvalue, Token op);
 
 }
 

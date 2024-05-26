@@ -90,7 +90,11 @@ namespace Parser {
 
         if (i) {
             token.value[i] = 0;
-            Node* value = operation(Lvalue{LvalueType::SYMBOL,{.symbol = {&symbol}}},token);
+            Node* lvalue = new Node;
+            lvalue->type = NodeType::SYMBOL;
+            lvalue->symbol = symbol;
+
+            Node* value = operation(lvalue,token);
             if (!value) return false;
             appendChild(parent,value);
             return true;
@@ -104,9 +108,36 @@ namespace Parser {
         return true;
     }
 
-    Node* operation(Lvalue lvalue, Token op) {
+    inline OpType getOpType(char* op) {
+        if (auto key = assignmentOps.find(op); key == assignmentOps.end()) return OpType::ASSIGNMENT;
+        if (auto key = mathmaticalOps.find(op); key == mathmaticalOps.end()) return OpType::MATH;
+        if (auto key = singleOperandOps.find(op); key == singleOperandOps.end()) return OpType::SINGLEOPERAND;
+    }
 
-        
+    Node* operation(Node* lvalue, Token op) {
+
+        Node* node = new Node;
+        node->type = NodeType::OPERATION;
+        node->op = Operator{op.value,getOpType(op.value)};
+
+        if (lvalue) appendChild(node, lvalue);
+
+        // var + 5 * 3;
+        // var * 5 + 3;
+
+        Token token = tokens->at(index++);
+
+        switch (token.type) {
+            case TokenType::GROUPING_START:
+                break;
+            case TokenType::LITERAL:
+                break;
+            case TokenType::KEYWORD:
+            case TokenType::SYMBOL:
+                break;
+            case TokenType::OPERATOR:
+                break;
+        }
 
     }
 }
