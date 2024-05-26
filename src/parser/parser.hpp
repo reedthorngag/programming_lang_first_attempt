@@ -50,7 +50,11 @@ namespace Parser {
     struct Symbol {
         SymbolType type;
         char* value;
-        Type t;
+        union {
+            Type t;
+            Function* func;
+        };
+        
     };
 
     struct Literal {
@@ -77,7 +81,7 @@ namespace Parser {
 
     extern const char* TokenTypeMap[];
 
-    extern std::unordered_map<std::string, Node*> globals;
+    extern std::unordered_map<std::string, Symbol> globals;
 
     extern std::vector<Node*> unresolvedReferences;
 
@@ -90,12 +94,17 @@ namespace Parser {
 
     std::unordered_map<std::string, Node*>* parseTokens(std::vector<Token>* tokens);
 
-    bool checkSymbolDeclared(char* name, Node* parent);
+    bool symbolDeclared(char* name, Node* parent);
+    bool symbolDeclaredInScope(char* name, Node* parent);
+    bool symbolDeclaredGlobal(char* name);
+
 
     Node* buildFunctionNode();
     Node* buildIfNode();
     Node* buildWhileNode();
-    Node* buildConstNode();
-    Node* buildVarNode();
+    Node* buildDeclerationNode(Keyword type);
+
+    bool assingment(Token symbol);
+
 }
 

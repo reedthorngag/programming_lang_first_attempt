@@ -5,12 +5,14 @@ language goals:
     3. let you do pretty much whatever the fuck you want (while not giving you *too* many foot guns)
     4. easily integratable with system libraries and stuff
 
+
 current language vision:
     typescript crossed with c++
 
 
 keywords:
     func var const struct enum
+    global  // this explicitly specifies the global scope for name overlaps in local scope
     if else elif switch
     while for do?
     alloc free

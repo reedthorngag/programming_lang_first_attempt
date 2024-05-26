@@ -54,10 +54,12 @@ namespace Parser {
     std::vector<Token>* tokens;
     long long unsigned int index = 0;
 
-    bool checkSymbolDeclared(char* name, Node* parent) {
+    bool symbolDeclared(char* name, Node* parent) {
 
-        if (auto key = globals.find(name); key != globals.end())
-            return true;
+        return symbolDeclaredGlobal(name) || symbolDeclaredInScope(name,parent);
+    }
+
+    inline bool symbolDeclaredInScope(char* name, Node* parent) {
 
         Node* node = parent;
         while (node) {
@@ -70,24 +72,27 @@ namespace Parser {
         return false;
     }
 
+    inline bool symbolDeclaredGlobal(char* name) {
+
+        auto key = globals.find(name); 
+        return key != globals.end();
+    }
+
     Node* processKeyword(Token token) {
 
         switch (token.keyword) {
             case Keyword::FUNC:
                 depth++;
-                buildFunctionNode();
-                printf("here!\n");
-                return nullptr;
+                return buildFunctionNode();
             case Keyword::IF:
                 depth++;
                 return buildIfNode();
             case Keyword::WHILE:
                 depth++;
                 return buildWhileNode();
-            case Keyword::CONST:
-                return buildConstNode();
             case Keyword::VAR:
-                return buildVarNode();
+                buildDeclerationNode(token.keyword);
+                return parent;
             default:
                 printf("ERROR: %s:%d:%d: keyword not yet implemented!\n",token.file,token.line,token.column);
                 return nullptr;
