@@ -147,6 +147,8 @@ namespace Lexer {
 
         while (*ptr) {
 
+            if (commentLevel) isOperator = false; // because the first '/' is detected as an operator, so reset it
+
             while (commentLevel && *ptr) {
                 col++;
                 switch (*ptr) {
@@ -161,7 +163,7 @@ namespace Lexer {
                     case '\n':
                         commentLevel -= notMultiLine;
                         line++;
-                        col = 0;
+                        col = 1;
                         break;
                     default:
                         firstEndChar = false;
@@ -278,7 +280,7 @@ namespace Lexer {
                         [[fallthrough]];
                     default:
                         addChar:
-                        //printf("%c %d%d %d%d %d%d  %d\n",*ptr,operatorChar(*ptr),isOperator,symbolChar(*ptr,isSymbol),isSymbol,validNumberLiteral(*ptr),isLiteral,symbolLen);
+                        printf("%c %d%d %d%d %d%d  %d\n",*ptr,operatorChar(*ptr),isOperator,symbolChar(*ptr,isSymbol),isSymbol,validNumberLiteral(*ptr),isLiteral,symbolLen);
                         if (!specialType) {
                             if (operatorChar(*ptr)) {
                                 isOperator++;
@@ -362,6 +364,7 @@ namespace Lexer {
             switch (*ptr) {
                 case '\n':
                     (*context->line)++;
+                    *context->column = 1;
                     if (typeLen) goto endType;
                     [[fallthrough]];
                 case ' ':
@@ -373,7 +376,8 @@ namespace Lexer {
                 case ')':
                 case '{':
                 case '}':
-                case ',': {
+                case ',': 
+                case ';': {
                     endType:
                     if (!typeLen) {
                         printf("ERROR: %s:%d:%d: expected type!\n",context->file,*context->line,*context->column);

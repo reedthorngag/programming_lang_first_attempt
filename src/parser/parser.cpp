@@ -15,7 +15,7 @@ namespace Parser {
         "')'", // GROUPING_END
         "keyword", // KEYWORD
         "symbol", // SYMBOL
-        "':'", // TYPE
+        "type", // TYPE
         "operator", // OPERATOR
         "literal", // LITERAL
         "EOF", // FILE_END
@@ -119,7 +119,11 @@ namespace Parser {
 
             case Keyword::VAR:
             case Keyword::CONST:
-                return buildDeclerationNode(token.keyword) ? parent : nullptr;
+                if (buildDeclerationNode(token.keyword)) return parent;
+                else {
+                    depth++;
+                    return nullptr;
+                }
 
             default:
                 printf("ERROR: %s:%d:%d: keyword not yet implemented!\n",token.file,token.line,token.column);

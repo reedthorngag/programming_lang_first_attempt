@@ -4,20 +4,21 @@ func test(): null {
 }
 
 func main(default: u32): u8 {
-    const yourMum: u32 = default += 5 * 2 + (8 >> 1);  // this is a single line comment test
-    //yourMum = 5 * (3 - 4 + 1);
+    const test: i8;
+    const test2: u32 = default += 5 * 2 + (8 >> 1 + 2) // this is a single line comment test
+    test2 = 5 * (3 - 4 + 1);
     //;;;
-    /*print(yourMum+8);
+    /*print(test2+8);
     /* this is a multi line
     comment test
     */
-    print(yourmum);
+    print(test2);
     var a: char = 'h';
     var b: u64 = 0x80085
     b += 0b111_000_111;
     print(++);
     const test: string = "he\"llo";
-    print(yourMum<<3);
-    yourMum <<= 5;*/
+    print(test<<3);
+    test2 <<= 5;*/
 }
 

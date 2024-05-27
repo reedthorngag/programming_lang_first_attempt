@@ -4,6 +4,7 @@ language goals:
   * fast compilation times
   * let you do pretty much whatever you want (while not giving you *too* many foot guns)
   * easily integratable with system libraries and stuff
+  * clear and accurate error messages
 
 
 current language vision:

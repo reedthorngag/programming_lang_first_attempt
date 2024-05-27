@@ -89,7 +89,17 @@ namespace Parser {
             return nullptr;
         }
 
-        return operation(lvalue,token);
+        Node* opNode = operation(lvalue,token);
+        if (!opNode) {
+            printf("hello\n");
+            return nullptr;
+        }
+        token = tokens->at(index);
+        if (token.type != TokenType::ENDLINE) {
+            printf("ERROR: %s:%d:%d: expecting ';', found %s!\n",token.file,token.line,token.column,token.type == TokenType::SYMBOL ? token.value : TokenTypeMap[token.type]);
+            return nullptr;
+        }
+        return opNode;
     }
 
     inline OpType getOpType(char* op) {
@@ -144,14 +154,14 @@ namespace Parser {
         Node* rvalue = new Node{};
 
         bool global = false;
-        //bool rvalueGrouped = false;
+        bool rvalueGrouped = false;
         top:
         switch (token.type) {
             case TokenType::GROUPING_START:
                 // TODO: fix this, it doesnt work properly
                 lOp.precedence = 0;
                 token = tokens->at(index++);
-                //rvalueGrouped = true;
+                rvalueGrouped = true;
                 goto top;  
             
             case TokenType::KEYWORD:
@@ -202,7 +212,11 @@ namespace Parser {
                     Node* child = operation(rvalue,token);
                     if (!child) return nullptr;
                     appendChild(node,child);
-                    if (tokens->at(index).type == TokenType::GROUPING_END) index++;
+                    token = tokens->at(index-1);
+                    if (rvalueGrouped && token.type != TokenType::GROUPING_END) {
+                        printf("ERROR: %s:%d:%d: expecting ')', found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                        return nullptr;
+                    }
                     return node;
                 }
             }

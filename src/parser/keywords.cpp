@@ -122,8 +122,8 @@ namespace Parser {
             return false;
         }
 
-        if (symbolDeclared(token.value, parent, nullptr)) {
-            printf("ERROR: %s:%d:%d: %s name %s already in use!\n",token.file,token.line,token.column,typeStr,token.value);
+        if ((parent && symbolDeclaredInScope(token.value, parent, nullptr)) || (!parent && symbolDeclaredGlobal(token.value,nullptr))) {
+            printf("ERROR: %s:%d:%d: name '%s' already in use!\n",token.file,token.line,token.column,token.value);
             return false;
         }
 
