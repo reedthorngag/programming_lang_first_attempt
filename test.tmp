@@ -5,8 +5,8 @@ func test(): null {
 
 func main(default: u32): u8 {
     const yourMum: u32 = default += 5 * 2 + (8 >> 1);  // this is a single line comment test
-    yourMum = 5 * (3 - 4 + 1);
-    ;;;
+    //yourMum = 5 * (3 - 4 + 1);
+    //;;;
     /*print(yourMum+8);
     /* this is a multi line
     comment test

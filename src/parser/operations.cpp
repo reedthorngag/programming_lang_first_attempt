@@ -65,7 +65,7 @@ namespace Parser {
             return nullptr;
         }
 
-        Node* lvalue = new Node;
+        Node* lvalue = new Node{};
         lvalue->type = NodeType::SYMBOL;
         lvalue->symbol = symbol;
 
@@ -127,7 +127,7 @@ namespace Parser {
 
     Node* operation(Node* lvalue, Token op) {
 
-        Node* node = new Node;
+        Node* node = new Node{};
         node->type = NodeType::OPERATION;
         node->op = Operator{op.value,getOpType(op.value)};
 
@@ -141,15 +141,17 @@ namespace Parser {
 
         Token token = tokens->at(index++);
 
-        Node* rvalue = new Node;
+        Node* rvalue = new Node{};
 
         bool global = false;
+        //bool rvalueGrouped = false;
         top:
         switch (token.type) {
             case TokenType::GROUPING_START:
                 // TODO: fix this, it doesnt work properly
                 lOp.precedence = 0;
                 token = tokens->at(index++);
+                //rvalueGrouped = true;
                 goto top;  
             
             case TokenType::KEYWORD:
@@ -166,7 +168,7 @@ namespace Parser {
                 [[fallthrough]];
             case TokenType::SYMBOL: {
                 rvalue->type = NodeType::SYMBOL;
-                Symbol symbol;
+                Symbol symbol{};
 
                 if (!(!global && symbolDeclaredInScope(token.value,parent,&symbol)) && !(global && symbolDeclaredGlobal(token.value,&symbol))) {
                     printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
@@ -193,13 +195,14 @@ namespace Parser {
                 if (!rOp.precedence) return nullptr;
 
                 if (lOp.precedence == rOp.precedence && lOp.evalOrder == RtoL) rOp.precedence++;
-                if (lOp.precedence >= rOp.precedence) {
+                if (lOp.precedence > rOp.precedence) {
                     appendChild(node,rvalue);
                     return operation(node,token);
                 } else {
                     Node* child = operation(rvalue,token);
                     if (!child) return nullptr;
                     appendChild(node,child);
+                    if (tokens->at(index).type == TokenType::GROUPING_END) index++;
                     return node;
                 }
             }

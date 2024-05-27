@@ -149,6 +149,8 @@ namespace Parser {
             Token token = tokens->at(index++);
 
             switch (token.type) {
+                case TokenType::ENDLINE:
+                    break;
                 case TokenType::KEYWORD:
                     parent = processKeyword(token);
                     break;

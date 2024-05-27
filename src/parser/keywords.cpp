@@ -7,7 +7,7 @@ namespace Parser {
 
     Node* buildFunctionNode() {
 
-        Node* node = new Node;
+        Node* node = new Node{};
         node->type = NodeType::FUNCTION;
 
         node->symbolMap = new std::unordered_map<std::string, Symbol>;
@@ -146,7 +146,7 @@ namespace Parser {
         if (parent) {
             parent->symbolMap->insert(std::make_pair(token.value,symbol));
         } else {
-            global = new Node;
+            global = new Node{};
             global->type = NodeType::SYMBOL;
             global->symbol = symbol;
 
