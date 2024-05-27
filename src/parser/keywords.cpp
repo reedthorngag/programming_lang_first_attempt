@@ -66,7 +66,8 @@ namespace Parser {
                 printf("ERROR: %s:%d:%d: unknown type '%s'!\n",token.file,token.line,token.column,token.value);
                 return nullptr;
             } else {
-                node->symbol.func->params.push_back(Param{token.value,type->second});
+                node->symbol.func->params.push_back(Param{paramName,type->second});
+                node->symbolMap->insert(std::make_pair(paramName,Symbol{SymbolType::VAR,paramName,{.t={type->second}}}));
             }
                 
             

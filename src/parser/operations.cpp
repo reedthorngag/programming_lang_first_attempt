@@ -99,20 +99,29 @@ namespace Parser {
         return OpType::MATH; // keep the compiler happy
     }
 
+    enum Order {
+        LtoR,
+        RtoL
+    };
 
-    int getPrecedence(Token token) {
+    struct Precedence {
+        Order evalOrder;
+        int precedence;
+    };
+
+    Precedence getPrecedence(Token token) {
 
         if (token.type != TokenType::OPERATOR) {
             printf("ERROR: %s:%d:%d: expecting operator, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
-            return 0;
+            return Precedence{};
         }
 
-        if (auto key = singleOperandOps.find(token.value);key != singleOperandOps.end()) return key->second;
-        if (auto key = assignmentOps.find(token.value);key != assignmentOps.end()) return key->second;
-        if (auto key = mathmaticalOps.find(token.value);key != mathmaticalOps.end()) return key->second;
+        if (auto key = singleOperandOps.find(token.value);key != singleOperandOps.end()) return Precedence{LtoR,key->second};
+        if (auto key = assignmentOps.find(token.value);key != assignmentOps.end()) return Precedence{RtoL,key->second};
+        if (auto key = mathmaticalOps.find(token.value);key != mathmaticalOps.end()) return Precedence{LtoR,key->second};
         
         printf("ERROR: %s:%d:%d: '%s' operator not yet implemented!\n",token.file,token.line,token.column,token.value);
-        return 0;
+        return Precedence{};
     }
 
 
@@ -124,7 +133,7 @@ namespace Parser {
 
         if (lvalue) appendChild(node, lvalue);
         
-        int lOp = getPrecedence(op);
+        Precedence lOp = getPrecedence(op);
 
         // var + 5 * 3; - top node + sub node *
         // var * 5 + 3; - top node + sub node *
@@ -135,9 +144,14 @@ namespace Parser {
         Node* rvalue = new Node;
 
         bool global = false;
+        top:
         switch (token.type) {
             case TokenType::GROUPING_START:
-                break;
+                // TODO: fix this, it doesnt work properly
+                lOp.precedence = 0;
+                token = tokens->at(index++);
+                goto top;  
+            
             case TokenType::KEYWORD:
                 if (token.keyword != Keyword::GLOBAL) {
                     printf("ERROR: %s:%d:%d: unexpected keyword!\n",token.file,token.line,token.column);
@@ -170,16 +184,16 @@ namespace Parser {
 
                 token = tokens->at(index++);
 
-                if (token.type == TokenType::ENDLINE) {
+                if (token.type == TokenType::ENDLINE || token.type == TokenType::GROUPING_END) {
                     appendChild(node,rvalue);
                     return node;
                 }
 
-                int rOp = getPrecedence(token);
-                if (!rOp) return nullptr;
+                Precedence rOp = getPrecedence(token);
+                if (!rOp.precedence) return nullptr;
 
-                // TODO: for right to left eveluated operations it should be > instead of >= (I think)
-                if (lOp >= rOp) {
+                if (lOp.precedence == rOp.precedence && lOp.evalOrder == RtoL) rOp.precedence++;
+                if (lOp.precedence >= rOp.precedence) {
                     appendChild(node,rvalue);
                     return operation(node,token);
                 } else {
