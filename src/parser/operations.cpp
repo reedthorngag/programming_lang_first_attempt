@@ -4,17 +4,17 @@
 namespace Parser {
 
     std::unordered_map<std::string, bool> assignmentOps = {
-        {"=",true},
-        {"+=",true},
-        {"-=",true},
-        {"/=",true},
-        {"*=",true},
-        {"%=",true},
-        {"<<=",true},
-        {">>=",true},
-        {"^=",true},
-        {"&=",true},
-        {"|=",true},
+        {"=",1},
+        {"+=",2},
+        {"-=",2},
+        {"/=",2},
+        {"*=",2},
+        {"%=",2},
+        {"<<=",2},
+        {">>=",2},
+        {"^=",2},
+        {"&=",2},
+        {"|=",2},
     };
 
     std::unordered_map<std::string, int> mathmaticalOps = {
@@ -47,7 +47,7 @@ namespace Parser {
     };
 
 
-    bool assignment(Token token) {
+    Node* assignment(Token token) {
         
         bool global = token.type == TokenType::KEYWORD && token.keyword == Keyword::GLOBAL;
 
@@ -55,64 +55,66 @@ namespace Parser {
 
         if (token.type != TokenType::SYMBOL) {
             printf("ERROR: %s:%d:%d: expecting name, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
-            return false;
+            return nullptr;
         }
 
         Symbol symbol;
 
         if (!(!global && symbolDeclaredInScope(token.value,parent,&symbol)) && !(global && symbolDeclaredGlobal(token.value,&symbol))) {
             printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
-            return false;
+            return nullptr;
         }
+
+        Node* lvalue = new Node;
+        lvalue->type = NodeType::SYMBOL;
+        lvalue->symbol = symbol;
 
         token = tokens->at(index++);
 
-        if (token.type == TokenType::ENDLINE) return true;
+        if (token.type == TokenType::ENDLINE) return lvalue;
 
         // TODO: fix this
         if (!parent) {
             printf("ERROR: %s:%d:%d: top level assignments currently unsupported!\n",token.file,token.line,token.column);
-            return false;
+            return nullptr;
         }
 
         if (token.type != TokenType::OPERATOR) {
             printf("ERROR: %s:%d:%d: expecting assignment or ';', found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
-            return false;
+            return nullptr;
         }
 
         if (auto key = assignmentOps.find(token.value); key == assignmentOps.end()) {
             printf("ERROR: %s:%d:%d: expecting assignment operator (=, +=, *=, etc), found '%s'!\n",token.file,token.line,token.column,token.value);
-            return false;
+            return nullptr;
         }
 
-        int i = 0;
-        while (token.value[i+1]) i++;
-
-        if (i) {
-            token.value[i] = 0;
-            Node* lvalue = new Node;
-            lvalue->type = NodeType::SYMBOL;
-            lvalue->symbol = symbol;
-
-            Node* value = operation(lvalue,token);
-            if (!value) return false;
-            appendChild(parent,value);
-            return true;
-        }
-
-        token = tokens->at(index++);
-
-        Node* value = new Node;
-
-
-        return true;
+        return operation(lvalue,token);
     }
 
     inline OpType getOpType(char* op) {
         if (auto key = assignmentOps.find(op); key == assignmentOps.end()) return OpType::ASSIGNMENT;
         if (auto key = mathmaticalOps.find(op); key == mathmaticalOps.end()) return OpType::MATH;
         if (auto key = singleOperandOps.find(op); key == singleOperandOps.end()) return OpType::SINGLEOPERAND;
+        return OpType::MATH; // keep the compiler happy
     }
+
+
+    int getPrecedence(Token token) {
+
+        if (token.type != TokenType::OPERATOR) {
+            printf("ERROR: %s:%d:%d: expecting operator, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+            return 0;
+        }
+
+        if (auto key = singleOperandOps.find(token.value);key != singleOperandOps.end()) return key->second;
+        if (auto key = assignmentOps.find(token.value);key != assignmentOps.end()) return key->second;
+        if (auto key = mathmaticalOps.find(token.value);key != mathmaticalOps.end()) return key->second;
+        
+        printf("ERROR: %s:%d:%d: '%s' operator not yet implemented!\n",token.file,token.line,token.column,token.value);
+        return 0;
+    }
+
 
     Node* operation(Node* lvalue, Token op) {
 
@@ -121,23 +123,78 @@ namespace Parser {
         node->op = Operator{op.value,getOpType(op.value)};
 
         if (lvalue) appendChild(node, lvalue);
+        
+        int lOp = getPrecedence(op);
 
-        // var + 5 * 3;
-        // var * 5 + 3;
+        // var + 5 * 3; - top node + sub node *
+        // var * 5 + 3; - top node + sub node *
+        
 
         Token token = tokens->at(index++);
 
+        Node* rvalue = new Node;
+
+        bool global = false;
         switch (token.type) {
             case TokenType::GROUPING_START:
                 break;
-            case TokenType::LITERAL:
-                break;
             case TokenType::KEYWORD:
-            case TokenType::SYMBOL:
-                break;
+                if (token.keyword != Keyword::GLOBAL) {
+                    printf("ERROR: %s:%d:%d: unexpected keyword!\n",token.file,token.line,token.column);
+                    return nullptr;
+                }
+                global = true;
+                token = tokens->at(index++);
+                if (token.type != TokenType::SYMBOL) {
+                    printf("ERROR: %s:%d:%d: expecting symbol, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                    return nullptr;
+                }
+                [[fallthrough]];
+            case TokenType::SYMBOL: {
+                rvalue->type = NodeType::SYMBOL;
+                Symbol symbol;
+
+                if (!(!global && symbolDeclaredInScope(token.value,parent,&symbol)) && !(global && symbolDeclaredGlobal(token.value,&symbol))) {
+                    printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
+                    return nullptr;
+                }
+                rvalue->symbol = symbol;
+            }
+                [[fallthrough]];
+            case TokenType::LITERAL: {
+                
+                if (!(int)rvalue->type) {
+                    rvalue->type = NodeType::LITERAL;
+                    rvalue->literal = Literal{token.value};
+                }
+
+                token = tokens->at(index++);
+
+                if (token.type == TokenType::ENDLINE) {
+                    appendChild(node,rvalue);
+                    return node;
+                }
+
+                int rOp = getPrecedence(token);
+                if (!rOp) return nullptr;
+
+                // TODO: for right to left eveluated operations it should be > instead of >= (I think)
+                if (lOp >= rOp) {
+                    appendChild(node,rvalue);
+                    return operation(node,token);
+                } else {
+                    Node* child = operation(rvalue,token);
+                    if (!child) return nullptr;
+                    appendChild(node,child);
+                    return node;
+                }
+            }
             case TokenType::OPERATOR:
                 break;
+            default:
+                printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                return nullptr;
         }
-
+        return nullptr;
     }
 }

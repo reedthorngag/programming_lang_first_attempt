@@ -17,13 +17,6 @@ namespace Parser {
         INVOCATION,
     };
 
-    // think of a more accurate name
-    enum class SymbolType {
-        FUNC,
-        VAR,
-        CONST,
-    };
-
     enum Type {
         i8, i16, i32, i64, i128,
         u8, u16, u32, u64, u128,
@@ -45,15 +38,21 @@ namespace Parser {
     };
 
     struct Function {
-        char* name;
         std::vector<Param> params;
         Type returnType;
+    };
+
+    // think of a more accurate name
+    enum class SymbolType {
+        FUNC,
+        VAR,
+        CONST,
     };
 
     // think of a better name
     struct Symbol {
         SymbolType type;
-        char* value;
+        char* name;
         union {
             Type t;
             Function* func;
@@ -81,7 +80,6 @@ namespace Parser {
         Node* firstChild;
         Node* nextSibling;
         union {
-            Function* function;
             Symbol symbol;
             Literal literal;
             Operator op;
@@ -92,7 +90,7 @@ namespace Parser {
 
     extern const char* TokenTypeMap[];
 
-    extern std::unordered_map<std::string, Symbol> globals;
+    extern std::unordered_map<std::string, Node*> globals;
 
     extern std::vector<Node*> unresolvedReferences;
 
@@ -103,7 +101,7 @@ namespace Parser {
     extern long long unsigned int index;
 
 
-    std::unordered_map<std::string, Symbol>* parseTokens(std::vector<Token>* tokens);
+    std::unordered_map<std::string, Node*>* parseTokens(std::vector<Token>* tokens);
 
 
     void appendChild(Node* parent, Node* child);
@@ -118,7 +116,7 @@ namespace Parser {
     Node* buildWhileNode();
     bool buildDeclerationNode(Keyword type);
 
-    bool assignment(Token token);
+    Node* assignment(Token token);
     Node* operation(Node* lvalue, Token op);
 
 }

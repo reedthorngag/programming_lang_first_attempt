@@ -44,9 +44,9 @@ namespace Parser {
         {"string",Type::string},
     };
 
-    std::unordered_map<std::string, Symbol> globals;
+    std::unordered_map<std::string, Node*> globals;
 
-    std::vector<Node*> unresolvedReferences(1024);
+    //std::vector<Node*> unresolvedReferences(1024);
 
     Node* parent = nullptr;
     int depth = 0;
@@ -87,7 +87,7 @@ namespace Parser {
     inline bool symbolDeclaredGlobal(char* name, Symbol* symbol) {
 
         if (auto key = globals.find(name); key != globals.end()) {
-            if (symbol) *symbol = key->second;
+            if (symbol) *symbol = key->second->symbol;
             return true;
         }
         return false;
@@ -108,13 +108,14 @@ namespace Parser {
                 depth++;
                 return buildWhileNode();
 
-            case Keyword::GLOBAL:
+            case Keyword::GLOBAL: {
                 Token t = tokens->at(index);
                 if (t.type != TokenType::SYMBOL) {
                     printf("ERROR: %s:%d:%d: expecting name, found %s!\n",t.file,t.line,t.column,TokenTypeMap[token.type]);
                     return nullptr;
                 }
                 return assignment(token) ? parent : nullptr;
+            }
 
             case Keyword::VAR:
             case Keyword::CONST:
@@ -141,7 +142,7 @@ namespace Parser {
         return nullptr;
     }
 
-    std::unordered_map<std::string, Symbol>* parseTokens(std::vector<Token>* _tokens) {
+    std::unordered_map<std::string, Node*>* parseTokens(std::vector<Token>* _tokens) {
         tokens = _tokens;
 
         while (index < tokens->size()) {
@@ -159,6 +160,13 @@ namespace Parser {
                     break;
                 case TokenType::SCOPE_START:
                     parent = newScope(token);
+                    break;
+                case TokenType::SCOPE_END:
+                    if (!depth-- || !parent) {
+                        printf("ERROR: %s:%d:%d: unexpected '}'\n",token.file,token.line,token.column);
+                        return nullptr;
+                    }
+                    parent = parent->parent;
                     break;
                 case TokenType::FILE_END:
                     break;

@@ -24,6 +24,42 @@ void printVal(Lexer::Token token, int* col) {
     }
 }
 
+const char* NodeTypeMap[]{
+    "FUNCTION",
+    "BLOCK",
+    "SYMBOL",
+    "LITERAL",
+    "ASSIGNMENT",
+    "OPERATION",
+    "INVOCATION",
+};
+
+void printNode(Parser::Node* node, int depth) {
+    int d = depth;
+    while (d--) printf("   ");
+    printf("%s",NodeTypeMap[(int)node->type]);
+    switch (node->type) {
+        case Parser::NodeType::SYMBOL:
+        case Parser::NodeType::FUNCTION:
+            printf(": %s\n",node->symbol.name);
+            break;
+        case Parser::NodeType::LITERAL:
+            printf(": %s\n",node->literal.value);
+            break;
+        case Parser::NodeType::OPERATION:
+            printf(": %s\n",node->op.value);
+            break;
+        default:
+            printf("\n");
+            break;
+    }
+    Parser::Node* child = node->firstChild;
+    while (child) {
+        printNode(child,depth+1);
+        child = child->nextSibling;
+    }
+}
+
 int main(int argc, char** argv) {
 
     if (argc < 2) {
@@ -185,8 +221,13 @@ int main(int argc, char** argv) {
     fflush(stdout);
 
     std::unordered_map<std::string, Parser::Node*>* tree = Parser::parseTokens(tokens);
-
     if (!tree) return 1;
+
+    printf("syntax tree:\n");
+    for (auto& [key, value] : *tree) {
+        printf("\n");
+        printNode(value,0);
+    }
 
 
     return 0;

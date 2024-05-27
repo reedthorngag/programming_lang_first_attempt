@@ -12,7 +12,7 @@ namespace Parser {
 
         node->symbolMap = new std::unordered_map<std::string, Symbol>;
 
-        node->function = new Function;
+        node->symbol = Symbol{SymbolType::FUNC,nullptr,{.func = {new Function}}};
 
         Token token = tokens->at(index++);
         if (token.type != TokenType::SYMBOL) {
@@ -25,8 +25,7 @@ namespace Parser {
             return nullptr;
         }
 
-        node->function->name = token.value;
-
+        node->symbol.name = token.value;
 
         token = tokens->at(index++);
         if (token.type != TokenType::GROUPING_START) {
@@ -38,7 +37,7 @@ namespace Parser {
         while (token.type != TokenType::GROUPING_END) {
             
             if (token.type == TokenType::COMMA) {
-                if (node->function->params.size() == 0) {
+                if (node->symbol.func->params.size() == 0) {
                     printf("ERROR: %s:%d:%d: expecting paramater name, found ','!\n",token.file,token.line,token.column);
                     return nullptr;
                 } else
@@ -67,7 +66,7 @@ namespace Parser {
                 printf("ERROR: %s:%d:%d: unknown type '%s'!\n",token.file,token.line,token.column,token.value);
                 return nullptr;
             } else {
-                node->function->params.push_back(Param{token.value,type->second});
+                node->symbol.func->params.push_back(Param{token.value,type->second});
             }
                 
             
@@ -84,7 +83,7 @@ namespace Parser {
             printf("ERROR: %s:%d:%d: unknown type '%s'!\n",token.file,token.line,token.column,token.value);
             return nullptr;
         } else
-            node->function->returnType = type->second;
+            node->symbol.func->returnType = type->second;
 
         token = tokens->at(index++);
         if (token.type != TokenType::SCOPE_START) {
@@ -96,7 +95,7 @@ namespace Parser {
         if (parent) {
             appendChild(parent,node);
         } else {
-            globals.insert(std::make_pair(node->function->name,Symbol{SymbolType::FUNC,node->function->name,{.func = {node->function}}}));
+            globals.insert(std::make_pair(node->symbol.name,node));
         }
 
         return node;
@@ -128,26 +127,40 @@ namespace Parser {
         }
 
         Token typeToken = tokens->at(index++);
-        if (token.type != TokenType::TYPE) {
+        if (typeToken.type != TokenType::TYPE) {
             printf("ERROR: %s:%d:%d: expecting type, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
             return false;
         }
 
         Type t;
-        if (auto type = typeMap.find(token.value); type == typeMap.end()) {
-            printf("ERROR: %s:%d:%d: unknown type '%s'!\n",token.file,token.line,token.column,token.value);
+        if (auto type = typeMap.find(typeToken.value); type == typeMap.end()) {
+            printf("ERROR: %s:%d:%d: unknown type '%s'!\n",typeToken.file,typeToken.line,typeToken.column,typeToken.value);
             return false;
         } else {
             t = type->second;
         }
 
+        Node* global;
+        Symbol symbol = Symbol{type==Keyword::VAR?SymbolType::VAR:SymbolType::CONST,token.value,{.t={t}}};
         if (parent) {
-            parent->symbolMap->insert(std::make_pair(token.value,Symbol{type==Keyword::VAR?SymbolType::VAR:SymbolType::CONST,token.value,{.t={t}}}));
+            parent->symbolMap->insert(std::make_pair(token.value,symbol));
         } else {
-            globals.insert(std::make_pair(token.value,Symbol{type==Keyword::VAR?SymbolType::VAR:SymbolType::CONST,token.value,{.t={t}}}));
+            global = new Node;
+            global->type = NodeType::SYMBOL;
+            global->symbol = symbol;
+
+            globals.insert(std::make_pair(token.value,global));
         }
 
-        return assignment(token);
+        Node* node = assignment(token);
+        if (!node) return false;
+        if (node->type != NodeType::SYMBOL) {
+            if (parent)
+                appendChild(parent,node);
+            else
+                appendChild(global,node);
+        }
+        return true;
     }
 
 }

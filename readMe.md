@@ -68,10 +68,10 @@ symbol name rules: (variable, function and type names)
 
 operator precedence: (from least to most)
     associate right to left:
-        =           0
-        += -=       1
-        /= *= %=    2
-        <<= >>=     3
+        =           1
+        += -=       4
+        /= *= %=    4
+        <<= >>=     4
         &= ^= |=    4
         ?:          5
     left to right:
