@@ -46,6 +46,88 @@ namespace Parser {
         {"--",17},
     };
 
+    Node* functionCall(Symbol symbol) {
+        Node* node = new Node{};
+        node->type = NodeType::INVOCATION;
+        node->symbol = symbol;
+
+        bool inGrouping = false;
+        bool global = false;
+        Token token = tokens->at(index++);
+
+        while (token.type != TokenType::GROUPING_END) {
+
+            Node* param = new Node{};
+            switch (token.type) {
+                case TokenType::COMMA:
+                    break;
+                case TokenType::GROUPING_START:
+                    inGrouping = true;
+                    break;
+                case TokenType::KEYWORD:
+                    if (token.keyword != Keyword::GLOBAL) {
+                        printf("ERROR: %s:%d:%d: unexpected keyword!\n",token.file,token.line,token.column);
+                        return nullptr;
+                    }
+                    global = true;
+                    token = tokens->at(index++);
+                    if (token.type != TokenType::SYMBOL) {
+                        printf("ERROR: %s:%d:%d: expecting name, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                        return nullptr;
+                    }
+                    [[fallthrough]];
+                case TokenType::SYMBOL: {
+                    param->type = NodeType::SYMBOL;
+                    Symbol symbol{};
+
+                    if (!(!global && symbolDeclaredInScope(token.value,parent,&symbol)) && !(global && symbolDeclaredGlobal(token.value,&symbol))) {
+                        printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
+                        return nullptr;
+                    }
+                    global = false;
+                    param->symbol = symbol;
+                }
+                    [[fallthrough]];
+                case TokenType::LITERAL: {
+                    
+                    if (!(int)param->type) {
+                        param->type = NodeType::LITERAL;
+                        param->literal = Literal{token.value};
+                    }
+
+                    token = tokens->at(index++);
+
+                    if (token.type == TokenType::COMMA || token.type == TokenType::GROUPING_END) {
+                        inGrouping = inGrouping && token.type != TokenType::GROUPING_END;
+                        if (inGrouping) {
+                            printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                            return nullptr;
+                        }
+                        appendChild(node,param);
+                        index--;
+                        break;
+                    }
+
+                    if (token.type != TokenType::OPERATOR) {
+                        printf("ERROR: %s:%d:%d: expecting operator, comma or close bracket, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                        return nullptr;
+                    }
+
+                    appendChild(node,operation(param,token));
+                    break;
+                }
+                case TokenType::OPERATOR:
+                    printf("not yet implemeted\n");
+                    break;
+                default:
+                    printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                    return nullptr;
+            }
+            token = tokens->at(index++);
+        }
+
+        return node;
+    }
 
     Node* assignment(Token token) {
         
@@ -72,6 +154,10 @@ namespace Parser {
         token = tokens->at(index++);
 
         if (token.type == TokenType::ENDLINE) return lvalue;
+        if (token.type == TokenType::GROUPING_START) {
+            delete lvalue;
+            return functionCall(symbol);
+        }
 
         // TODO: fix this
         if (!parent) {
@@ -158,7 +244,6 @@ namespace Parser {
         top:
         switch (token.type) {
             case TokenType::GROUPING_START:
-                // TODO: fix this, it doesnt work properly
                 lOp.precedence = 0;
                 token = tokens->at(index++);
                 rvalueGrouped = true;
@@ -184,6 +269,7 @@ namespace Parser {
                     printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
                     return nullptr;
                 }
+                global = false;
                 rvalue->symbol = symbol;
             }
                 [[fallthrough]];
@@ -196,16 +282,24 @@ namespace Parser {
 
                 token = tokens->at(index++);
 
-                if (token.type == TokenType::ENDLINE || token.type == TokenType::GROUPING_END) {
+                bool isGroupingEnd = false;
+                if (token.type == TokenType::GROUPING_END) {
+                    isGroupingEnd = true;
+                    rvalueGrouped = false;
+                    token = tokens->at(index++);
+                }
+
+                if (token.type == TokenType::ENDLINE || token.type == TokenType::COMMA) {
                     appendChild(node,rvalue);
                     return node;
                 }
 
                 Precedence rOp = getPrecedence(token);
                 if (!rOp.precedence) return nullptr;
+                if (isGroupingEnd) rOp.precedence = 0;
 
                 if (lOp.precedence == rOp.precedence && lOp.evalOrder == RtoL) rOp.precedence++;
-                if (lOp.precedence > rOp.precedence) {
+                if (lOp.precedence >= rOp.precedence) {
                     appendChild(node,rvalue);
                     return operation(node,token);
                 } else {
@@ -221,6 +315,7 @@ namespace Parser {
                 }
             }
             case TokenType::OPERATOR:
+                printf("not yet implemeted\n");
                 break;
             default:
                 printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);

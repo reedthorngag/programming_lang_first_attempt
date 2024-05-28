@@ -36,7 +36,7 @@ const char* NodeTypeMap[]{
 
 void printNode(Parser::Node* node, int depth) {
     int d = depth;
-    while (d--) printf("   ");
+    while (d--) printf(" | ");
     printf("%s",NodeTypeMap[(int)node->type]);
     switch (node->type) {
         case Parser::NodeType::SYMBOL:
