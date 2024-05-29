@@ -221,7 +221,7 @@ namespace Parser {
     Node* processGrouping() {
         printf("here\n");
 
-        Node* node;
+        Node* node = nullptr;
 
         Token token = tokens->at(index++);
 
@@ -303,7 +303,16 @@ namespace Parser {
     }
 
     Node* operation(Node* lvalue, Token op) {
-        printf("%s\n",op.value);
+        const char* NodeTypeMap[]{
+            "FUNCTION",
+            "BLOCK",
+            "SYMBOL",
+            "LITERAL",
+            "ASSIGNMENT",
+            "OPERATION",
+            "INVOCATION",
+        };
+        printf("%s %s: %lld %d %s\n",op.value,NodeTypeMap[(int)lvalue->type],(long long)lvalue,(int)lvalue->type,lvalue->type == NodeType::LITERAL ? lvalue->literal.value : "");
 
         Node* node = new Node{};
         node->type = NodeType::OPERATION;
@@ -325,7 +334,6 @@ namespace Parser {
         switch (token.type) {
             case TokenType::GROUPING_START: {
                 Node* child = processGrouping();
-                printf("herre\n");
                 appendChild(node,child);
                 return node;
             }
@@ -378,8 +386,7 @@ namespace Parser {
                 } else {
                     Node* child = operation(rvalue,token);
                     if (!child) return nullptr;
-                    // wtf? next line is causing crash
-                    appendChild(node,child);
+                    appendChild(node,rvalue);
                     return node;
                 }
             }

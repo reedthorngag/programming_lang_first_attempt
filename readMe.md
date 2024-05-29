@@ -11,6 +11,9 @@ current language vision:
   * typescript crossed with c++
 
 
+features:
+  * default initilize to zero like any sane person would make a sane language do (maybe keyword to explicitly exclude variables)
+
 
 ```
 keywords:
