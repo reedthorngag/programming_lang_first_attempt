@@ -176,10 +176,8 @@ namespace Parser {
         }
 
         Node* opNode = operation(lvalue,token);
-        if (!opNode) {
-            printf("hello\n");
-            return nullptr;
-        }
+        if (!opNode) return nullptr;
+
         token = tokens->at(index);
         if (token.type != TokenType::ENDLINE) {
             printf("ERROR: %s:%d:%d: expecting ';', found %s!\n",token.file,token.line,token.column,token.type == TokenType::SYMBOL ? token.value : TokenTypeMap[token.type]);
@@ -220,8 +218,92 @@ namespace Parser {
         return Precedence{};
     }
 
+    Node* processGrouping() {
+        printf("here\n");
+
+        Node* node;
+
+        Token token = tokens->at(index++);
+
+        bool global = false;
+        switch (token.type) {
+            case TokenType::GROUPING_START: {
+                node = processGrouping();
+                if (tokens->at(index).type == TokenType::OPERATOR) {
+                    token = tokens->at(index++);
+                    return operation(node,token);
+                }
+                return node;
+            }
+            case TokenType::KEYWORD:
+                if (token.keyword != Keyword::GLOBAL) {
+                    printf("ERROR: %s:%d:%d: unexpected keyword!\n",token.file,token.line,token.column);
+                    return nullptr;
+                }
+                global = true;
+                token = tokens->at(index++);
+                if (token.type != TokenType::SYMBOL) {
+                    printf("ERROR: %s:%d:%d: expecting symbol, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                    return nullptr;
+                }
+                [[fallthrough]];
+            case TokenType::SYMBOL: {
+                Symbol symbol{};
+
+                if (!(!global && symbolDeclaredInScope(token.value,parent,&symbol)) && !(global && symbolDeclaredGlobal(token.value,&symbol))) {
+                    printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
+                    return nullptr;
+                }
+
+                if (tokens->at(index).type == TokenType::GROUPING_START) {
+                    index++;
+                    return functionCall(symbol);
+                }
+                node = new Node{};
+                node->type = NodeType::SYMBOL;
+                node->symbol = symbol;
+            }
+                [[fallthrough]];
+            case TokenType::LITERAL: {
+                if (!node) {
+                    node = new Node{};
+                    node->type = NodeType::LITERAL;
+                    node->literal = Literal{token.value};
+                }
+
+                token = tokens->at(index++);
+
+                if (token.type == TokenType::GROUPING_END)
+                    return node;
+
+                if (token.type != TokenType::OPERATOR) {
+                    printf("ERROR: %s:%d:%d: expecting operator or ')', found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                    return nullptr;
+                }
+
+                node = operation(node,token);
+                if (!node) return nullptr;
+
+                token = tokens->at(index-1);
+                if (token.type != TokenType::GROUPING_END) {
+                    printf("ERROR: %s:%d:%d: expecting operator or ')', found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                    return nullptr;
+                }
+
+                return node;
+            }
+            case TokenType::OPERATOR:
+                printf("not yet implemeted\n");
+                break;
+            default:
+                printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                return nullptr;
+        }
+        return nullptr;
+    }
 
     Node* operation(Node* lvalue, Token op) {
+        printf("%s\n",op.value);
 
         Node* node = new Node{};
         node->type = NodeType::OPERATION;
@@ -240,14 +322,13 @@ namespace Parser {
         Node* rvalue = new Node{};
 
         bool global = false;
-        bool rvalueGrouped = false;
-        top:
         switch (token.type) {
-            case TokenType::GROUPING_START:
-                lOp.precedence = 0;
-                token = tokens->at(index++);
-                rvalueGrouped = true;
-                goto top;  
+            case TokenType::GROUPING_START: {
+                Node* child = processGrouping();
+                printf("herre\n");
+                appendChild(node,child);
+                return node;
+            }
             
             case TokenType::KEYWORD:
                 if (token.keyword != Keyword::GLOBAL) {
@@ -282,21 +363,13 @@ namespace Parser {
 
                 token = tokens->at(index++);
 
-                bool isGroupingEnd = false;
-                if (token.type == TokenType::GROUPING_END) {
-                    isGroupingEnd = true;
-                    rvalueGrouped = false;
-                    token = tokens->at(index++);
-                }
-
-                if (token.type == TokenType::ENDLINE || token.type == TokenType::COMMA) {
+                if (token.type == TokenType::ENDLINE || token.type == TokenType::COMMA || token.type == TokenType::GROUPING_END) {
                     appendChild(node,rvalue);
                     return node;
                 }
 
                 Precedence rOp = getPrecedence(token);
                 if (!rOp.precedence) return nullptr;
-                if (isGroupingEnd) rOp.precedence = 0;
 
                 if (lOp.precedence == rOp.precedence && lOp.evalOrder == RtoL) rOp.precedence++;
                 if (lOp.precedence >= rOp.precedence) {
@@ -305,12 +378,8 @@ namespace Parser {
                 } else {
                     Node* child = operation(rvalue,token);
                     if (!child) return nullptr;
+                    // wtf? next line is causing crash
                     appendChild(node,child);
-                    token = tokens->at(index-1);
-                    if (rvalueGrouped && token.type != TokenType::GROUPING_END) {
-                        printf("ERROR: %s:%d:%d: expecting ')', found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
-                        return nullptr;
-                    }
                     return node;
                 }
             }

@@ -12,6 +12,7 @@ namespace Parser {
         BLOCK,
         SYMBOL,
         LITERAL,
+        VALUE,
         ASSIGNMENT,
         OPERATION,
         INVOCATION,

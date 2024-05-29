@@ -6,8 +6,8 @@ func test(): null {
 func main(default: u32): u8 {
     const test: i8;
     const test2: u32 = default += 5 * 2 + (8 >> 1 + 2); // this is a single line comment test
-    test2 += (5+1)*3;
-    test(default,(5+2),100);
+    test2 += (5+1) * 3;
+    //test(default,(5+2),100);
     test2 = 5 * (3 - 4 + 1);
     
     
