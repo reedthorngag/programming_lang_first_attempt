@@ -87,6 +87,7 @@ namespace Parser {
         std::unordered_map<std::string, Symbol>* symbolMap;
     };
 
+    extern std::unordered_map<std::string, Symbol> builtins;
 
     extern const char* TokenTypeMap[];
 
@@ -107,6 +108,7 @@ namespace Parser {
     void appendChild(Node* parent, Node* child);
 
     bool symbolDeclared(char* name, Node* parent, Symbol* symbol);
+    inline bool symbolBuiltin(char* name, Symbol* symbol);
     bool symbolDeclaredInScope(char* name, Node* parent, Symbol* symbol);
     bool symbolDeclaredGlobal(char* name, Symbol* symbol);
 

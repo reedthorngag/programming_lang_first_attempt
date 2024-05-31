@@ -12,7 +12,7 @@ current language vision:
 
 
 features:
-  * default initilize to zero like any sane person would make a sane language do (maybe keyword to explicitly exclude variables)
+  * default initilize to zero like any sane person would make a sane language do (maybe keyword to explicitly exclude variables, or just make the compiler optimize it out when possible/detectable)
 
 
 ```

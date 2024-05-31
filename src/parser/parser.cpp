@@ -44,6 +44,8 @@ namespace Parser {
         {"string",Type::string},
     };
 
+    std::unordered_map<std::string, Symbol> builtins;
+
     std::unordered_map<std::string, Node*> globals;
 
     //std::vector<Node*> unresolvedReferences(1024);
@@ -53,6 +55,26 @@ namespace Parser {
 
     std::vector<Token>* tokens;
     long long unsigned int index = 0;
+
+    inline char* newStr(const char* c) {
+        int len = 0;
+        while (c[len++]);
+        char* str = new char[len];
+        while (len--) str[len] = c[len];
+        return str;
+    }
+
+    void buildBuiltins() {
+        char* f = newStr("print");
+        char* p1 = newStr("value");
+
+        Function* func = new Function;
+        func->returnType = Type::null;
+        func->params.push_back(Param{p1,Type::i64});
+        Symbol sym = Symbol{SymbolType::FUNC,f,{.func = {func}}};
+
+        builtins.insert(std::make_pair(f,sym));
+    }
 
     void appendChild(Node* parent, Node* child) {
         Node* sibling = parent->firstChild;
@@ -70,8 +92,16 @@ namespace Parser {
         return symbolDeclaredGlobal(name,symbol) || symbolDeclaredInScope(name,parent,symbol);
     }
 
-    inline bool symbolDeclaredInScope(char* name, Node* parent, Symbol* symbol) {
+    inline bool symbolBuiltin(char* name, Symbol* symbol) {
+        if (auto key = builtins.find(name); key != builtins.end()) {
+            if (symbol) *symbol = key->second;
+            return true;
+        }
+        return false;
+    }
 
+    inline bool symbolDeclaredInScope(char* name, Node* parent, Symbol* symbol) {
+        if (symbolBuiltin(name, symbol)) return true;
         Node* node = parent;
         while (node) {
             if (auto key = node->symbolMap->find(name); key != node->symbolMap->end()) {
@@ -85,7 +115,7 @@ namespace Parser {
     }
 
     inline bool symbolDeclaredGlobal(char* name, Symbol* symbol) {
-
+        if (symbolBuiltin(name, symbol)) return true;
         if (auto key = globals.find(name); key != globals.end()) {
             if (symbol) *symbol = key->second->symbol;
             return true;
@@ -174,6 +204,8 @@ namespace Parser {
     }
 
     std::unordered_map<std::string, Node*>* parseTokens(std::vector<Token>* _tokens) {
+        buildBuiltins();
+
         tokens = _tokens;
 
         while (index < tokens->size()) {

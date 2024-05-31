@@ -120,6 +120,10 @@ namespace Parser {
                     printf("not yet implemeted\n");
                     break;
                 default:
+                    if (tokens->at(index-2).type == TokenType::GROUPING_END) {
+                        index -= 2;
+                        break;
+                    }
                     printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
                     return nullptr;
             }
@@ -178,7 +182,7 @@ namespace Parser {
         Node* opNode = operation(lvalue,token);
         if (!opNode) return nullptr;
 
-        token = tokens->at(index);
+        token = tokens->at(index-1);
         if (token.type != TokenType::ENDLINE) {
             printf("ERROR: %s:%d:%d: expecting ';', found %s!\n",token.file,token.line,token.column,token.type == TokenType::SYMBOL ? token.value : TokenTypeMap[token.type]);
             return nullptr;
@@ -219,7 +223,6 @@ namespace Parser {
     }
 
     Node* processGrouping() {
-        printf("here\n");
 
         Node* node = nullptr;
 
@@ -333,9 +336,9 @@ namespace Parser {
         bool global = false;
         switch (token.type) {
             case TokenType::GROUPING_START: {
-                Node* child = processGrouping();
-                appendChild(node,child);
-                return node;
+                delete rvalue;
+                rvalue = processGrouping();
+                goto processNext;
             }
             
             case TokenType::KEYWORD:
@@ -368,6 +371,7 @@ namespace Parser {
                     rvalue->type = NodeType::LITERAL;
                     rvalue->literal = Literal{token.value};
                 }
+                processNext: // couldnt think of a better name
 
                 token = tokens->at(index++);
 
