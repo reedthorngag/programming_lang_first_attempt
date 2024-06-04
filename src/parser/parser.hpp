@@ -30,13 +30,11 @@ namespace Parser {
         i16,
         i32,
         i64,
-        i128,
 
         u8,
         u16,
         u32,
         u64,
-        u128,
 
         f16,
         f32,
@@ -54,17 +52,15 @@ namespace Parser {
         0b10,
         0b100,
         0b1000,
-        0b10000,
 
+        0b10000,
         0b100000,
         0b1000000,
         0b10000000,
-        0b100000000,
-        0b1000000000,
 
+        0b1000000000,
         0b10000000000,
         0b100000000000,
-        0b1000000000000,
 
         0,
         0,
@@ -78,12 +74,10 @@ namespace Parser {
         TypeMask[i16] | TypeMask[i8],
         TypeMask[i32] | TypeMask[i16] | TypeMask[i8],
         TypeMask[i64] | TypeMask[i32] | TypeMask[i16] | TypeMask[i8],
-        TypeMask[i128] | TypeMask[i64] | TypeMask[i32] | TypeMask[i16] | TypeMask[i8],
         TypeMask[u8],
         TypeMask[u16] | TypeMask[u8],
         TypeMask[u32] | TypeMask[u16] | TypeMask[u8],
         TypeMask[u64] | TypeMask[u32] | TypeMask[u16] | TypeMask[u8],
-        TypeMask[u128] | TypeMask[u64] | TypeMask[u32] | TypeMask[u16] | TypeMask[u8],
         TypeMask[f16],
         TypeMask[f32] | TypeMask[f16],
         TypeMask[f64] | TypeMask[f32] | TypeMask[f16],
@@ -91,6 +85,35 @@ namespace Parser {
         TypeMask[string],
         TypeMask[boolean],
         TypeMask[null],
+    };
+
+    const uint64_t NumTypeMax[] {
+        127, 32767, 2147483647, 9223372036854775807,
+        255, 65535,4294967295, 18446744073709551615LLU
+    };
+
+    const int64_t NumTypeMin[] {
+        -127, -32768, -2147483648, -9223372036854775807LL,
+        0, 0, 0, 0, 0
+    };
+
+    struct Number {
+        const Type type;
+        const int64_t min;
+        const uint64_t max;
+    };
+
+    const Number TypeConstraints[] {
+        Number{},
+        Number{i8,NumTypeMin[NumberType::i8],NumTypeMax[NumberType::i8]},
+        Number{i16,NumTypeMin[NumberType::i16],NumTypeMax[NumberType::i16]},
+        Number{i32,NumTypeMin[NumberType::i32],NumTypeMax[NumberType::i32]},
+        Number{i64,NumTypeMin[NumberType::i64],NumTypeMax[NumberType::i64]},
+
+        Number{u8,NumTypeMin[NumberType::u8],NumTypeMax[NumberType::u8]},
+        Number{u16,NumTypeMin[NumberType::u16],NumTypeMax[NumberType::u16]},
+        Number{u32,NumTypeMin[NumberType::u32],NumTypeMax[NumberType::u32]},
+        Number{u64,NumTypeMin[NumberType::u64],NumTypeMax[NumberType::u64]},
     };
 
     extern std::unordered_map<std::string, Type> typeMap;

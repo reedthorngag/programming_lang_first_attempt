@@ -6,10 +6,10 @@ func test(): null {
 const test5: u16;
 const test4: u64 = 5;
 
-func main(default: i32): u8 {
-    const test: i8 = 5 + 1 + 3;
-    const test2: u32 = default += 5 * 2 + (8 >> 1 + 2); // this is a single line comment test
-    /*test2 += (5+1) * 3;
+func main(default: i32): u16 {
+    const test: i16 = 5 + 1 + 3;
+    const test2: i32 = default += 5 * 2 + (8 >> 1 + 2); // this is a single line comment test
+    test2 += (5+1) * 3;
     test(default,(5+2),100);
     test2 = 5 * (3 - 4 + 1);
     test(test2+8);
@@ -26,6 +26,6 @@ func main(default: i32): u8 {
     b += 0b111_000_111;
     print();
     const test3: string = "he\"llo";
-    test2 <<= 5;*/
+    test2 <<= 5;
 }
 

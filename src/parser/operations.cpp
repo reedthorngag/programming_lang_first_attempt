@@ -133,32 +133,6 @@ namespace Parser {
         return node;
     }
 
-    void printNode(Parser::Node* node, int depth) {
-    int d = depth;
-    while (d--) printf(" | ");
-    printf("%s",Parser::NodeTypeMap[(int)node->type]);
-    switch (node->type) {
-        case Parser::NodeType::SYMBOL:
-        case Parser::NodeType::FUNCTION:
-            printf(": %s\n",node->symbol.name);
-            break;
-        case Parser::NodeType::LITERAL:
-            printf(": %s\n",node->literal.value);
-            break;
-        case Parser::NodeType::OPERATION:
-            printf(": %s\n",node->op.value);
-            break;
-        default:
-            printf("\n");
-            break;
-    }
-    Parser::Node* child = node->firstChild;
-    while (child) {
-        printNode(child,depth+1);
-        child = child->nextSibling;
-    }
-}
-
     Node* assignment(Token token) {
         
         bool global = token.type == TokenType::KEYWORD && token.keyword == Keyword::GLOBAL;

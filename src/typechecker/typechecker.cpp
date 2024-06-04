@@ -19,7 +19,11 @@ namespace TypeChecker {
 
     // TODO: make this attempt to confrom to parentType
     Type literalType(Node* node, Type parentType) {
-        if (!parseLiteral(node)) return Type::error;
+        if (!parseLiteral(node, parentType)) return Type::error;
+        if (typesImplicitlyCompatible(parentType,node->literal.type)) {
+            printf("ERROR: %s:%d:%d: incompatible types! ('%s' and '%s')\n",node->token.file,node->token.line,node->token.column,TypeMap[parentType],TypeMap[node->literal.type]);
+            return Type::error;
+        }
         return node->literal.type;
     }
 
@@ -56,7 +60,7 @@ namespace TypeChecker {
         if (!lvalue) {
             printf("ERROR: %s:%d:%d: operation without child!\n",node->token.file,node->token.line,node->token.column);
         }
-        Type ltype = getType(lvalue, Type::error);
+        Type ltype = getType(lvalue, parentType);
         if (ltype == Type::error) return Type::error;
 
         Node* rvalue = lvalue->nextSibling;
@@ -73,7 +77,7 @@ namespace TypeChecker {
         };
 
         if (!typesImplicitlyCompatible(parentType,ltype)) {
-            printf("ERROR: %s:%d:%d: incompatible types! ('%s' and '%s')\n",lvalue->token.file,lvalue->token.line,lvalue->token.column,TypeMap[parentType],TypeMap[ltype]);
+            printf("ERROR: %s:%d:%d: incompatible types! ('%s' and '%s')\n",node->token.file,node->token.line,node->token.column,TypeMap[parentType],TypeMap[ltype]);
             return Type::error;
         };
         return ltype;
@@ -81,7 +85,19 @@ namespace TypeChecker {
 
     Type processInvocation(Node* node) {
 
+        int paramNum = 0;
         Node* child = node->firstChild;
+        while (child) {
+            child = child->nextSibling;
+            paramNum++;
+        }
+
+        if (paramNum != (int)node->symbol.func->params.size()) {
+            printf("ERROR: %s:%d:%d: expecting %d paramaters, found %d\n",node->token.file,node->token.line,node->token.column,(int)node->symbol.func->params.size(),paramNum);
+            return Type::error;
+        }
+
+        child = node->firstChild;
         for (Param p : node->symbol.func->params) {
 
             Type type = getType(child,p.type);

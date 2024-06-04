@@ -31,6 +31,8 @@ void printNode(Parser::Node* node, int depth) {
     printf("%s",Parser::NodeTypeMap[(int)node->type]);
     switch (node->type) {
         case Parser::NodeType::SYMBOL:
+            printf(": %s: %s\n",node->symbol.name,Parser::TypeMap[node->symbol.t]);
+            break;
         case Parser::NodeType::FUNCTION:
             printf(": %s\n",node->symbol.name);
             break;

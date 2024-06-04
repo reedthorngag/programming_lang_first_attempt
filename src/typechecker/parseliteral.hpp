@@ -3,7 +3,7 @@
 
 namespace TypeChecker {
 
-    bool parseLiteral(Parser::Node* node);
+    bool parseLiteral(Parser::Node* node, Parser::Type parent);
 };
 
 

@@ -67,13 +67,13 @@ namespace Lexer {
     };
 
     const char* maxStr[] {
-        "127", "32_767", "2_147_483_647", "9_223_372_036_854_775_807", "170_141_183_460_469_231_731_687_303_715_884_105_727",
-        "255", "65_535","4_294_967_295", "18_446_744_073_709_551_615", "340_282_366_920_938_463_463_374_607_431_768_211_455"
+        "127", "32_767", "2_147_483_647", "9_223_372_036_854_775_807",
+        "255", "65_535","4_294_967_295", "18_446_744_073_709_551_615",
     };
 
     const char* minStr[] {
-        "-127", "-32_768", "-2_147_483_648", "-9_223_372_036_854_775_808", "-170_141_183_460_469_231_731_687_303_715_884_105_728",
-        "0", "0", "0", "0", "0"
+        "-127", "-32_768", "-2_147_483_648", "-9_223_372_036_854_775_808",
+        "0", "0", "0", "0"
     };
 
     struct Number {
@@ -87,13 +87,11 @@ namespace Lexer {
         {"i16",Number{true,minStr[NumberType::i16],maxStr[NumberType::i16]}},
         {"i32",Number{true,minStr[NumberType::i32],maxStr[NumberType::i32]}},
         {"i64",Number{true,minStr[NumberType::i64],maxStr[NumberType::i64]}},
-        {"i128",Number{true,minStr[NumberType::i128],maxStr[NumberType::i128]}},
 
         {"u8",Number{true,minStr[NumberType::u8],maxStr[NumberType::u8]}},
         {"u16",Number{true,minStr[NumberType::u16],maxStr[NumberType::u16]}},
         {"u32",Number{true,minStr[NumberType::u32],maxStr[NumberType::u32]}},
         {"u64",Number{true,minStr[NumberType::u64],maxStr[NumberType::u64]}},
-        {"u128",Number{true,minStr[NumberType::u128],maxStr[NumberType::u128]}},
 
         {"f16",Number{false}},
         {"f32",Number{false}},
