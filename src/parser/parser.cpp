@@ -26,9 +26,29 @@ namespace Parser {
         "BLOCK",
         "SYMBOL",
         "LITERAL",
-        "ASSIGNMENT",
         "OPERATION",
         "INVOCATION",
+    };
+
+    const char* TypeMap[] {
+        "error",
+        "i8",
+        "i16",
+        "i32",
+        "i64",
+        "i128",
+        "u8",
+        "u16",
+        "u32",
+        "u64",
+        "u128",
+        "f16",
+        "f32",
+        "f64",
+        "chr",
+        "string",
+        "boolean",
+        "null"
     };
 
     std::unordered_map<std::string, Type> typeMap = {

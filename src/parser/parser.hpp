@@ -22,16 +22,75 @@ namespace Parser {
 
     extern const char* NodeTypeMap[];
 
+    extern const char* TypeMap[];
+
     enum Type {
         error, // used to indicate there is a type error, not used as a type
-        i8, i16, i32, i64, i128,
-        u8, u16, u32, u64, u128,
-        f16, f32, f64,
+        i8,
+        i16,
+        i32,
+        i64,
+        i128,
+
+        u8,
+        u16,
+        u32,
+        u64,
+        u128,
+
+        f16,
+        f32,
+        f64,
         chr, // c++ wont let me use 'char' and it seems there is no way to fix 
            // it smh, *this* is the sort of thing that makes me want to write my own language
         string,
         boolean,
         null
+    };
+
+    const long long TypeMask[] {
+        0,
+        0b1,
+        0b10,
+        0b100,
+        0b1000,
+        0b10000,
+
+        0b100000,
+        0b1000000,
+        0b10000000,
+        0b100000000,
+        0b1000000000,
+
+        0b10000000000,
+        0b100000000000,
+        0b1000000000000,
+
+        0,
+        0,
+        0,
+        0,
+    };
+
+    const long long TypeCompatibility[] {
+        0,
+        TypeMask[i8],
+        TypeMask[i16] | TypeMask[i8],
+        TypeMask[i32] | TypeMask[i16] | TypeMask[i8],
+        TypeMask[i64] | TypeMask[i32] | TypeMask[i16] | TypeMask[i8],
+        TypeMask[i128] | TypeMask[i64] | TypeMask[i32] | TypeMask[i16] | TypeMask[i8],
+        TypeMask[u8],
+        TypeMask[u16] | TypeMask[u8],
+        TypeMask[u32] | TypeMask[u16] | TypeMask[u8],
+        TypeMask[u64] | TypeMask[u32] | TypeMask[u16] | TypeMask[u8],
+        TypeMask[u128] | TypeMask[u64] | TypeMask[u32] | TypeMask[u16] | TypeMask[u8],
+        TypeMask[f16],
+        TypeMask[f32] | TypeMask[f16],
+        TypeMask[f64] | TypeMask[f32] | TypeMask[f16],
+        TypeMask[chr],
+        TypeMask[string],
+        TypeMask[boolean],
+        TypeMask[null],
     };
 
     extern std::unordered_map<std::string, Type> typeMap;

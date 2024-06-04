@@ -9,25 +9,40 @@ using namespace Parser;
 namespace TypeChecker {
 
     bool typesImplicitlyCompatible(Type parent, Type child) {
+        if (parent == child) return true;
 
-        return true;
+        if (parent == Type::error) return true;
+        if (child == Type::error) return false;
+
+        return TypeCompatibility[parent] & TypeMask[child];
     }
 
-    Type literalType(Node* node) {
+    // TODO: make this attempt to confrom to parentType
+    Type literalType(Node* node, Type parentType) {
         if (!parseLiteral(node)) return Type::error;
         return node->literal.type;
     }
 
-    Type getType(Node* node) {
+    Type getType(Node* node, Type parentType) {
         switch (node->type) {
             case NodeType::OPERATION:
-                return processOperation(node);
+                return processOperation(node, parentType);
 
             case NodeType::SYMBOL:
                 return node->symbol.t;
             
             case NodeType::LITERAL:
-                return literalType(node);
+                return literalType(node,parentType);
+            
+            case NodeType::INVOCATION: {
+                Type type = processInvocation(node);
+                if (type == Type::error) return Type::error;
+                if (!typesImplicitlyCompatible(parentType,type)) {
+                    printf("ERROR: %s:%d:%d: incompatible types! ('%s' and '%s')\n",node->token.file,node->token.line,node->token.column,TypeMap[parentType],TypeMap[type]);
+                    return Type::error;
+                }
+                return type;
+            }
             
             default:
                 printf("ERROR: %s:%d:%d: '%s' unexpected node!\n",node->token.file,node->token.line,node->token.column,NodeTypeMap[(int)node->type]);
@@ -35,13 +50,13 @@ namespace TypeChecker {
         }
     }
 
-    Type processOperation(Node* node) {
+    Type processOperation(Node* node, Type parentType) {
 
         Node* lvalue = node->firstChild;
         if (!lvalue) {
             printf("ERROR: %s:%d:%d: operation without child!\n",node->token.file,node->token.line,node->token.column);
         }
-        Type ltype = getType(lvalue);
+        Type ltype = getType(lvalue, Type::error);
         if (ltype == Type::error) return Type::error;
 
         Node* rvalue = lvalue->nextSibling;
@@ -49,16 +64,35 @@ namespace TypeChecker {
             printf("you missed an edge case idiot\n");
             return ltype;
         }
-        Type rtype = getType(rvalue);
+        Type rtype = getType(rvalue, ltype);
         if (rtype == Type::error) return Type::error;
 
-        if (!typesImplicitlyCompatible(ltype,rtype)) return Type::error;
+        if (!typesImplicitlyCompatible(ltype,rtype)) {
+            printf("ERROR: %s:%d:%d: incompatible types! ('%s' and '%s')\n",rvalue->token.file,rvalue->token.line,rvalue->token.column,TypeMap[ltype],TypeMap[rtype]);
+            return Type::error;
+        };
 
+        if (!typesImplicitlyCompatible(parentType,ltype)) {
+            printf("ERROR: %s:%d:%d: incompatible types! ('%s' and '%s')\n",lvalue->token.file,lvalue->token.line,lvalue->token.column,TypeMap[parentType],TypeMap[ltype]);
+            return Type::error;
+        };
         return ltype;
     }
 
     Type processInvocation(Node* node) {
-        printf("invocation\n");
+
+        Node* child = node->firstChild;
+        for (Param p : node->symbol.func->params) {
+
+            Type type = getType(child,p.type);
+            if (!typesImplicitlyCompatible(p.type,type)) {
+                printf("ERROR: %s:%d:%d: incompatible type! (requires '%s', found '%s')\n",child->token.file,child->token.line,child->token.column,TypeMap[p.type],TypeMap[type]);
+                return Type::error;
+            }
+
+            child = child->nextSibling;
+        }
+
         return node->symbol.func->returnType;
     }
 
@@ -72,7 +106,7 @@ namespace TypeChecker {
                     break;
 
                 case NodeType::OPERATION:
-                    if (processOperation(child) == Type::error) return false;
+                    if (processOperation(child,Type::error) == Type::error) return false;
                     break;
 
                 case NodeType::INVOCATION:
@@ -91,14 +125,16 @@ namespace TypeChecker {
 
     bool process(std::unordered_map<std::string, Parser::Node*>* tree) {
 
-        printf("hello from the type checker\n");
-
         for (auto& [key, node] : *tree) {
             switch (node->type) {
                 case NodeType::FUNCTION:
+                    if (!processBlock(node)) return false;
                     break;
+
                 case NodeType::SYMBOL:
+                    if (node->firstChild && !processOperation(node->firstChild,node->symbol.t)) return false;
                     break;
+
                 default:
                     printf("ERROR: %s:%d:%d: expecting decleration or function, found '%s'!\n",node->token.file,node->token.line,node->token.column,NodeTypeMap[(int)node->type]);
                     return false;

@@ -133,6 +133,32 @@ namespace Parser {
         return node;
     }
 
+    void printNode(Parser::Node* node, int depth) {
+    int d = depth;
+    while (d--) printf(" | ");
+    printf("%s",Parser::NodeTypeMap[(int)node->type]);
+    switch (node->type) {
+        case Parser::NodeType::SYMBOL:
+        case Parser::NodeType::FUNCTION:
+            printf(": %s\n",node->symbol.name);
+            break;
+        case Parser::NodeType::LITERAL:
+            printf(": %s\n",node->literal.value);
+            break;
+        case Parser::NodeType::OPERATION:
+            printf(": %s\n",node->op.value);
+            break;
+        default:
+            printf("\n");
+            break;
+    }
+    Parser::Node* child = node->firstChild;
+    while (child) {
+        printNode(child,depth+1);
+        child = child->nextSibling;
+    }
+}
+
     Node* assignment(Token token) {
         
         bool global = token.type == TokenType::KEYWORD && token.keyword == Keyword::GLOBAL;
@@ -223,7 +249,6 @@ namespace Parser {
     }
 
     Node* processGrouping() {
-
         Node* node = nullptr;
 
         Token token = tokens->at(index++);
@@ -308,7 +333,7 @@ namespace Parser {
     }
 
     Node* operation(Node* lvalue, Token op) {
-        printf("%s %s: %lld %d %s\n",op.value,NodeTypeMap[(int)lvalue->type],(long long)lvalue,(int)lvalue->type,lvalue->type == NodeType::LITERAL ? lvalue->literal.value : "");
+        //printf("%s %s: %lld %d %s\n",op.value,NodeTypeMap[(int)lvalue->type],(long long)lvalue,(int)lvalue->type,lvalue->type == NodeType::LITERAL ? lvalue->literal.value : "");
 
         Node* node = new Node{};
         node->type = NodeType::OPERATION;
@@ -382,7 +407,7 @@ namespace Parser {
                 } else {
                     Node* child = operation(rvalue,token);
                     if (!child) return nullptr;
-                    appendChild(node,rvalue);
+                    appendChild(node,child);
                     return node;
                 }
             }
