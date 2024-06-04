@@ -1,6 +1,8 @@
 #include <stdio.h>
 
+#include "typechecker.hpp"
 #include "../parser/parser.hpp"
+#include "parseliteral.hpp"
 
 using namespace Parser;
 
@@ -12,7 +14,8 @@ namespace TypeChecker {
     }
 
     Type literalType(Node* node) {
-        
+        if (!parseLiteral(node)) return Type::error;
+        return node->literal.type;
     }
 
     Type getType(Node* node) {
@@ -66,12 +69,15 @@ namespace TypeChecker {
                 case NodeType::FUNCTION:
                 case NodeType::BLOCK:
                     if (!processBlock(child)) return false;
+                    break;
 
                 case NodeType::OPERATION:
                     if (processOperation(child) == Type::error) return false;
+                    break;
 
                 case NodeType::INVOCATION:
                     if (processInvocation(child) == Type::error) return false;
+                    break;
 
                 default:
                     printf("ERROR: %s:%d:%d: '%s' unexpected node!\n",node->token.file,node->token.line,node->token.column,NodeTypeMap[(int)node->type]);
@@ -100,5 +106,5 @@ namespace TypeChecker {
         }
         return true;
     }
-}
+};
 

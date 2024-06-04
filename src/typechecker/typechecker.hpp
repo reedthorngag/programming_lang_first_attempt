@@ -4,6 +4,7 @@
 
 namespace TypeChecker {
 
-    void process(std::unordered_map<std::string, Parser::Node*>* tree);
+    Parser::Type processOperation(Parser::Node* node);
+    bool process(std::unordered_map<std::string, Parser::Node*>* tree);
 }
 

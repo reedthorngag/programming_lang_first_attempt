@@ -1,5 +1,6 @@
 #include <unordered_map>
 #include <vector>
+#include <cstdint>
 
 #include "../lexer/lexer.hpp"
 
@@ -69,7 +70,10 @@ namespace Parser {
         Type type;
         union {
             char* value;
-            char* str;
+            struct {
+                char* str;
+                int len;
+            } str;
             char chr;
             uint64_t u;
             int64_t i;
