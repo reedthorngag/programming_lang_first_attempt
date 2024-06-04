@@ -3,6 +3,7 @@
 
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
+#include "typechecker/typechecker.hpp"
 
 void pad(Lexer::Token token, int* line, int* col) {
     while (*line < token.line) {
@@ -229,6 +230,8 @@ int main(int argc, char** argv) {
         printf("\n");
     }
 
+
+    TypeChecker::process(tree);
 
     return 0;
 }

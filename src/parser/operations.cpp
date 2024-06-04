@@ -50,6 +50,7 @@ namespace Parser {
         Node* node = new Node{};
         node->type = NodeType::INVOCATION;
         node->symbol = symbol;
+        node->token = tokens->at(index-1);
 
         bool inGrouping = false;
         bool global = false;
@@ -86,6 +87,7 @@ namespace Parser {
                     }
                     global = false;
                     param->symbol = symbol;
+                    param->token = token;
                 }
                     [[fallthrough]];
                 case TokenType::LITERAL: {
@@ -93,6 +95,7 @@ namespace Parser {
                     if (!(int)param->type) {
                         param->type = NodeType::LITERAL;
                         param->literal = Literal{token.value};
+                        param->token = token;
                     }
 
                     token = tokens->at(index++);
@@ -116,9 +119,6 @@ namespace Parser {
                     appendChild(node,operation(param,token));
                     break;
                 }
-                case TokenType::OPERATOR:
-                    printf("not yet implemeted\n");
-                    break;
                 default:
                     if (tokens->at(index-2).type == TokenType::GROUPING_END) {
                         index -= 2;
@@ -146,7 +146,12 @@ namespace Parser {
 
         Symbol symbol;
 
-        if (!(!global && symbolDeclaredInScope(token.value,parent,&symbol)) && !(global && symbolDeclaredGlobal(token.value,&symbol))) {
+        if (global) {
+            if (!symbolDeclaredGlobal(token.value,&symbol)) {
+                printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
+                return nullptr;
+            }
+        } else if (!symbolDeclaredInScope(token.value,parent,&symbol) && !symbolDeclaredGlobal(token.value,&symbol)) {
             printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
             return nullptr;
         }
@@ -154,6 +159,7 @@ namespace Parser {
         Node* lvalue = new Node{};
         lvalue->type = NodeType::SYMBOL;
         lvalue->symbol = symbol;
+        lvalue->token = token;
 
         token = tokens->at(index++);
 
@@ -161,12 +167,6 @@ namespace Parser {
         if (token.type == TokenType::GROUPING_START) {
             delete lvalue;
             return functionCall(symbol);
-        }
-
-        // TODO: fix this
-        if (!parent) {
-            printf("ERROR: %s:%d:%d: top level assignments currently unsupported!\n",token.file,token.line,token.column);
-            return nullptr;
         }
 
         if (token.type != TokenType::OPERATOR) {
@@ -265,6 +265,7 @@ namespace Parser {
                 node = new Node{};
                 node->type = NodeType::SYMBOL;
                 node->symbol = symbol;
+                node->token = token;
             }
                 [[fallthrough]];
             case TokenType::LITERAL: {
@@ -272,6 +273,7 @@ namespace Parser {
                     node = new Node{};
                     node->type = NodeType::LITERAL;
                     node->literal = Literal{token.value};
+                    node->token = token;
                 }
 
                 token = tokens->at(index++);
@@ -306,28 +308,16 @@ namespace Parser {
     }
 
     Node* operation(Node* lvalue, Token op) {
-        const char* NodeTypeMap[]{
-            "FUNCTION",
-            "BLOCK",
-            "SYMBOL",
-            "LITERAL",
-            "ASSIGNMENT",
-            "OPERATION",
-            "INVOCATION",
-        };
         printf("%s %s: %lld %d %s\n",op.value,NodeTypeMap[(int)lvalue->type],(long long)lvalue,(int)lvalue->type,lvalue->type == NodeType::LITERAL ? lvalue->literal.value : "");
 
         Node* node = new Node{};
         node->type = NodeType::OPERATION;
         node->op = Operator{op.value,getOpType(op.value)};
+        node->token = op;
 
         if (lvalue) appendChild(node, lvalue);
         
         Precedence lOp = getPrecedence(op);
-
-        // var + 5 * 3; - top node + sub node *
-        // var * 5 + 3; - top node + sub node *
-        
 
         Token token = tokens->at(index++);
 
@@ -363,6 +353,7 @@ namespace Parser {
                 }
                 global = false;
                 rvalue->symbol = symbol;
+                rvalue->token = token;
             }
                 [[fallthrough]];
             case TokenType::LITERAL: {
@@ -370,6 +361,7 @@ namespace Parser {
                 if (!(int)rvalue->type) {
                     rvalue->type = NodeType::LITERAL;
                     rvalue->literal = Literal{token.value};
+                    rvalue->token = token;
                 }
                 processNext: // couldnt think of a better name
 

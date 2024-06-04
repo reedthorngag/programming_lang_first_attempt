@@ -5,5 +5,6 @@ g++ -Wall -g -W -Werror -Wno-unused-parameter -Wno-unused-variable -Wno-missing-
     src/*.cpp ^
     src/lexer/*.cpp ^
     src/parser/*.cpp ^
+    src/typechecker/*.cpp ^
     -o bin/output.exe || exit 1
 

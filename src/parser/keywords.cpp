@@ -149,6 +149,7 @@ namespace Parser {
             global = new Node{};
             global->type = NodeType::SYMBOL;
             global->symbol = symbol;
+            global->token = token;
 
             globals.insert(std::make_pair(token.value,global));
         }

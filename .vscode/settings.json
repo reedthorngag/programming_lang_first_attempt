@@ -52,7 +52,8 @@
         "list": "cpp",
         "string": "cpp",
         "unordered_map": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "iostream": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled",
     "todo-tree.tree.scanMode": "workspace"

@@ -21,6 +21,16 @@ namespace Parser {
         "EOF", // FILE_END
     };
 
+    const char* NodeTypeMap[]{
+        "FUNCTION",
+        "BLOCK",
+        "SYMBOL",
+        "LITERAL",
+        "ASSIGNMENT",
+        "OPERATION",
+        "INVOCATION",
+    };
+
     std::unordered_map<std::string, Type> typeMap = {
         {"null",Type::null},
 

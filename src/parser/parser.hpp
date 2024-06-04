@@ -3,6 +3,9 @@
 
 #include "../lexer/lexer.hpp"
 
+#ifndef _PARSER
+#define _PARSER
+
 using namespace Lexer;
 
 namespace Parser {
@@ -16,6 +19,8 @@ namespace Parser {
         OPERATION,
         INVOCATION,
     };
+
+    extern const char* NodeTypeMap[];
 
     enum Type {
         i8, i16, i32, i64, i128,
@@ -84,6 +89,7 @@ namespace Parser {
             Literal literal;
             Operator op;
         };
+        Token token;
         std::unordered_map<std::string, Symbol>* symbolMap;
     };
 
@@ -121,5 +127,6 @@ namespace Parser {
     Node* assignment(Token token);
     Node* operation(Node* lvalue, Token op);
 
-}
+};
 
+#endif
