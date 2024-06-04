@@ -15,7 +15,6 @@ namespace Parser {
         BLOCK,
         SYMBOL,
         LITERAL,
-        ASSIGNMENT,
         OPERATION,
         INVOCATION,
     };
@@ -23,12 +22,14 @@ namespace Parser {
     extern const char* NodeTypeMap[];
 
     enum Type {
+        error, // used to indicate there is a type error, not used as a type
         i8, i16, i32, i64, i128,
         u8, u16, u32, u64, u128,
         f16, f32, f64,
-        c, // fucking c++ wont let me use 'char' and it seems there is no way to fix 
-           // it ffs, *this* is the sort of thing that makes me want to write my own language
+        chr, // c++ wont let me use 'char' and it seems there is no way to fix 
+           // it smh, *this* is the sort of thing that makes me want to write my own language
         string,
+        boolean,
         null
     };
 
@@ -65,7 +66,14 @@ namespace Parser {
     };
 
     struct Literal {
-        char* value;
+        Type type;
+        union {
+            char* value;
+            char* str;
+            char chr;
+            uint64_t u;
+            int64_t i;
+        };
     };
 
     enum OpType {

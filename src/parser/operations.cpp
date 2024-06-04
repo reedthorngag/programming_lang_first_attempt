@@ -94,7 +94,7 @@ namespace Parser {
                     
                     if (!(int)param->type) {
                         param->type = NodeType::LITERAL;
-                        param->literal = Literal{token.value};
+                        param->literal = Literal{Type::null,{.value = {token.value}}};
                         param->token = token;
                     }
 
@@ -272,7 +272,7 @@ namespace Parser {
                 if (!node) {
                     node = new Node{};
                     node->type = NodeType::LITERAL;
-                    node->literal = Literal{token.value};
+                    node->literal = Literal{Type::null,{.value = {token.value}}};
                     node->token = token;
                 }
 
@@ -360,7 +360,7 @@ namespace Parser {
                 
                 if (!(int)rvalue->type) {
                     rvalue->type = NodeType::LITERAL;
-                    rvalue->literal = Literal{token.value};
+                    rvalue->literal = Literal{Type::null,{.value = {token.value}}};
                     rvalue->token = token;
                 }
                 processNext: // couldnt think of a better name

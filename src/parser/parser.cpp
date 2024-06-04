@@ -50,8 +50,10 @@ namespace Parser {
         {"f32",Type::u32},
         {"f64",Type::u64},
 
-        {"char",Type::c},
+        {"char",Type::chr},
         {"string",Type::string},
+        {"null",Type::null},
+        {"bool",Type::boolean}
     };
 
     std::unordered_map<std::string, Symbol> builtins;
