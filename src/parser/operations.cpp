@@ -183,6 +183,16 @@ namespace Parser {
             return nullptr;
         }
 
+        if (symbol.type == SymbolType::FUNC && (!symbolDeclaredGlobal(lvalue->token.value,&symbol) || symbol.type == SymbolType::FUNC)) {
+            printf("ERROR: %s:%d:%d: '%s' is a function!\n",lvalue->token.file,lvalue->token.line,lvalue->token.column,lvalue->token.value);
+            return nullptr;
+        }
+
+        if (symbol.type == SymbolType::CONST && tokens->at(index-2).type != TokenType::TYPE) {
+            printf("ERROR: %s:%d:%d: '%s' is a constant and can't be assigned to!\n",token.file,token.line,token.column,lvalue->token.value);
+            return nullptr;
+        }
+
         Node* opNode = operation(lvalue,token);
         if (!opNode) return nullptr;
 

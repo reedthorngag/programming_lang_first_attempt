@@ -196,7 +196,11 @@ namespace Lexer {
                     symbolLen++;
 
             } else {
-
+                printf("%c",*ptr);
+                if (*ptr != '/' && *ptr != '*') {
+                    firstStartChar = false;
+                    commentLevel = 0;
+                }
                 switch (*ptr) {
                     case '/':
                         if (firstStartChar) {
