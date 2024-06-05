@@ -12,7 +12,8 @@ namespace Parser {
 
         node->symbolMap = new std::unordered_map<std::string, Symbol>;
 
-        node->symbol = Symbol{SymbolType::FUNC,nullptr,{.func = {new Function}}};
+        node->symbol = Symbol{SymbolType::FUNC,nullptr,{.func = {new Function{}}}};
+        node->symbol.func->params = new std::vector<Param>;
 
         Token token = tokens->at(index++);
         if (token.type != TokenType::SYMBOL) {
@@ -37,7 +38,7 @@ namespace Parser {
         while (token.type != TokenType::GROUPING_END) {
             
             if (token.type == TokenType::COMMA) {
-                if (node->symbol.func->params.size() == 0) {
+                if (node->symbol.func->params->size() == 0) {
                     printf("ERROR: %s:%d:%d: expecting paramater name, found ','!\n",token.file,token.line,token.column);
                     return nullptr;
                 } else
@@ -66,7 +67,7 @@ namespace Parser {
                 printf("ERROR: %s:%d:%d: unknown type '%s'!\n",token.file,token.line,token.column,token.value);
                 return nullptr;
             } else {
-                node->symbol.func->params.push_back(Param{paramName,type->second});
+                node->symbol.func->params->push_back(Param{paramName,type->second});
                 node->symbolMap->insert(std::make_pair(paramName,Symbol{SymbolType::VAR,paramName,{.t={type->second}}}));
             }
                 

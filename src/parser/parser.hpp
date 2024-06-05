@@ -127,7 +127,7 @@ namespace Parser {
     };
 
     struct Function {
-        std::vector<Param> params;
+        std::vector<Param>* params;
         Type returnType;
     };
 

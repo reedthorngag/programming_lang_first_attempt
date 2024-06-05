@@ -42,6 +42,9 @@ void printNode(Parser::Node* node, int depth) {
         case Parser::NodeType::OPERATION:
             printf(": %s\n",node->op.value);
             break;
+        case Parser::NodeType::INVOCATION:
+            printf(": %s %lld\n",node->symbol.name,(long long)node->symbol.func);
+            break;
         default:
             printf("\n");
             break;

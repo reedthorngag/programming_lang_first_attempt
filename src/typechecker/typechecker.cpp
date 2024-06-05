@@ -17,10 +17,9 @@ namespace TypeChecker {
         return TypeCompatibility[parent] & TypeMask[child];
     }
 
-    // TODO: make this attempt to confrom to parentType
     Type literalType(Node* node, Type parentType) {
         if (!parseLiteral(node, parentType)) return Type::error;
-        if (typesImplicitlyCompatible(parentType,node->literal.type)) {
+        if (!typesImplicitlyCompatible(parentType,node->literal.type)) {
             printf("ERROR: %s:%d:%d: incompatible types! ('%s' and '%s')\n",node->token.file,node->token.line,node->token.column,TypeMap[parentType],TypeMap[node->literal.type]);
             return Type::error;
         }
@@ -92,13 +91,13 @@ namespace TypeChecker {
             paramNum++;
         }
 
-        if (paramNum != (int)node->symbol.func->params.size()) {
-            printf("ERROR: %s:%d:%d: expecting %d paramaters, found %d\n",node->token.file,node->token.line,node->token.column,(int)node->symbol.func->params.size(),paramNum);
+        if (paramNum != (int)node->symbol.func->params->size()) {
+            printf("ERROR: %s:%d:%d: expecting %d paramaters, found %d\n",node->token.file,node->token.line,node->token.column,(int)node->symbol.func->params->size(),paramNum);
             return Type::error;
         }
 
         child = node->firstChild;
-        for (Param p : node->symbol.func->params) {
+        for (Param p : *node->symbol.func->params) {
 
             Type type = getType(child,p.type);
             if (!typesImplicitlyCompatible(p.type,type)) {

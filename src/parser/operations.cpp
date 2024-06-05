@@ -165,6 +165,10 @@ namespace Parser {
 
         if (token.type == TokenType::ENDLINE) return lvalue;
         if (token.type == TokenType::GROUPING_START) {
+            if (symbol.type != SymbolType::FUNC && (!symbolDeclaredGlobal(lvalue->token.value,&symbol) || symbol.type != SymbolType::FUNC)) {
+                printf("ERROR: %s:%d:%d: '%s' isn't a function!\n",lvalue->token.file,lvalue->token.line,lvalue->token.column,lvalue->token.value);
+                return nullptr;
+            }
             delete lvalue;
             return functionCall(symbol);
         }
