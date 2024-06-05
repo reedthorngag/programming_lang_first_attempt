@@ -105,7 +105,7 @@ namespace TypeChecker {
     }
 
     bool parseString(Node* node) {
-        
+
         char* in = node->literal.value;
         int len = 0;
         while (in[len]) len++;
@@ -114,16 +114,15 @@ namespace TypeChecker {
         len = 0;
         int i = 1;
         bool ignoreNext = false;
-        do {
-            if (ignoreNext) continue;
+        while (ignoreNext || in[i] != '"') {
             ignoreNext = false;
             if (in[i] == '\\') ignoreNext = true;
             else {
                 buf[len] = in[i];
                 len++;
             }
-        } while (ignoreNext || in[i++] != '\"');
-
+            i++;
+        }
         delete[] in;
 
         node->literal.str.str = buf;

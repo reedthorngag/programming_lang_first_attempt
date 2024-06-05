@@ -196,7 +196,6 @@ namespace Lexer {
                     symbolLen++;
 
             } else {
-                printf("%c",*ptr);
                 if (*ptr != '/' && *ptr != '*') {
                     firstStartChar = false;
                     commentLevel = 0;
@@ -282,7 +281,7 @@ namespace Lexer {
                         [[fallthrough]];
                     default:
                         addChar:
-                        printf("%c %d%d %d%d %d%d  %d\n",*ptr,operatorChar(*ptr),isOperator,symbolChar(*ptr,isSymbol),isSymbol,validNumberLiteral(*ptr),isLiteral,symbolLen);
+                        //printf("%c %d%d %d%d %d%d  %d\n",*ptr,operatorChar(*ptr),isOperator,symbolChar(*ptr,isSymbol),isSymbol,validNumberLiteral(*ptr),isLiteral,symbolLen);
                         if (!specialType) {
                             if (operatorChar(*ptr)) {
                                 isOperator++;
