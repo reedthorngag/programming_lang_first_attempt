@@ -2,8 +2,6 @@
 on function enter:
     push rbp
 
-    preserve all registers that are modified except rax
-
     lea rbp, rsp
     sub rsp, space for locals
 
@@ -18,10 +16,12 @@ on function exit:
 
     mov rsp, rbp
 
-    pop preserved registers
-
     pop rbp
 
     ret
 
 
+function call:
+    preserve in use registers (or mark garbage)
+
+    

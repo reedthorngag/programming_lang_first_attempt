@@ -1,4 +1,6 @@
 #include <fstream>
+#include <unordered_map>
+#include <cstring>
 
 #include "../parser/parser.hpp"
 
@@ -6,13 +8,38 @@ using namespace Parser;
 
 namespace Compiler {
 
-    std::ofstream* out;
+    std::ofstream* output;
+
+    inline void out(const char* str) {
+        *output << str;
+    }
+
+    inline void out(const char* str, const char* arg) {
+        *output << str << " " << arg;
+    }
+
+    inline void out(const char* str, const char* arg1, const char* arg2) {
+        *output << str << " " << arg1 << "," << arg2;
+    }
+
+
+    void functionSetup(Node* node) {
+        out("push rbp");
+
+        int spaceReq = 0;
+
+        for (auto& [name, symbol] : *node->symbolMap) {
+
+        }
+
+        if (spaceReq == 0) return;
+    }
 
     bool createFunction(Node* node) {
-        out->write(node->symbol.name,strlen(node->symbol.name));
-        out->write(":\n",2);
+        out(node->symbol.name);
+        out(":\n");
 
-        allocateLocals(node);
+        functionSetup(node);
 
         Node* child = node->firstChild;
         while (child) {
@@ -28,12 +55,13 @@ namespace Compiler {
                     return false;
             }
         }
+        return true;
     }
 
 
     bool compile(std::unordered_map<std::string, Node*>* tree, std::ofstream* out) {
 
-        Compiler::out = out;
+        Compiler::output = out;
 
         for (auto& [key, node] : *tree) {
             switch (node->type) {
@@ -42,7 +70,7 @@ namespace Compiler {
                     break;
 
                 case NodeType::SYMBOL:
-                    if (node->firstChild && !buildOperation(node->firstChild,node->symbol.t)) return false;
+                    //if (node->firstChild && !buildOperation(node->firstChild,node->symbol.t)) return false;
                     break;
 
                 default:
@@ -52,4 +80,4 @@ namespace Compiler {
         }
         return true;
     }
-}
+};
