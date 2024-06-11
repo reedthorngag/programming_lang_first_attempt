@@ -85,6 +85,7 @@ namespace Parser {
                         printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
                         return nullptr;
                     }
+                    (*symbol.refCount)++;
                     global = false;
                     param->symbol = symbol;
                     param->token = token;
@@ -155,6 +156,7 @@ namespace Parser {
             printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
             return nullptr;
         }
+        (*symbol.refCount)++;
 
         Node* lvalue = new Node{};
         lvalue->type = NodeType::SYMBOL;
@@ -169,7 +171,9 @@ namespace Parser {
                 printf("ERROR: %s:%d:%d: '%s' isn't a function!\n",lvalue->token.file,lvalue->token.line,lvalue->token.column,lvalue->token.value);
                 return nullptr;
             }
+            (*lvalue->symbol.refCount)--;
             delete lvalue;
+            (*symbol.refCount)++;
             return functionCall(symbol);
         }
 
@@ -270,6 +274,7 @@ namespace Parser {
                     printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
                     return nullptr;
                 }
+                (*symbol.refCount)++;
 
                 if (tokens->at(index).type == TokenType::GROUPING_START) {
                     index++;
@@ -364,6 +369,7 @@ namespace Parser {
                     printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
                     return nullptr;
                 }
+                (*symbol.refCount)++;
                 global = false;
                 rvalue->symbol = symbol;
                 rvalue->token = token;

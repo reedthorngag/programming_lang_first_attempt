@@ -12,7 +12,7 @@ namespace Parser {
 
         node->symbolMap = new std::unordered_map<std::string, Symbol>;
 
-        node->symbol = Symbol{SymbolType::FUNC,nullptr,{.func = {new Function{}}}};
+        node->symbol = Symbol{SymbolType::FUNC,nullptr,{.func = {new Function{}}},new int{0}};
         node->symbol.func->params = new std::vector<Param>;
 
         Token token = tokens->at(index++);
@@ -68,7 +68,7 @@ namespace Parser {
                 return nullptr;
             } else {
                 node->symbol.func->params->push_back(Param{paramName,type->second});
-                node->symbolMap->insert(std::make_pair(paramName,Symbol{SymbolType::VAR,paramName,{.t={type->second}}}));
+                node->symbolMap->insert(std::make_pair(paramName,Symbol{SymbolType::VAR,paramName,{.t={type->second}},new int{0}}));
             }
                 
             
@@ -143,7 +143,7 @@ namespace Parser {
         }
 
         Node* global;
-        Symbol symbol = Symbol{type==Keyword::VAR?SymbolType::VAR:SymbolType::CONST,token.value,{.t={t}}};
+        Symbol symbol = Symbol{type==Keyword::VAR?SymbolType::VAR:SymbolType::CONST,token.value,{.t={t}},new int{0}};
         if (parent) {
             parent->symbolMap->insert(std::make_pair(token.value,symbol));
         } else {

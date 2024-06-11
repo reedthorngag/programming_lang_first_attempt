@@ -146,6 +146,7 @@ namespace Parser {
             Type t;
             Function* func;
         };
+        int* refCount;
     };
 
     struct Literal {

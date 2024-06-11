@@ -20,7 +20,8 @@ namespace Compiler {
                 "ax",
                 "eax",
                 "rax"
-            }
+            },
+            {}
         },
         Register{
             Reg::RBX,
@@ -29,7 +30,8 @@ namespace Compiler {
                 "bx",
                 "ebx",
                 "rbx"
-            }
+            },
+            {}
         },
         Register{
             Reg::RCX,
@@ -38,7 +40,8 @@ namespace Compiler {
                 "cx",
                 "ecx",
                 "rcx"
-            }
+            },
+            {}
         },
         Register{
             Reg::RDX,
@@ -47,7 +50,8 @@ namespace Compiler {
                 "dx",
                 "edx",
                 "rdx"
-            }
+            },
+            {}
         },
         Register{
             Reg::RDI,
@@ -56,7 +60,8 @@ namespace Compiler {
                 "di",
                 "edi",
                 "rdi"
-            }
+            },
+            {}
         },
         Register{
             Reg::RSI,
@@ -65,7 +70,8 @@ namespace Compiler {
                 "si",
                 "esi",
                 "rsi"
-            }
+            },
+            {}
         },
         Register{
             Reg::RBP,
@@ -74,7 +80,8 @@ namespace Compiler {
                 "bp",
                 "ebp",
                 "rbp"
-            }
+            },
+            {}
         },
         Register{
             Reg::RSP,
@@ -83,7 +90,8 @@ namespace Compiler {
                 "sp",
                 "esp",
                 "rsp"
-            }
+            },
+            {}
         },
         Register{
             Reg::R8,
@@ -92,7 +100,8 @@ namespace Compiler {
                 "R8W",
                 "R8D",
                 "R8"
-            }
+            },
+            {}
         },
         Register{
             Reg::R9,
@@ -101,16 +110,18 @@ namespace Compiler {
                 "R9W",
                 "R9D",
                 "R9"
-            }
+            },
+            {}
         },
         Register{
             Reg::R10,
             {
-                "R10B",
-                "R10W",
-                "R10D",
-                "R10"
-            }
+                "R1{}B",
+                "R1{}W",
+                "R1{}D",
+                "R1{}"
+            },
+            {}
         },
         Register{
             Reg::R11,
@@ -119,7 +130,8 @@ namespace Compiler {
                 "R11W",
                 "R11D",
                 "R11"
-            }
+            },
+            {}
         },
         Register{
             Reg::R12,
@@ -128,7 +140,8 @@ namespace Compiler {
                 "R12W",
                 "R12D",
                 "R12"
-            }
+            },
+            {}
         },
         Register{
             Reg::R13,
@@ -137,7 +150,8 @@ namespace Compiler {
                 "R13W",
                 "R13D",
                 "R13"
-            }
+            },
+            {}
         },
         Register{
             Reg::R13,
@@ -146,7 +160,8 @@ namespace Compiler {
                 "R13W",
                 "R13D",
                 "R13"
-            }
+            },
+            {}
         },
         Register{
             Reg::R14,
@@ -155,7 +170,8 @@ namespace Compiler {
                 "R14W",
                 "R14D",
                 "R14"
-            }
+            },
+            {}
         },
         Register{
             Reg::R15,
@@ -164,7 +180,8 @@ namespace Compiler {
                 "R15W",
                 "R15D",
                 "R15"
-            }
+            },
+            {}
         },
     };
 

@@ -14,6 +14,36 @@ namespace Compiler {
         QWORD
     };
 
+    const int SizeByteMap[] {
+        1,
+        2,
+        4,
+        8
+    };
+
+    const Size TypeSizeMap[] {
+        Size::BYTE,// error, // doesnt happen in the program
+
+        Size::BYTE,// i8,
+        Size::WORD,// i16,
+        Size::DWORD,// i32,
+        Size::QWORD,// i64,
+
+        Size::BYTE,// u8,
+        Size::WORD,// u16,
+        Size::DWORD,// u32,
+        Size::QWORD,// u64,
+
+        Size::WORD,// f16, these will require special handling prob (in xmm regs?)
+        Size::DWORD,// f32,
+        Size::QWORD,// f64,
+
+        Size::BYTE,// chr,
+        Size::BYTE,// string, // this also requires special handling
+        Size::BYTE,// boolean, // may be handled seperately to only take 1 bit in future
+        Size::BYTE,// null
+    };
+
     extern const char* SizeString[];
 
     enum Reg {
@@ -35,22 +65,43 @@ namespace Compiler {
         R15
     };
 
+    struct Local {
+        Parser::Symbol symbol;
+        int offset; // total offset, to get the value: mov reg, size [rbp - offset]
+        Size size;
+    };
+
+    struct Global {
+        Parser::Symbol* symbol;
+    };
+
+    enum ValueType {
+        EMPTY,
+        LOCAL,
+        GLOBAL,
+        INTERMEDIATE
+    };
+
+    struct Value {
+        ValueType type;
+        union {
+            Local* local;
+            Global* global;
+            Parser::Node* parent;
+        };
+    };
+
     struct Register {
         Reg reg;
         const char* subRegs[4];
+        Value value;
     };
 
     extern Register registers[];
 
-    struct Local {
-        int offset;
-        int size;
-    };
-
     struct Context {
         Parser::Node* node;
-        std::unordered_map<char*, Local> locals;
-
+        std::unordered_map<std::string, Local>* locals;
     };
 
     bool compile(std::unordered_map<std::string, Parser::Node*>* tree, std::ofstream* out);

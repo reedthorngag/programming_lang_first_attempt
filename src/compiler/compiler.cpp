@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <cstring>
 
+#include "compiler.hpp"
 #include "../parser/parser.hpp"
 
 using namespace Parser;
@@ -10,39 +11,47 @@ namespace Compiler {
 
     std::ofstream* output;
 
-    inline void out(const char* str) {
+    inline void out(std::string str) {
         (*output) << str << "\n";
     }
 
-    inline void out(const char* str, const char* arg) {
+    inline void out(std::string str, std::string arg) {
         (*output) << "    " << str << " " << arg << "\n";
     }
 
-    inline void out(const char* str, const char* arg1, const char* arg2) {
+    inline void out(std::string str, std::string arg1, std::string arg2) {
         (*output) << "    " << str << " " << arg1 << "," << arg2 << "\n";
     }
 
 
-    bool functionSetup(Node* node) {
+    Context* functionSetup(Node* node) {
 
         int spaceReq = 0;
 
-        for (auto& [name, symbol] : *node->symbolMap) {
+        Context* context = new Context{node,new std::unordered_map<std::string, Local>};
 
+        for (auto& [name, symbol] : *node->symbolMap) {
+            if (*symbol.refCount) {
+                printf("thing: %s %d\n",name.c_str(),SizeByteMap[TypeSizeMap[symbol.t]]);
+                spaceReq += SizeByteMap[TypeSizeMap[symbol.t]];
+                Local l = Local{symbol,spaceReq,TypeSizeMap[symbol.t]};
+                context->locals->insert(std::make_pair(name,l));
+            }
         }
 
-        if (spaceReq == 0) return false;
+        if (spaceReq == 0) return context;
 
         out("    push rbp");
         out("    mov rbp, rsp");
+        out("sub","rsp",std::to_string(spaceReq));
 
-        return true;
+        return context;
     }
 
     bool createFunction(Node* node) {
         (*output) << node->symbol.name << ":\n";
 
-        bool hasLocals = functionSetup(node);
+        Context* context = functionSetup(node);
 
         Node* child = node->firstChild;
         while (child) {
@@ -60,7 +69,7 @@ namespace Compiler {
             child = child->nextSibling;
         }
 
-        if (hasLocals) {
+        if (context->locals->size()) {
             out("    mov rsp, rbp");
             out("    pop rbp");
         }
