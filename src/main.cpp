@@ -226,12 +226,33 @@ int main(int argc, char** argv) {
         printf("\n");
     }
 
-
     if (!TypeChecker::process(tree)) {
         printf("Type check failed!\n");
         return 1;
     } else {
         printf("Type check passed!\n");
+    }
+
+    if (auto key = tree->find("main");key != tree->end()) {
+        switch (key->second->symbol.func->returnType) {
+                case Parser::Type::i8:
+                case Parser::Type::i16:
+                case Parser::Type::i32:
+                case Parser::Type::i64:
+                case Parser::Type::u8:
+                case Parser::Type::u16:
+                case Parser::Type::u32:
+                case Parser::Type::u64:
+                case Parser::Type::null:
+                case Parser::Type::boolean:
+                    break;
+                default:
+                    printf("ERROR: Main function return type invalid!\n");
+                    return 1;
+            }
+    } else {
+        printf("ERROR: No main function!\n");
+        return 1;
     }
 
     int len = 0;
@@ -249,7 +270,7 @@ int main(int argc, char** argv) {
 
     printf("Out file: %s\n",outFileName);
 
-    std::ofstream outFile(inputFile, std::ios::binary | std::ios::trunc);
+    std::ofstream outFile(outFileName, std::ios::binary | std::ios::trunc);
     if (!outFile.is_open()) {
         printf("Failed to open %s\n",outFileName);
         exit(1);

@@ -11,20 +11,19 @@ namespace Compiler {
     std::ofstream* output;
 
     inline void out(const char* str) {
-        *output << str;
+        (*output) << str << "\n";
     }
 
     inline void out(const char* str, const char* arg) {
-        *output << str << " " << arg;
+        (*output) << "    " << str << " " << arg << "\n";
     }
 
     inline void out(const char* str, const char* arg1, const char* arg2) {
-        *output << str << " " << arg1 << "," << arg2;
+        (*output) << "    " << str << " " << arg1 << "," << arg2 << "\n";
     }
 
 
-    void functionSetup(Node* node) {
-        out("push rbp");
+    bool functionSetup(Node* node) {
 
         int spaceReq = 0;
 
@@ -32,14 +31,18 @@ namespace Compiler {
 
         }
 
-        if (spaceReq == 0) return;
+        if (spaceReq == 0) return false;
+
+        out("    push rbp");
+        out("    mov rbp, rsp");
+
+        return true;
     }
 
     bool createFunction(Node* node) {
-        out(node->symbol.name);
-        out(":\n");
+        (*output) << node->symbol.name << ":\n";
 
-        functionSetup(node);
+        bool hasLocals = functionSetup(node);
 
         Node* child = node->firstChild;
         while (child) {
@@ -54,14 +57,31 @@ namespace Compiler {
                     printf("ERROR: %s:%d:%d: unexpected node: %s!\n",child->token.file,child->token.line,child->token.column,NodeTypeMap[(int)child->type]);
                     return false;
             }
+            child = child->nextSibling;
         }
+
+        if (hasLocals) {
+            out("    mov rsp, rbp");
+            out("    pop rbp");
+        }
+        out("    ret\n");
+
         return true;
     }
 
 
-    bool compile(std::unordered_map<std::string, Node*>* tree, std::ofstream* out) {
+    bool compile(std::unordered_map<std::string, Node*>* tree, std::ofstream* output) {
+        Compiler::output = output;
 
-        Compiler::output = out;
+        (*output) << "_start:\n";
+        out("    call main");
+
+        auto key = tree->find("main");
+        if (key->second->symbol.func->returnType == Type::null) {
+            out("    xor rax, rax");
+        }
+
+        out("    ret\n");
 
         for (auto& [key, node] : *tree) {
             switch (node->type) {
