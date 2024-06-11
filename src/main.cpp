@@ -4,6 +4,7 @@
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
 #include "typechecker/typechecker.hpp"
+#include "compiler/compiler.hpp"
 
 void pad(Lexer::Token token, int* line, int* col) {
     while (*line < token.line) {
@@ -232,6 +233,36 @@ int main(int argc, char** argv) {
     } else {
         printf("Type check passed!\n");
     }
+
+    int len = 0;
+    for (; inputFile[len++];);
+    for (;inputFile[--len] != '.';);
+    len++;
+
+    char* outFileName = new char[len+4];
+    outFileName[len] = 'a';
+    outFileName[len+1] = 's';
+    outFileName[len+2] = 'm';
+    outFileName[len+3] = 0;
+    
+    for (;len--;) outFileName[len] = inputFile[len];
+
+    printf("Out file: %s\n",outFileName);
+
+    std::ofstream outFile(inputFile, std::ios::binary | std::ios::trunc);
+    if (!outFile.is_open()) {
+        printf("Failed to open %s\n",outFileName);
+        exit(1);
+    }
+
+    if (!Compiler::compile(tree, &outFile)) {
+        printf("Compile failed!\n");
+        return 1;
+    } else {
+        printf("Compile succeeded!\n");
+    }
+
+    outFile.close();
 
     return 0;
 }

@@ -1,0 +1,27 @@
+
+on function enter:
+    push rbp
+
+    preserve all registers that are modified except rax
+
+    lea rbp, rsp
+    sub rsp, space for locals
+
+    move values passed in registers into locals
+
+    local is accessed by [rbp-(local offset + local size)]
+
+    
+on function exit:
+
+    mov rax, return value or set/clear CF if bool value
+
+    mov rsp, rbp
+
+    pop preserved registers
+
+    pop rbp
+
+    ret
+
+
