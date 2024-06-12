@@ -82,7 +82,8 @@ namespace Compiler {
         EMPTY,
         LOCAL,
         GLOBAL,
-        INTERMEDIATE
+        INTERMEDIATE,
+        PARAMETER,
     };
 
     struct Value {

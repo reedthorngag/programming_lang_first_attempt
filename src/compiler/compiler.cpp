@@ -1,6 +1,7 @@
 #include <fstream>
 #include <unordered_map>
 #include <cstring>
+#include <stack>
 
 #include "compiler.hpp"
 #include "../parser/parser.hpp"
@@ -20,12 +21,38 @@ namespace Compiler {
 
     bool callFunction(Node* funcCall) {
 
-        Node* param = funcCall->firstChild;
-        while (param) {
-            Reg reg = evaluate(param);
+        std::stack<Node*> params;
 
-            param = param->nextSibling;
+        Node* paramNode = funcCall->firstChild;
+        while (paramNode) {
+            params.push(paramNode);
+            paramNode = paramNode->nextSibling;
         }
+        int p = funcCall->symbol.func->params->size();
+        Param param;
+        while (!params.empty()) {
+            paramNode = params.top();
+            params.pop();
+
+            param = funcCall->symbol.func->params->at(--p);
+
+            Reg reg = evaluate(paramNode);
+
+            out("push",registers[reg].subRegs[TypeSizeMap[param.type]]);
+        }
+
+        for (Param p : *funcCall->symbol.func->params) {
+            
+            if (p.reg == Reg::STACK)
+                break;
+            
+            if (registers[param.reg].value.type != ValueType::EMPTY) {
+                printf("WARN: %s:%d:%d: register value not empty!\n",paramNode->token.file,paramNode->token.line,paramNode->token.column);
+            }
+
+            out("pop",registers[p.reg].subRegs[TypeSizeMap[p.type]]);
+        }
+
         return true;
     }
 
@@ -72,8 +99,6 @@ namespace Compiler {
         Context* context = functionSetup(node);
 
         generateParamMapping(node);
-        for (auto param : *node->symbol.func->params)
-            out(registers[param.reg].subRegs[Size::QWORD]);
 
         Node* child = node->firstChild;
         while (child) {
