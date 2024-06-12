@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "../lexer/lexer.hpp"
+#include "../compiler/compiler.hpp"
 
 #ifndef _PARSER
 #define _PARSER
@@ -121,9 +122,30 @@ namespace Parser {
     extern std::unordered_map<std::string, bool> assignmentOps;
     extern std::unordered_map<std::string, int> mathmaticalOps; // boolean and bitwise too
 
+    enum Reg {
+        RAX,
+        RBX,
+        RCX,
+        RDX,
+        R8,
+        R9,
+        R10,
+        R11,
+        R12,
+        R13,
+        R14,
+        R15,
+        RSI,
+        RDI,
+        RBP,
+        RSP,
+        STACK // simplifies stuff for what reg params use
+    };
+
     struct Param {
         char* name;
         Type type;
+        Reg reg;
     };
 
     struct Function {

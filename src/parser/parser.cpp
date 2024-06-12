@@ -99,7 +99,7 @@ namespace Parser {
         Function* func = new Function{};
         func->returnType = Type::null;
         func->params = new std::vector<Param>;
-        func->params->push_back(Param{p1,Type::i64});
+        func->params->push_back(Param{p1,Type::i64,Reg::RAX});
         Symbol sym = Symbol{SymbolType::FUNC,f,{.func = {func}},new int{0}};
 
         builtins.insert(std::make_pair(f,sym));

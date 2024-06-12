@@ -54,46 +54,6 @@ namespace Compiler {
             {}
         },
         Register{
-            Reg::RDI,
-            {
-                "dil",
-                "di",
-                "edi",
-                "rdi"
-            },
-            {}
-        },
-        Register{
-            Reg::RSI,
-            {
-                "sil",
-                "si",
-                "esi",
-                "rsi"
-            },
-            {}
-        },
-        Register{
-            Reg::RBP,
-            {
-                "bpl",
-                "bp",
-                "ebp",
-                "rbp"
-            },
-            {}
-        },
-        Register{
-            Reg::RSP,
-            {
-                "spl",
-                "sp",
-                "esp",
-                "rsp"
-            },
-            {}
-        },
-        Register{
             Reg::R8,
             {
                 "R8B",
@@ -180,6 +140,46 @@ namespace Compiler {
                 "R15W",
                 "R15D",
                 "R15"
+            },
+            {}
+        },
+        Register{
+            Reg::RSI,
+            {
+                "sil",
+                "si",
+                "esi",
+                "rsi"
+            },
+            {}
+        },
+        Register{
+            Reg::RDI,
+            {
+                "dil",
+                "di",
+                "edi",
+                "rdi"
+            },
+            {}
+        },
+        Register{
+            Reg::RBP,
+            {
+                "bpl",
+                "bp",
+                "ebp",
+                "rbp"
+            },
+            {}
+        },
+        Register{
+            Reg::RSP,
+            {
+                "spl",
+                "sp",
+                "esp",
+                "rsp"
             },
             {}
         },

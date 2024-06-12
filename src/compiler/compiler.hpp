@@ -1,11 +1,13 @@
 #include <unordered_map>
 
-#include "../parser/parser.hpp"
-
 #ifndef _COMPILER
 #define _COMPILER
 
+#include "../parser/parser.hpp"
+
 namespace Compiler {
+
+    extern std::ofstream* output;
 
     enum Size {
         BYTE,
@@ -51,10 +53,6 @@ namespace Compiler {
         RBX,
         RCX,
         RDX,
-        RDI,
-        RSI,
-        RBP,
-        RSP,
         R8,
         R9,
         R10,
@@ -62,7 +60,12 @@ namespace Compiler {
         R12,
         R13,
         R14,
-        R15
+        R15,
+        RSI,
+        RDI,
+        RBP,
+        RSP,
+        STACK // simplifies stuff for what reg params use
     };
 
     struct Local {

@@ -4,6 +4,7 @@
 
 #include "compiler.hpp"
 #include "../parser/parser.hpp"
+#include "operations.hpp"
 
 using namespace Parser;
 
@@ -11,16 +12,34 @@ namespace Compiler {
 
     std::ofstream* output;
 
-    inline void out(std::string str) {
-        (*output) << str << "\n";
+    const std::unordered_map<std::string,Global> globals;
+
+    Reg evaluate(Node* node) {
+        return Reg::RAX;
     }
 
-    inline void out(std::string str, std::string arg) {
-        (*output) << "    " << str << " " << arg << "\n";
+    bool callFunction(Node* funcCall) {
+
+        Node* param = funcCall->firstChild;
+        while (param) {
+            Reg reg = evaluate(param);
+
+            param = param->nextSibling;
+        }
+        return true;
     }
 
-    inline void out(std::string str, std::string arg1, std::string arg2) {
-        (*output) << "    " << str << " " << arg1 << "," << arg2 << "\n";
+    void generateParamMapping(Node* node) {
+
+        Reg reg = Reg::RAX;
+        for (int i = 0; i < (int)node->symbol.func->params->size(); i++) {
+            if (reg == Reg::RBP) {
+                node->symbol.func->params->at(i).reg = (Parser::Reg)Reg::STACK;
+            } else {
+                node->symbol.func->params->at(i).reg = (Parser::Reg)reg;
+                reg = (Reg)(reg+1);
+            }
+        }
     }
 
 
@@ -32,7 +51,6 @@ namespace Compiler {
 
         for (auto& [name, symbol] : *node->symbolMap) {
             if (*symbol.refCount) {
-                printf("thing: %s %d\n",name.c_str(),SizeByteMap[TypeSizeMap[symbol.t]]);
                 spaceReq += SizeByteMap[TypeSizeMap[symbol.t]];
                 Local l = Local{symbol,spaceReq,TypeSizeMap[symbol.t]};
                 context->locals->insert(std::make_pair(name,l));
@@ -53,12 +71,17 @@ namespace Compiler {
 
         Context* context = functionSetup(node);
 
+        generateParamMapping(node);
+        for (auto param : *node->symbol.func->params)
+            out(registers[param.reg].subRegs[Size::QWORD]);
+
         Node* child = node->firstChild;
         while (child) {
             switch (child->type) {
                 case NodeType::BLOCK:
                     break;
                 case NodeType::INVOCATION:
+                    callFunction(child);
                     break;
                 case NodeType::OPERATION:
                     break;
