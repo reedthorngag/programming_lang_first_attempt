@@ -19,7 +19,7 @@ namespace Compiler {
         return Reg::RAX;
     }
 
-    bool callFunction(Node* funcCall) {
+    Reg callFunction(Node* funcCall) {
 
         std::stack<Node*> params;
 
@@ -53,7 +53,7 @@ namespace Compiler {
             out("pop",registers[p.reg].subRegs[TypeSizeMap[p.type]]);
         }
 
-        return true;
+        return funcCall->symbol.func->returnType == Type::null ? Reg::NUL : Reg::RAX;
     }
 
     void generateParamMapping(Node* node) {

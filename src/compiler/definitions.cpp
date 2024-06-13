@@ -14,6 +14,16 @@ namespace Compiler {
 
     Register registers[] {
         Register{
+            Reg::NUL,
+            {
+                "NULL",
+                "NULL",
+                "NULL",
+                "NULL"
+            },
+            {}
+        },
+        Register{
             Reg::RAX,
             {
                 "al",

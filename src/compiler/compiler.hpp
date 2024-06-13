@@ -49,6 +49,7 @@ namespace Compiler {
     extern const char* SizeString[];
 
     enum Reg {
+        NUL, // so functions that generally return a value in a register can return nothing
         RAX,
         RBX,
         RCX,
