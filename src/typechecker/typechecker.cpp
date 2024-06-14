@@ -32,7 +32,7 @@ namespace TypeChecker {
                 return processOperation(node, parentType);
 
             case NodeType::SYMBOL:
-                return node->symbol.t;
+                return node->symbol->t;
             
             case NodeType::LITERAL:
                 return literalType(node,parentType);
@@ -91,13 +91,13 @@ namespace TypeChecker {
             paramNum++;
         }
 
-        if (paramNum != (int)node->symbol.func->params->size()) {
-            printf("ERROR: %s:%d:%d: expecting %d paramaters, found %d\n",node->token.file,node->token.line,node->token.column,(int)node->symbol.func->params->size(),paramNum);
+        if (paramNum != (int)node->symbol->func->params->size()) {
+            printf("ERROR: %s:%d:%d: expecting %d paramaters, found %d\n",node->token.file,node->token.line,node->token.column,(int)node->symbol->func->params->size(),paramNum);
             return Type::error;
         }
 
         child = node->firstChild;
-        for (Param p : *node->symbol.func->params) {
+        for (Param p : *node->symbol->func->params) {
 
             Type type = getType(child,p.type);
             if (!typesImplicitlyCompatible(p.type,type)) {
@@ -108,7 +108,7 @@ namespace TypeChecker {
             child = child->nextSibling;
         }
 
-        return node->symbol.func->returnType;
+        return node->symbol->func->returnType;
     }
 
     bool processBlock(Node* node) {
@@ -147,7 +147,7 @@ namespace TypeChecker {
                     break;
 
                 case NodeType::SYMBOL:
-                    if (node->firstChild && !processOperation(node->firstChild,node->symbol.t)) return false;
+                    if (node->firstChild && !processOperation(node->firstChild,node->symbol->t)) return false;
                     break;
 
                 default:

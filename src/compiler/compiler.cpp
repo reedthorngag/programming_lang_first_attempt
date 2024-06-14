@@ -28,47 +28,35 @@ namespace Compiler {
             params.push(paramNode);
             paramNode = paramNode->nextSibling;
         }
-        int p = funcCall->symbol.func->params->size();
+        int p = funcCall->symbol->func->params->size();
         Param param;
         while (!params.empty()) {
             paramNode = params.top();
             params.pop();
 
-            param = funcCall->symbol.func->params->at(--p);
+            param = funcCall->symbol->func->params->at(--p);
 
             Reg reg = evaluate(paramNode);
 
-            out("push",registers[reg].subRegs[TypeSizeMap[param.type]]);
+            out("push",registers[reg].subRegs[3]);
         }
 
-        for (Param p : *funcCall->symbol.func->params) {
-            
-            if (p.reg == Reg::STACK)
+        for (Param p : *funcCall->symbol->func->params) {
+            printf("hello: %s\n",registers[p.reg].subRegs[3]);
+            if ((Reg)p.reg == Reg::STACK)
                 break;
             
             if (registers[param.reg].value.type != ValueType::EMPTY) {
                 printf("WARN: %s:%d:%d: register value not empty!\n",paramNode->token.file,paramNode->token.line,paramNode->token.column);
             }
 
-            out("pop",registers[p.reg].subRegs[TypeSizeMap[p.type]]);
+            out("pop",registers[p.reg].subRegs[3]);
         }
 
-        return funcCall->symbol.func->returnType == Type::null ? Reg::NUL : Reg::RAX;
+        out("call",funcCall->symbol->name);
+
+        return funcCall->symbol->func->returnType == Type::null ? Reg::NUL : Reg::RAX;
     }
-
-    void generateParamMapping(Node* node) {
-
-        Reg reg = Reg::RAX;
-        for (int i = 0; i < (int)node->symbol.func->params->size(); i++) {
-            if (reg == Reg::RBP) {
-                node->symbol.func->params->at(i).reg = (Parser::Reg)Reg::STACK;
-            } else {
-                node->symbol.func->params->at(i).reg = (Parser::Reg)reg;
-                reg = (Reg)(reg+1);
-            }
-        }
-    }
-
 
     Context* functionSetup(Node* node) {
 
@@ -77,9 +65,9 @@ namespace Compiler {
         Context* context = new Context{node,new std::unordered_map<std::string, Local>};
 
         for (auto& [name, symbol] : *node->symbolMap) {
-            if (*symbol.refCount) {
-                spaceReq += SizeByteMap[TypeSizeMap[symbol.t]];
-                Local l = Local{symbol,spaceReq,TypeSizeMap[symbol.t]};
+            if (symbol->refCount) {
+                spaceReq += SizeByteMap[TypeSizeMap[symbol->t]];
+                Local l = Local{symbol,spaceReq,TypeSizeMap[symbol->t]};
                 context->locals->insert(std::make_pair(name,l));
             }
         }
@@ -94,11 +82,9 @@ namespace Compiler {
     }
 
     bool createFunction(Node* node) {
-        (*output) << node->symbol.name << ":\n";
+        (*output) << node->symbol->name << ":\n";
 
         Context* context = functionSetup(node);
-
-        generateParamMapping(node);
 
         Node* child = node->firstChild;
         while (child) {
@@ -134,7 +120,7 @@ namespace Compiler {
         out("    call main");
 
         auto key = tree->find("main");
-        if (key->second->symbol.func->returnType == Type::null) {
+        if (key->second->symbol->func->returnType == Type::null) {
             out("    xor rax, rax");
         }
 
@@ -147,7 +133,7 @@ namespace Compiler {
                     break;
 
                 case NodeType::SYMBOL:
-                    //if (node->firstChild && !buildOperation(node->firstChild,node->symbol.t)) return false;
+                    //if (node->firstChild && !buildOperation(node->firstChild,node->symbol->t)) return false;
                     break;
 
                 default:

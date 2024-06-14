@@ -72,7 +72,7 @@ namespace Parser {
         {"bool",Type::boolean}
     };
 
-    std::unordered_map<std::string, Symbol> builtins;
+    std::unordered_map<std::string, Symbol*> builtins;
 
     std::unordered_map<std::string, Node*> globals;
 
@@ -92,6 +92,19 @@ namespace Parser {
         return str;
     }
 
+    void generateParamMapping(Node* node) {
+
+        Reg reg = Reg::RAX;
+        for (int i = 0; i < (int)node->symbol->func->params->size(); i++) {
+            if (reg == Reg::RBP) {
+                node->symbol->func->params->at(i).reg = (Parser::Reg)Reg::STACK;
+            } else {
+                node->symbol->func->params->at(i).reg = (Parser::Reg)reg;
+                reg = (Reg)(reg+1);
+            }
+        }
+    }
+
     void buildBuiltins() {
         char* f = newStr("print");
         char* p1 = newStr("value");
@@ -99,8 +112,14 @@ namespace Parser {
         Function* func = new Function{};
         func->returnType = Type::null;
         func->params = new std::vector<Param>;
-        func->params->push_back(Param{p1,Type::i64,Reg::RAX});
-        Symbol sym = Symbol{SymbolType::FUNC,f,{.func = {func}},new int{0}};
+        func->params->push_back(Param{p1,Type::i64,Reg::NUL});
+        Symbol* sym = new Symbol{SymbolType::FUNC,f,{.func = {func}},0};
+
+        Node* tmp = new Node{};
+        tmp->symbol = sym;
+
+        generateParamMapping(tmp);
+        delete tmp;
 
         builtins.insert(std::make_pair(f,sym));
     }
@@ -117,11 +136,11 @@ namespace Parser {
         }
     }
 
-    bool symbolDeclared(char* name, Node* parent, Symbol* symbol) {
+    bool symbolDeclared(char* name, Node* parent, Symbol** symbol) {
         return symbolDeclaredGlobal(name,symbol) || symbolDeclaredInScope(name,parent,symbol);
     }
 
-    inline bool symbolBuiltin(char* name, Symbol* symbol) {
+    inline bool symbolBuiltin(char* name, Symbol** symbol) {
         if (auto key = builtins.find(name); key != builtins.end()) {
             if (symbol) *symbol = key->second;
             return true;
@@ -129,7 +148,7 @@ namespace Parser {
         return false;
     }
 
-    inline bool symbolDeclaredInScope(char* name, Node* parent, Symbol* symbol) {
+    inline bool symbolDeclaredInScope(char* name, Node* parent, Symbol** symbol) {
         if (symbolBuiltin(name, symbol)) return true;
         Node* node = parent;
         while (node) {
@@ -143,7 +162,7 @@ namespace Parser {
         return false;
     }
 
-    inline bool symbolDeclaredGlobal(char* name, Symbol* symbol) {
+    inline bool symbolDeclaredGlobal(char* name, Symbol** symbol) {
         if (symbolBuiltin(name, symbol)) return true;
         if (auto key = globals.find(name); key != globals.end()) {
             if (symbol) *symbol = key->second->symbol;

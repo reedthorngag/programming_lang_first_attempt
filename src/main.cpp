@@ -32,10 +32,10 @@ void printNode(Parser::Node* node, int depth) {
     printf("%s",Parser::NodeTypeMap[(int)node->type]);
     switch (node->type) {
         case Parser::NodeType::SYMBOL:
-            printf(": %s: %s\n",node->symbol.name,Parser::TypeMap[node->symbol.t]);
+            printf(": %s: %s\n",node->symbol->name,Parser::TypeMap[node->symbol->t]);
             break;
         case Parser::NodeType::FUNCTION:
-            printf(": %s\n",node->symbol.name);
+            printf(": %s\n",node->symbol->name);
             break;
         case Parser::NodeType::LITERAL:
             printf(": %s\n",node->literal.value);
@@ -44,7 +44,7 @@ void printNode(Parser::Node* node, int depth) {
             printf(": %s\n",node->op.value);
             break;
         case Parser::NodeType::INVOCATION:
-            printf(": %s %lld\n",node->symbol.name,(long long)node->symbol.func);
+            printf(": %s %lld\n",node->symbol->name,(long long)node->symbol->func);
             break;
         default:
             printf("\n");
@@ -234,7 +234,7 @@ int main(int argc, char** argv) {
     }
 
     if (auto key = tree->find("main");key != tree->end()) {
-        switch (key->second->symbol.func->returnType) {
+        switch (key->second->symbol->func->returnType) {
                 case Parser::Type::i8:
                 case Parser::Type::i16:
                 case Parser::Type::i32:

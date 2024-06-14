@@ -123,6 +123,7 @@ namespace Parser {
     extern std::unordered_map<std::string, int> mathmaticalOps; // boolean and bitwise too
 
     enum Reg {
+        NUL,
         RAX,
         RBX,
         RCX,
@@ -168,7 +169,7 @@ namespace Parser {
             Type t;
             Function* func;
         };
-        int* refCount;
+        int refCount;
     };
 
     struct Literal {
@@ -202,15 +203,15 @@ namespace Parser {
         Node* firstChild;
         Node* nextSibling;
         union {
-            Symbol symbol;
+            Symbol* symbol;
             Literal literal;
             Operator op;
         };
         Token token;
-        std::unordered_map<std::string, Symbol>* symbolMap;
+        std::unordered_map<std::string, Symbol*>* symbolMap;
     };
 
-    extern std::unordered_map<std::string, Symbol> builtins;
+    extern std::unordered_map<std::string, Symbol*> builtins;
 
     extern const char* TokenTypeMap[];
 
@@ -230,11 +231,12 @@ namespace Parser {
 
     void appendChild(Node* parent, Node* child);
 
-    bool symbolDeclared(char* name, Node* parent, Symbol* symbol);
-    inline bool symbolBuiltin(char* name, Symbol* symbol);
-    bool symbolDeclaredInScope(char* name, Node* parent, Symbol* symbol);
-    bool symbolDeclaredGlobal(char* name, Symbol* symbol);
+    bool symbolDeclared(char* name, Node* parent, Symbol** symbol);
+    inline bool symbolBuiltin(char* name, Symbol** symbol);
+    bool symbolDeclaredInScope(char* name, Node* parent, Symbol** symbol);
+    bool symbolDeclaredGlobal(char* name, Symbol** symbol);
 
+    void generateParamMapping(Node* node);
 
     Node* buildFunctionNode();
     Node* buildIfNode();

@@ -11,10 +11,10 @@ namespace Parser {
         Node* node = new Node{};
         node->type = NodeType::FUNCTION;
 
-        node->symbolMap = new std::unordered_map<std::string, Symbol>;
+        node->symbolMap = new std::unordered_map<std::string, Symbol*>;
 
-        node->symbol = Symbol{SymbolType::FUNC,nullptr,{.func = {new Function{}}},new int{0}};
-        node->symbol.func->params = new std::vector<Param>;
+        node->symbol = new Symbol{SymbolType::FUNC,nullptr,{.func = {new Function{}}},0};
+        node->symbol->func->params = new std::vector<Param>;
 
         Token token = tokens->at(index++);
         if (token.type != TokenType::SYMBOL) {
@@ -27,7 +27,7 @@ namespace Parser {
             return nullptr;
         }
 
-        node->symbol.name = token.value;
+        node->symbol->name = token.value;
 
         token = tokens->at(index++);
         if (token.type != TokenType::GROUPING_START) {
@@ -39,7 +39,7 @@ namespace Parser {
         while (token.type != TokenType::GROUPING_END) {
             
             if (token.type == TokenType::COMMA) {
-                if (node->symbol.func->params->size() == 0) {
+                if (node->symbol->func->params->size() == 0) {
                     printf("ERROR: %s:%d:%d: expecting paramater name, found ','!\n",token.file,token.line,token.column);
                     return nullptr;
                 } else
@@ -68,8 +68,8 @@ namespace Parser {
                 printf("ERROR: %s:%d:%d: unknown type '%s'!\n",token.file,token.line,token.column,token.value);
                 return nullptr;
             } else {
-                node->symbol.func->params->push_back(Param{paramName,type->second,Reg::RAX});
-                node->symbolMap->insert(std::make_pair(paramName,Symbol{SymbolType::VAR,paramName,{.t={type->second}},new int{0}}));
+                node->symbol->func->params->push_back(Param{paramName,type->second,Reg::NUL});
+                node->symbolMap->insert(std::make_pair(paramName,new Symbol{SymbolType::VAR,paramName,{.t={type->second}},0}));
             }
                 
             
@@ -86,7 +86,7 @@ namespace Parser {
             printf("ERROR: %s:%d:%d: unknown type '%s'!\n",token.file,token.line,token.column,token.value);
             return nullptr;
         } else
-            node->symbol.func->returnType = type->second;
+            node->symbol->func->returnType = type->second;
 
         token = tokens->at(index++);
         if (token.type != TokenType::SCOPE_START) {
@@ -98,8 +98,10 @@ namespace Parser {
         if (parent) {
             appendChild(parent,node);
         } else {
-            globals.insert(std::make_pair(node->symbol.name,node));
+            globals.insert(std::make_pair(node->symbol->name,node));
         }
+
+        generateParamMapping(node);
 
         return node;
     }
@@ -144,7 +146,7 @@ namespace Parser {
         }
 
         Node* global;
-        Symbol symbol = Symbol{type==Keyword::VAR?SymbolType::VAR:SymbolType::CONST,token.value,{.t={t}},new int{0}};
+        Symbol* symbol = new Symbol{type==Keyword::VAR?SymbolType::VAR:SymbolType::CONST,token.value,{.t={t}},0};
         if (parent) {
             parent->symbolMap->insert(std::make_pair(token.value,symbol));
         } else {

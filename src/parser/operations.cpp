@@ -46,7 +46,7 @@ namespace Parser {
         {"--",17},
     };
 
-    Node* functionCall(Symbol symbol) {
+    Node* functionCall(Symbol* symbol) {
         Node* node = new Node{};
         node->type = NodeType::INVOCATION;
         node->symbol = symbol;
@@ -79,13 +79,13 @@ namespace Parser {
                     [[fallthrough]];
                 case TokenType::SYMBOL: {
                     param->type = NodeType::SYMBOL;
-                    Symbol symbol{};
+                    Symbol* symbol;
 
                     if (!(!global && symbolDeclaredInScope(token.value,parent,&symbol)) && !(global && symbolDeclaredGlobal(token.value,&symbol))) {
                         printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
                         return nullptr;
                     }
-                    (*symbol.refCount)++;
+                    symbol->refCount++;
                     global = false;
                     param->symbol = symbol;
                     param->token = token;
@@ -145,7 +145,7 @@ namespace Parser {
             return nullptr;
         }
 
-        Symbol symbol;
+        Symbol* symbol;
 
         if (global) {
             if (!symbolDeclaredGlobal(token.value,&symbol)) {
@@ -156,7 +156,7 @@ namespace Parser {
             printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
             return nullptr;
         }
-        (*symbol.refCount)++;
+        symbol->refCount++;
 
         Node* lvalue = new Node{};
         lvalue->type = NodeType::SYMBOL;
@@ -167,13 +167,13 @@ namespace Parser {
 
         if (token.type == TokenType::ENDLINE) return lvalue;
         if (token.type == TokenType::GROUPING_START) {
-            if (symbol.type != SymbolType::FUNC && (!symbolDeclaredGlobal(lvalue->token.value,&symbol) || symbol.type != SymbolType::FUNC)) {
+            if (symbol->type != SymbolType::FUNC && (!symbolDeclaredGlobal(lvalue->token.value,&symbol) || symbol->type != SymbolType::FUNC)) {
                 printf("ERROR: %s:%d:%d: '%s' isn't a function!\n",lvalue->token.file,lvalue->token.line,lvalue->token.column,lvalue->token.value);
                 return nullptr;
             }
-            (*lvalue->symbol.refCount)--;
+            lvalue->symbol->refCount--;
             delete lvalue;
-            (*symbol.refCount)++;
+            symbol->refCount++;
             return functionCall(symbol);
         }
 
@@ -187,12 +187,12 @@ namespace Parser {
             return nullptr;
         }
 
-        if (symbol.type == SymbolType::FUNC && (!symbolDeclaredGlobal(lvalue->token.value,&symbol) || symbol.type == SymbolType::FUNC)) {
+        if (symbol->type == SymbolType::FUNC && (!symbolDeclaredGlobal(lvalue->token.value,&symbol) || symbol->type == SymbolType::FUNC)) {
             printf("ERROR: %s:%d:%d: '%s' is a function!\n",lvalue->token.file,lvalue->token.line,lvalue->token.column,lvalue->token.value);
             return nullptr;
         }
 
-        if (symbol.type == SymbolType::CONST && tokens->at(index-2).type != TokenType::TYPE) {
+        if (symbol->type == SymbolType::CONST && tokens->at(index-2).type != TokenType::TYPE) {
             printf("ERROR: %s:%d:%d: '%s' is a constant and can't be assigned to!\n",token.file,token.line,token.column,lvalue->token.value);
             return nullptr;
         }
@@ -268,13 +268,13 @@ namespace Parser {
                 }
                 [[fallthrough]];
             case TokenType::SYMBOL: {
-                Symbol symbol{};
+                Symbol* symbol{};
 
                 if (!(!global && symbolDeclaredInScope(token.value,parent,&symbol)) && !(global && symbolDeclaredGlobal(token.value,&symbol))) {
                     printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
                     return nullptr;
                 }
-                (*symbol.refCount)++;
+                symbol->refCount++;
 
                 if (tokens->at(index).type == TokenType::GROUPING_START) {
                     index++;
@@ -363,13 +363,13 @@ namespace Parser {
                 [[fallthrough]];
             case TokenType::SYMBOL: {
                 rvalue->type = NodeType::SYMBOL;
-                Symbol symbol{};
+                Symbol* symbol{};
 
                 if (!(!global && symbolDeclaredInScope(token.value,parent,&symbol)) && !(global && symbolDeclaredGlobal(token.value,&symbol))) {
                     printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
                     return nullptr;
                 }
-                (*symbol.refCount)++;
+                symbol->refCount++;
                 global = false;
                 rvalue->symbol = symbol;
                 rvalue->token = token;
