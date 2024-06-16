@@ -170,6 +170,7 @@ namespace Parser {
             Function* func;
         };
         int refCount;
+        Reg location;
     };
 
     struct Literal {

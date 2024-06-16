@@ -11,15 +11,112 @@ using namespace Parser;
 
 namespace Compiler {
 
+    bool buildScope(Context* parent); // who needs header files anyway?
+
     std::ofstream* output;
 
     const std::unordered_map<std::string,Global> globals;
 
-    Reg evaluate(Node* node) {
+    const char* toLocalLabel(const char* label) {
+        int len = 0;
+        while (label[len++]);
+        char* str = new char[len+1];
+        str[0] = '.';
+        str++;
+        while (len--) str[len] = label[len];
+        str--;
+        return str;
+    }
+
+    bool freeReg(Reg reg) {
+
+        Value value = registers[reg].value;
+
+        switch (value.type) {
+            case ValueType::EMPTY:
+                return true;
+
+            case ValueType::GLOBAL:
+                out("mov",
+                        value.global->symbol->name,
+                        registers[reg].subRegs[TypeSizeMap[value.global->symbol->t]]
+                    );
+                value.global->symbol->location = (Parser::Reg)Reg::NUL;
+                registers[reg].value = Value{};
+                break;
+            
+            case ValueType::PARAMETER:
+            case ValueType::LOCAL:
+                out("mov",
+                        refLocalVar(value.local),
+                        registers[reg].subRegs[TypeSizeMap[value.local->size]]
+                    );
+                value.local->symbol->location = (Parser::Reg)Reg::NUL;
+                registers[reg].value = Value{};
+                break;
+
+            default:
+                return false;
+        }
+    }
+
+    Reg findFreeReg() {
+        Reg reg = Reg::RAX;
+        for (; reg != Reg::RBP; reg = (Reg)(reg+1)) {
+            if (registers[reg].value.type == ValueType::EMPTY) return reg;
+        }
+
+        int minRefCount = INT_MAX;
+        Reg minRefCountReg;
+
+        for (; reg != Reg::NUL; reg = (Reg)(reg-1)) {
+            Value value = registers[reg].value;
+            switch (value.type) {
+                case ValueType::GLOBAL:
+                    if (value.global->symbol->refCount < minRefCount) {
+                        minRefCount = value.global->symbol->refCount;
+                        minRefCountReg = reg;
+                    }
+                    break;
+                
+                case ValueType::PARAMETER:
+                case ValueType::LOCAL:
+                    if (value.local->symbol->refCount < minRefCount) {
+                        minRefCount = value.local->symbol->refCount;
+                        minRefCountReg = reg;
+                    }
+                    break;
+                
+                default:
+                    break;
+            }
+        }
+
+        freeReg(minRefCountReg); // dont need to check it succeeds as we already only get available regs
+
+        return reg;
+    }
+
+    Reg evaluate(Node* node, Context* context) {
+
+        switch (node->type) {
+            case NodeType::SYMBOL:
+                return findFreeReg();
+            
+            case NodeType::LITERAL: {
+                Reg reg = findFreeReg();
+                if (node->literal.type == Type::string) {
+                    // do something special
+                }
+                out()
+            }
+                
+        }
+
         return Reg::RAX;
     }
 
-    Reg callFunction(Node* funcCall) {
+    Reg callFunction(Node* funcCall, Context* context) {
 
         std::stack<Node*> params;
 
@@ -36,7 +133,7 @@ namespace Compiler {
 
             param = funcCall->symbol->func->params->at(--p);
 
-            Reg reg = evaluate(paramNode);
+            Reg reg = evaluate(paramNode,context);
 
             out("push",registers[reg].subRegs[3]);
         }
@@ -86,15 +183,30 @@ namespace Compiler {
 
         Context* context = functionSetup(node);
 
-        Node* child = node->firstChild;
+        if (buildScope(context)) return false;
+
+        if (context->locals->size()) {
+            out("    mov rsp, rbp");
+            out("    pop rbp");
+        }
+        out("    ret\n");
+
+        return true;
+    }
+
+    // TODO: rename to something that makes more sense
+    bool buildScope(Context* context) {
+
+        Node* child = context->node->firstChild;
         while (child) {
             switch (child->type) {
                 case NodeType::BLOCK:
                     break;
                 case NodeType::INVOCATION:
-                    callFunction(child);
+                    callFunction(child, context);
                     break;
                 case NodeType::OPERATION:
+                    evaluate(child, context);
                     break;
                 default:
                     printf("ERROR: %s:%d:%d: unexpected node: %s!\n",child->token.file,child->token.line,child->token.column,NodeTypeMap[(int)child->type]);
@@ -102,12 +214,6 @@ namespace Compiler {
             }
             child = child->nextSibling;
         }
-
-        if (context->locals->size()) {
-            out("    mov rsp, rbp");
-            out("    pop rbp");
-        }
-        out("    ret\n");
 
         return true;
     }

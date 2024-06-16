@@ -3,9 +3,6 @@ _start:
     xor rax, rax
     ret
 
-print:
-    ret
-
 main:
     push rbp
     mov rbp, rsp

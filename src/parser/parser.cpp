@@ -113,7 +113,7 @@ namespace Parser {
         func->returnType = Type::null;
         func->params = new std::vector<Param>;
         func->params->push_back(Param{p1,Type::i64,Reg::NUL});
-        Symbol* sym = new Symbol{SymbolType::FUNC,f,{.func = {func}},0};
+        Symbol* sym = new Symbol{SymbolType::FUNC,f,{.func = {func}},0,Reg::NUL};
 
         Node* tmp = new Node{};
         tmp->symbol = sym;

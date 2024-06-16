@@ -71,7 +71,7 @@ namespace Compiler {
 
     struct Local {
         Parser::Symbol* symbol;
-        int offset; // total offset, to get the value: mov reg, size [rbp - offset]
+        int offset; // total offset. to get the value: mov reg, size [rbp - offset]
         Size size;
     };
 
