@@ -20,10 +20,6 @@ namespace Compiler {
         (*output) << "    " << op << " " << arg1 << "," << arg2 << "\n";
     }
 
-    inline void out(std::string op, Type type, std::string arg1, std::string arg2) {
-        (*output) << "    " << op << " " << TypeMap[type] << " " << arg1 << "," << arg2 << "\n";
-    }
-
     inline const char* refLocalVar(Local* local) {
         std::stringstream out;
         out << "[rbp-" << std::to_string(local->offset) << "]";

@@ -69,7 +69,7 @@ namespace Parser {
                 return nullptr;
             } else {
                 node->symbol->func->params->push_back(Param{paramName,type->second,Reg::NUL});
-                node->symbolMap->insert(std::make_pair(paramName,new Symbol{SymbolType::VAR,paramName,{.t={type->second}}},0,Reg::NUL));
+                node->symbolMap->insert(std::make_pair(paramName,new Symbol{SymbolType::VAR,paramName,{.t={type->second}},0,Reg::NUL}));
             }
                 
             

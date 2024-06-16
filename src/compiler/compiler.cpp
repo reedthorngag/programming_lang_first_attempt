@@ -2,6 +2,8 @@
 #include <unordered_map>
 #include <cstring>
 #include <stack>
+#include <sstream>
+#include <vector>
 
 #include "compiler.hpp"
 #include "../parser/parser.hpp"
@@ -12,10 +14,32 @@ using namespace Parser;
 namespace Compiler {
 
     bool buildScope(Context* parent); // who needs header files anyway?
+    Reg callFunction(Node* funcCall, Context* context);
 
     std::ofstream* output;
 
-    const std::unordered_map<std::string,Global> globals;
+    const std::unordered_map<std::string,Symbol*> globals;
+
+    struct dataString {
+        char* parentName;
+        char* name;
+        struct {
+            char* str;
+            int len;
+        } value;
+    };
+
+    std::vector<dataString> strings;
+    std::vector<Symbol*> globalSymbols;
+
+    inline bool symbolDeclaredGlobal(char* name, Symbol** symbol) {
+        if (symbolBuiltin(name, symbol)) return true;
+        if (auto key = globals.find(name); key != globals.end()) {
+            if (symbol) *symbol = key->second;
+            return true;
+        }
+        return false;
+    }
 
     const char* toLocalLabel(const char* label) {
         int len = 0;
@@ -31,6 +55,7 @@ namespace Compiler {
     bool freeReg(Reg reg) {
 
         Value value = registers[reg].value;
+        if (value.locked) return false;
 
         switch (value.type) {
             case ValueType::EMPTY:
@@ -38,10 +63,10 @@ namespace Compiler {
 
             case ValueType::GLOBAL:
                 out("mov",
-                        value.global->symbol->name,
-                        registers[reg].subRegs[TypeSizeMap[value.global->symbol->t]]
+                        value.symbol->name,
+                        registers[reg].subRegs[TypeSizeMap[value.symbol->t]]
                     );
-                value.global->symbol->location = (Parser::Reg)Reg::NUL;
+                value.symbol->location = (Parser::Reg)Reg::NUL;
                 registers[reg].value = Value{};
                 break;
             
@@ -58,23 +83,29 @@ namespace Compiler {
             default:
                 return false;
         }
+
+        return true;
     }
 
     Reg findFreeReg() {
         Reg reg = Reg::RAX;
+
         for (; reg != Reg::RBP; reg = (Reg)(reg+1)) {
             if (registers[reg].value.type == ValueType::EMPTY) return reg;
         }
 
         int minRefCount = INT_MAX;
-        Reg minRefCountReg;
+        Reg minRefCountReg = Reg::NUL;
 
         for (; reg != Reg::NUL; reg = (Reg)(reg-1)) {
             Value value = registers[reg].value;
+
+            if (value.locked) continue;
+
             switch (value.type) {
                 case ValueType::GLOBAL:
-                    if (value.global->symbol->refCount < minRefCount) {
-                        minRefCount = value.global->symbol->refCount;
+                    if (value.symbol->refCount < minRefCount) {
+                        minRefCount = value.symbol->refCount;
                         minRefCountReg = reg;
                     }
                     break;
@@ -97,23 +128,108 @@ namespace Compiler {
         return reg;
     }
 
+    Reg operation(Node* node, Context* context) {
+
+        Reg firstArg = evaluate(node->firstChild,context);
+        registers[firstArg].value.locked = true;
+
+        Reg secondArg = Reg::NUL;
+        if (node->firstChild->nextSibling) {
+            secondArg = evaluate(node->firstChild->nextSibling,context);
+        }
+        
+    }
+
     Reg evaluate(Node* node, Context* context) {
 
         switch (node->type) {
-            case NodeType::SYMBOL:
-                return findFreeReg();
+            case NodeType::SYMBOL: {
+
+                Reg reg = findFreeReg();
+                bool onStack = false;
+                if (reg == Reg::NUL) {
+                    onStack = true;
+                    out("sub","rsp","8");
+                    out("push","rax");
+                    reg = Reg::RAX;
+                }
+
+                Symbol* symbol;
+
+                if (symbolDeclaredInScope(node->symbol->name,context->node,&symbol)) {
+                    Local* local = context->locals->find(node->symbol->name)->second;
+
+                    out("mov",registers[reg].subRegs[local->size],refLocalVar(local));
+
+                    registers[reg].value.type == ValueType::LOCAL;
+                    registers[reg].value.local = local;
+
+                } else if (Compiler::symbolDeclaredGlobal(node->symbol->name,&symbol)) { // this covers builtins too
+                    std::stringstream ss;
+                    ss << "[" << node->symbol->name << "]";
+                    out("mov",registers[reg].subRegs[TypeSizeMap[node->symbol->t]],ss.str());
+
+                    registers[reg].value.type = ValueType::GLOBAL;
+                    registers[reg].value.symbol = symbol;
+                }
+
+                if (onStack) {
+                    out("mov", "rax","[rsp+8]");
+                    out("pop", "rax");
+                    return Reg::STACK;
+                }
+                
+                return reg;
+            }
             
             case NodeType::LITERAL: {
-                Reg reg = findFreeReg();
-                if (node->literal.type == Type::string) {
-                    // do something special
-                }
-                out()
-            }
                 
+                Reg reg = findFreeReg();
+                bool onStack = false;
+                if (reg == Reg::NUL) {
+                    onStack = true;
+                    out("sub","rsp","8");
+                    out("push","rax");
+                    reg = Reg::RAX;
+                }
+
+                switch (node->literal.type) {
+                    case Type::string: {
+                        std::stringstream ss;
+                        ss << node->token.file << node->token.line << node->token.column;
+                        strings.push_back(dataString{context->node->symbol->name,ss.str().data(),node->literal.str.str,node->literal.str.len});
+                        break;
+                    }
+
+                    case Type::chr: {
+                        std::stringstream ss;
+                        ss << '\'' << node->literal.chr << '\'';
+                        out("mov", registers[reg].subRegs[0],ss.str());
+                        break;
+                    }
+
+                    default:
+                        out("mov", registers[reg].subRegs[TypeSizeMap[node->literal.type]],std::to_string(node->literal.u));
+                        break;
+                }
+
+                if (onStack) {
+                    out("mov", "rax","[rsp+8]");
+                    out("pop", "rax");
+                    return Reg::STACK;
+                }
+                
+                return reg;
+            }
+
+            case NodeType::INVOCATION:
+                return callFunction(node, context);
+
+            default:
+                break;   
         }
 
-        return Reg::RAX;
+        return Reg::NUL;
     }
 
     Reg callFunction(Node* funcCall, Context* context) {
@@ -159,12 +275,12 @@ namespace Compiler {
 
         int spaceReq = 0;
 
-        Context* context = new Context{node,new std::unordered_map<std::string, Local>};
+        Context* context = new Context{node,new std::unordered_map<std::string, Local*>};
 
         for (auto& [name, symbol] : *node->symbolMap) {
             if (symbol->refCount) {
                 spaceReq += SizeByteMap[TypeSizeMap[symbol->t]];
-                Local l = Local{symbol,spaceReq,TypeSizeMap[symbol->t]};
+                Local* l = new Local{symbol,spaceReq,TypeSizeMap[symbol->t]};
                 context->locals->insert(std::make_pair(name,l));
             }
         }
@@ -222,6 +338,9 @@ namespace Compiler {
     bool compile(std::unordered_map<std::string, Node*>* tree, std::ofstream* output) {
         Compiler::output = output;
 
+        out("BITS 64");
+        out("section .text");
+
         (*output) << "_start:\n";
         out("    call main");
 
@@ -239,7 +358,7 @@ namespace Compiler {
                     break;
 
                 case NodeType::SYMBOL:
-                    //if (node->firstChild && !buildOperation(node->firstChild,node->symbol->t)) return false;
+                    globalSymbols.push_back(node->symbol);
                     break;
 
                 default:
@@ -247,6 +366,8 @@ namespace Compiler {
                     break;
             }
         }
+
+
         return true;
     }
 };

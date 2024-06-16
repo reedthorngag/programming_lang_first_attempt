@@ -91,9 +91,10 @@ namespace Compiler {
         ValueType type;
         union {
             Local* local;
-            Global* global;
+            Symbol* symbol;
             Parser::Node* parent;
         };
+        bool locked;
     };
 
     struct Register {
@@ -106,7 +107,7 @@ namespace Compiler {
 
     struct Context {
         Parser::Node* node;
-        std::unordered_map<std::string, Local>* locals;
+        std::unordered_map<std::string, Local*>* locals;
     };
 
     bool compile(std::unordered_map<std::string, Parser::Node*>* tree, std::ofstream* out);

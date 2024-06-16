@@ -21,7 +21,7 @@ namespace Compiler {
                 "NULL",
                 "NULL"
             },
-            {}
+            {ValueType::EMPTY,0,true}
         },
         Register{
             Reg::RAX,
