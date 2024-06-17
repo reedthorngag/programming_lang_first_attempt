@@ -4,6 +4,7 @@
 #define _COMPILER
 
 #include "../parser/parser.hpp"
+using namespace Parser;
 
 namespace Compiler {
 

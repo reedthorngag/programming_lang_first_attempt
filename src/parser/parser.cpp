@@ -140,7 +140,7 @@ namespace Parser {
         return symbolDeclaredGlobal(name,symbol) || symbolDeclaredInScope(name,parent,symbol);
     }
 
-    inline bool symbolBuiltin(char* name, Symbol** symbol) {
+    bool symbolBuiltin(char* name, Symbol** symbol) {
         if (auto key = builtins.find(name); key != builtins.end()) {
             if (symbol) *symbol = key->second;
             return true;

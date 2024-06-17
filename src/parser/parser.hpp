@@ -189,7 +189,8 @@ namespace Parser {
 
     enum OpType {
         ASSIGNMENT,
-        SINGLEOPERAND,
+        SINGLE_OP_PREFIX,
+        SINGLE_OP_POSTFIX,
         MATH
     };
 
@@ -233,7 +234,7 @@ namespace Parser {
     void appendChild(Node* parent, Node* child);
 
     bool symbolDeclared(char* name, Node* parent, Symbol** symbol);
-    inline bool symbolBuiltin(char* name, Symbol** symbol);
+    bool symbolBuiltin(char* name, Symbol** symbol);
     bool symbolDeclaredInScope(char* name, Node* parent, Symbol** symbol);
     bool symbolDeclaredGlobal(char* name, Symbol** symbol);
 

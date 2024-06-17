@@ -1,5 +1,6 @@
 #include <fstream>
 #include <sstream>
+#include <unordered_map>
 
 #include "compiler.hpp"
 
@@ -27,6 +28,8 @@ namespace Compiler {
     }
 
     void swapRegs(Reg a, Reg b);
+    
+    Reg doOp(Node* op, Reg a, Reg b);
 };
 
 #endif

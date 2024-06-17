@@ -15,6 +15,7 @@ namespace Compiler {
 
     bool buildScope(Context* parent); // who needs header files anyway?
     Reg callFunction(Node* funcCall, Context* context);
+    Reg evaluate(Node* node, Context* context);
 
     std::ofstream* output;
 
@@ -138,6 +139,7 @@ namespace Compiler {
             secondArg = evaluate(node->firstChild->nextSibling,context);
         }
         
+        return doOp(node,firstArg,secondArg);
     }
 
     Reg evaluate(Node* node, Context* context) {
@@ -161,7 +163,7 @@ namespace Compiler {
 
                     out("mov",registers[reg].subRegs[local->size],refLocalVar(local));
 
-                    registers[reg].value.type == ValueType::LOCAL;
+                    registers[reg].value.type = ValueType::LOCAL;
                     registers[reg].value.local = local;
 
                 } else if (Compiler::symbolDeclaredGlobal(node->symbol->name,&symbol)) { // this covers builtins too
@@ -183,7 +185,7 @@ namespace Compiler {
             }
             
             case NodeType::LITERAL: {
-                
+
                 Reg reg = findFreeReg();
                 bool onStack = false;
                 if (reg == Reg::NUL) {
