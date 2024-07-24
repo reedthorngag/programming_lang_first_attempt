@@ -59,7 +59,10 @@
         "ranges": "cpp",
         "span": "cpp",
         "sstream": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "algorithm": "cpp",
+        "optional": "cpp",
+        "random": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled",
     "todo-tree.tree.scanMode": "workspace"

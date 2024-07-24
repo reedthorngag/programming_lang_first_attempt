@@ -95,6 +95,8 @@ namespace Compiler {
             Symbol* symbol;
             Parser::Node* parent;
         };
+        bool modified;
+        bool preserveModified;
         bool locked;
     };
 

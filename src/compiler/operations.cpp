@@ -4,62 +4,82 @@
 namespace Compiler {
 
 
-    Reg assign(Reg a, Reg b) {
-
+    void assign(Reg a, Reg b) {
+        out("mov", registers[a].subRegs[3], registers[b].subRegs[3]);
     }
 
-    Reg assignAdd(Reg a, Reg b) {
-        out("add", registers[a].subRegs[4])
+    void swap(Reg a, Reg b) {
+        out("xchg", registers[a].subRegs[3], registers[b].subRegs[3]);
     }
 
-    Reg assignSub(Reg a, Reg b) {
-        
+    void add(Reg a, Reg b) {
+        out("add", registers[a].subRegs[3], registers[b].subRegs[3]);
     }
 
-    Reg assignDiv(Reg a, Reg b) {
-        
+    void sub(Reg a, Reg b) {
+        out("sub", registers[a].subRegs[3], registers[b].subRegs[3]);
     }
 
-    Reg assignMul(Reg a, Reg b) {
-        
+    void div(Reg a, Reg b) {
+        out("   unsupported OP! (div)");
     }
 
-    Reg assignMod(Reg a, Reg b) {
-        
+    void mul(Reg a, Reg b) {
+        out("   unsupported OP! (mul)");
     }
 
-    Reg assignShl(Reg a, Reg b) {
-        
+    void mod(Reg a, Reg b) {
+        out("   unsupported OP! (mod)");
     }
 
-    Reg assignShr(Reg a, Reg b) {
-        
+    void shl(Reg a, Reg b) {
+        out("shl", registers[a].subRegs[3], registers[b].subRegs[3]);
     }
 
-    Reg assignXor(Reg a, Reg b) {
-
+    void shr(Reg a, Reg b) {
+        out("shr", registers[a].subRegs[3], registers[b].subRegs[3]);
     }
 
-    Reg assignAnd(Reg a, Reg b) {
-        
+    void _xor(Reg a, Reg b) {
+        out("xor", registers[a].subRegs[3], registers[b].subRegs[3]);
     }
 
-    Reg assignOr(Reg a, Reg b) {
-        
+    void _and(Reg a, Reg b) {
+        out("and", registers[a].subRegs[3], registers[b].subRegs[3]);
+    }
+
+    void _or(Reg a, Reg b) {
+        out("or", registers[a].subRegs[3], registers[b].subRegs[3]);
+    }
+
+    void _not(Reg a) {
+        out("not", registers[a].subRegs[3]);
+    }
+
+    void dec(Reg a) {
+        out("dec", registers[a].subRegs[3]);
+    }
+
+    void inc(Reg a) {
+        out("inc", registers[a].subRegs[3]);
+    }
+
+    void cmp(Reg a, Reg b) {
+        out("cmp", registers[a].subRegs[3], registers[b].subRegs[3]);
     }
 
     std::unordered_map<std::string, void (*)(Reg a, Reg b)> assignmentOps = {
-        {"=",1},
-        {"+=",2},
-        {"-=",2},
-        {"/=",2},
-        {"*=",2},
-        {"%=",2},
-        {"<<=",2},
-        {">>=",2},
-        {"^=",2},
-        {"&=",2},
-        {"|=",2},
+        {"=",assign},
+        {"+=",add},
+        {"-=",sub},
+        {"/=",div},
+        {"*=",mul},
+        {"%=",div},
+        {"<<=",shl},
+        {">>=",shr},
+        {"^=",_xor},
+        {"&=",_and},
+        {"|=",_or},
     };
 
     std::unordered_map<std::string, int> mathmaticalOps = {
@@ -85,10 +105,10 @@ namespace Compiler {
     };
 
     std::unordered_map<std::string, int> singleOperandOps = {
-        {"!",16},
-        {"~",16},
-        {"++",17},
-        {"--",17},
+        {"!",_not},
+        {"~",_not},
+        {"++",inc},
+        {"--",dec},
     };
 
     void swapRegs(Reg a, Reg b) {

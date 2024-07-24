@@ -63,20 +63,24 @@ namespace Compiler {
                 return true;
 
             case ValueType::GLOBAL:
-                out("mov",
-                        value.symbol->name,
-                        registers[reg].subRegs[TypeSizeMap[value.symbol->t]]
-                    );
+                if (value.modified && value.preserveModified) {
+                    out("mov",
+                            std::format("[%s]",value.symbol->name),
+                            registers[reg].subRegs[TypeSizeMap[value.symbol->t]]
+                        );
+                }
                 value.symbol->location = (Parser::Reg)Reg::NUL;
                 registers[reg].value = Value{};
                 break;
             
             case ValueType::PARAMETER:
             case ValueType::LOCAL:
-                out("mov",
-                        refLocalVar(value.local),
-                        registers[reg].subRegs[TypeSizeMap[value.local->size]]
-                    );
+                if (value.modified && value.preserveModified) {
+                    out("mov",
+                            refLocalVar(value.local),
+                            registers[reg].subRegs[TypeSizeMap[value.local->size]]
+                        );
+                }
                 value.local->symbol->location = (Parser::Reg)Reg::NUL;
                 registers[reg].value = Value{};
                 break;
@@ -129,17 +133,36 @@ namespace Compiler {
         return reg;
     }
 
+    void pushReg(Reg reg) {
+
+        switch (registers[reg].value.type) {
+            case GLOBAL:
+                out("push", registers[reg].subRegs[3]);
+                registers[reg].value.symbol->location = Parser::Reg::STACK;
+                registers[reg].value = {};
+                break;
+            case PARAMETER:
+            case LOCAL:
+                out("push", registers[reg].subRegs[3]);
+                registers[reg].value.symbol->location = Parser::Reg::STACK;
+                registers[reg].value = {};
+                break;
+            default:
+                break;
+        }
+    }
+
     Reg operation(Node* node, Context* context) {
 
-        Reg firstArg = evaluate(node->firstChild,context);
+        Reg firstArg = evaluate(node->firstChild, context);
         registers[firstArg].value.locked = true;
 
         Reg secondArg = Reg::NUL;
         if (node->firstChild->nextSibling) {
-            secondArg = evaluate(node->firstChild->nextSibling,context);
+            secondArg = evaluate(node->firstChild->nextSibling, context);
         }
         
-        return doOp(node,firstArg,secondArg);
+        return doOp(node, firstArg, secondArg);
     }
 
     Reg evaluate(Node* node, Context* context) {
@@ -151,8 +174,7 @@ namespace Compiler {
                 bool onStack = false;
                 if (reg == Reg::NUL) {
                     onStack = true;
-                    out("sub","rsp","8");
-                    out("push","rax");
+                    pushReg(Reg:RAX);
                     reg = Reg::RAX;
                 }
 
@@ -176,7 +198,6 @@ namespace Compiler {
                 }
 
                 if (onStack) {
-                    out("mov", "rax","[rsp+8]");
                     out("pop", "rax");
                     return Reg::STACK;
                 }
