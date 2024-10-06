@@ -65,5 +65,6 @@
         "random": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled",
-    "todo-tree.tree.scanMode": "workspace"
+    "todo-tree.tree.scanMode": "workspace",
+    "makefile.configureOnOpen": false
 }

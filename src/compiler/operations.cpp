@@ -104,7 +104,7 @@ namespace Compiler {
         {"%",15},
     };
 
-    std::unordered_map<std::string, int> singleOperandOps = {
+    std::unordered_map<std::string, void (*)(Reg a)> singleOperandOps = {
         {"!",_not},
         {"~",_not},
         {"++",inc},
@@ -119,11 +119,11 @@ namespace Compiler {
     }
 
     Reg assignmentOp(Node* op, Reg lvalue, Reg rvalue) {
-
+        return Reg::NUL;
     }
 
     Reg mathmaticalOp(Node* op, Reg lvalue, Reg rvalue) {
-        
+        return Reg::NUL;
     }
     
     Reg doOp(Node* op, Reg a, Reg b) {

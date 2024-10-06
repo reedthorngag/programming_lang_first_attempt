@@ -3,7 +3,7 @@ language goals:
   * have my own language that I can adjust to how I like
   * fast compilation times
   * let you do pretty much whatever you want (while not giving you *too* many foot guns)
-  * easily integratable with system libraries and stuff
+  * easily integrable with system libraries and stuff
   * clear and accurate error messages
 
 
@@ -12,7 +12,7 @@ current language vision:
 
 
 features:
-  * default initilize to zero like any sane person would make a sane language do (maybe keyword to explicitly exclude variables, or just make the compiler optimize it out when possible/detectable)
+  * default initialize to zero like any sane person would make a sane language do (maybe keyword to explicitly exclude variables, or just make the compiler optimize it out when possible/detectable)
   * good bitwise support such as bool arrays (and possibly bool vars in the same scope) using 1 bit per value and good bitmask support
 
 
@@ -26,7 +26,7 @@ keywords:
     return continue break
 
 operators:
-    mathmatical: + - / * % ++ --
+    mathematical: + - / * % ++ --
     bitwise: & ^ | ~ << >>
     boolean: ! || && == != < > <= >=
     assignment: =
@@ -45,7 +45,7 @@ pointers and fields:
     create a reference: &variable
     dereference a pointer: *variable
     access a field: .
-    acess a pointers field: -> (or maybe just use .?)
+    access a pointers field: -> (or maybe just use . ?)
 
 built in data types:
     i8, i16, i32, i64, i128
@@ -103,7 +103,7 @@ valid string literals:
     "stri
 ng"
     "stri\
-    ng" backslash means ignore any spaces, tabs or newlines that immediatly follow
+    ng" backslash means ignore any spaces, tabs or newlines that immediately follow
 
 
 commenting:
@@ -112,7 +112,7 @@ commenting:
     // */ is valid for partial line
 
 valid line starts:
-    decleration
+    declaration
     assignment
     function call
 

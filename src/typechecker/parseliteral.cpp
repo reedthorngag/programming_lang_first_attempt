@@ -25,7 +25,7 @@ namespace TypeChecker {
         if (parent > Type::f64) return Type::error;
 
         if (num > TypeConstraints[parent].max || (int64_t)num < TypeConstraints[parent].min) {
-            printf("%lld %d %d\n",num, num > TypeConstraints[parent].max, (int64_t)num < TypeConstraints[parent].min);
+            printf("%lld %d %d\n", (long long int)num, (int)(num > TypeConstraints[parent].max), (int)num < TypeConstraints[parent].min);
             return Type::error;
         }
 

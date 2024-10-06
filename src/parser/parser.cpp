@@ -141,7 +141,8 @@ namespace Parser {
     }
 
     bool symbolBuiltin(char* name, Symbol** symbol) {
-        if (auto key = builtins.find(name); key != builtins.end()) {
+        auto key = builtins.find(name); 
+        if (key != builtins.end()) {
             if (symbol) *symbol = key->second;
             return true;
         }
@@ -152,7 +153,8 @@ namespace Parser {
         if (symbolBuiltin(name, symbol)) return true;
         Node* node = parent;
         while (node) {
-            if (auto key = node->symbolMap->find(name); key != node->symbolMap->end()) {
+            auto key = node->symbolMap->find(name);
+            if (key != node->symbolMap->end()) {
                 if (symbol) *symbol = key->second;
                 return true;
             }
@@ -164,7 +166,8 @@ namespace Parser {
 
     inline bool symbolDeclaredGlobal(char* name, Symbol** symbol) {
         if (symbolBuiltin(name, symbol)) return true;
-        if (auto key = globals.find(name); key != globals.end()) {
+        auto key = globals.find(name); 
+        if (key != globals.end()) {
             if (symbol) *symbol = key->second->symbol;
             return true;
         }

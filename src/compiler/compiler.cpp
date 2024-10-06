@@ -4,6 +4,7 @@
 #include <stack>
 #include <sstream>
 #include <vector>
+#include <climits>
 
 #include "compiler.hpp"
 #include "../parser/parser.hpp"
@@ -35,7 +36,8 @@ namespace Compiler {
 
     inline bool symbolDeclaredGlobal(char* name, Symbol** symbol) {
         if (symbolBuiltin(name, symbol)) return true;
-        if (auto key = globals.find(name); key != globals.end()) {
+        auto key = globals.find(name);
+        if (key != globals.end()) {
             if (symbol) *symbol = key->second;
             return true;
         }
@@ -64,11 +66,13 @@ namespace Compiler {
 
             case ValueType::GLOBAL:
                 if (value.modified && value.preserveModified) {
+                    std::stringstream fmt;
+                    fmt << "[" << value.symbol->name << "]";
                     out("mov",
-                            std::format("[%s]",value.symbol->name),
+                            fmt.str(),
                             registers[reg].subRegs[TypeSizeMap[value.symbol->t]]
                         );
-                }
+                }   
                 value.symbol->location = (Parser::Reg)Reg::NUL;
                 registers[reg].value = Value{};
                 break;
@@ -144,7 +148,7 @@ namespace Compiler {
             case PARAMETER:
             case LOCAL:
                 out("push", registers[reg].subRegs[3]);
-                registers[reg].value.symbol->location = Parser::Reg::STACK;
+                registers[reg].value.local->symbol->location = Parser::Reg::STACK;
                 registers[reg].value = {};
                 break;
             default:
@@ -172,9 +176,9 @@ namespace Compiler {
 
                 Reg reg = findFreeReg();
                 bool onStack = false;
-                if (reg == Reg::NUL) {
+                if (reg == Reg::NUL) { 
                     onStack = true;
-                    pushReg(Reg:RAX);
+                    pushReg(Reg::RAX);
                     reg = Reg::RAX;
                 }
 
@@ -220,7 +224,7 @@ namespace Compiler {
                     case Type::string: {
                         std::stringstream ss;
                         ss << node->token.file << node->token.line << node->token.column;
-                        strings.push_back(dataString{context->node->symbol->name,ss.str().data(),node->literal.str.str,node->literal.str.len});
+                        strings.push_back(dataString{context->node->symbol->name,(char*)ss.str().data(),node->literal.str.str,node->literal.str.len});
                         break;
                     }
 
@@ -300,11 +304,11 @@ namespace Compiler {
 
         Context* context = new Context{node,new std::unordered_map<std::string, Local*>};
 
-        for (auto& [name, symbol] : *node->symbolMap) {
-            if (symbol->refCount) {
-                spaceReq += SizeByteMap[TypeSizeMap[symbol->t]];
-                Local* l = new Local{symbol,spaceReq,TypeSizeMap[symbol->t]};
-                context->locals->insert(std::make_pair(name,l));
+        for (auto& pair : *node->symbolMap) {
+            if (pair.second->refCount) {
+                spaceReq += SizeByteMap[TypeSizeMap[pair.second->t]];
+                Local* l = new Local{pair.second,spaceReq,TypeSizeMap[pair.second->t]};
+                context->locals->insert(std::make_pair(pair.first,l));
             }
         }
 
@@ -374,14 +378,14 @@ namespace Compiler {
 
         out("    ret\n");
 
-        for (auto& [key, node] : *tree) {
-            switch (node->type) {
+        for (auto& pair : *tree) {
+            switch (pair.second->type) {
                 case NodeType::FUNCTION:
-                    if (!createFunction(node)) return false;
+                    if (!createFunction(pair.second)) return false;
                     break;
 
                 case NodeType::SYMBOL:
-                    globalSymbols.push_back(node->symbol);
+                    globalSymbols.push_back(pair.second->symbol);
                     break;
 
                 default:

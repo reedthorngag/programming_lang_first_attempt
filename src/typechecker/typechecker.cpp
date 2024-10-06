@@ -140,18 +140,18 @@ namespace TypeChecker {
 
     bool process(std::unordered_map<std::string, Parser::Node*>* tree) {
 
-        for (auto& [key, node] : *tree) {
-            switch (node->type) {
+        for (auto& pair : *tree) {
+            switch (pair.second->type) {
                 case NodeType::FUNCTION:
-                    if (!processBlock(node)) return false;
-                    break;
+                    if (!processBlock(pair.second)) return false;
+                    break; 
 
                 case NodeType::SYMBOL:
-                    if (node->firstChild && !processOperation(node->firstChild,node->symbol->t)) return false;
+                    if (pair.second->firstChild && !processOperation(pair.second->firstChild,pair.second->symbol->t)) return false;
                     break;
 
                 default:
-                    printf("ERROR: %s:%d:%d: expecting decleration or function, found '%s'!\n",node->token.file,node->token.line,node->token.column,NodeTypeMap[(int)node->type]);
+                    printf("ERROR: %s:%d:%d: expecting declaration or function, found '%s'!\n",pair.second->token.file,pair.second->token.line,pair.second->token.column,NodeTypeMap[(int)pair.second->type]);
                     return false;
             }
         }

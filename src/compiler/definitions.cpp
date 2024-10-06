@@ -19,7 +19,7 @@ namespace Compiler {
                 "NULL",
                 "NULL",
                 "NULL",
-                "NULL"
+                "NULL",
             },
             {ValueType::EMPTY,0,true}
         },

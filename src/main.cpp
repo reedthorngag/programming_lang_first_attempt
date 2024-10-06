@@ -221,8 +221,8 @@ int main(int argc, char** argv) {
     if (!tree) return 1;
 
     printf("syntax tree:\n");
-    for (auto& [key, value] : *tree) {
-        printNode(value,0);
+    for (auto& pair : *tree) {
+        printNode(pair.second,0);
         printf("\n");
     }
 
