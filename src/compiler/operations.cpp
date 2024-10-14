@@ -40,15 +40,15 @@ namespace Compiler {
         out("shr", registers[a].subRegs[3], registers[b].subRegs[3]);
     }
 
-    void _xor(Reg a, Reg b) {
+    void xor(Reg a, Reg b) {
         out("xor", registers[a].subRegs[3], registers[b].subRegs[3]);
     }
 
-    void _and(Reg a, Reg b) {
+    void and(Reg a, Reg b) {
         out("and", registers[a].subRegs[3], registers[b].subRegs[3]);
     }
 
-    void _or(Reg a, Reg b) {
+    void or(Reg a, Reg b) {
         out("or", registers[a].subRegs[3], registers[b].subRegs[3]);
     }
 
@@ -68,6 +68,64 @@ namespace Compiler {
         out("cmp", registers[a].subRegs[3], registers[b].subRegs[3]);
     }
 
+    void equal(Reg a, Reg b) {
+        out("cmp", registers[a].subRegs[3], registers[b].subRegs[3]);
+        out("cmovz", registers[a].subRegs[3], "1");
+        out("cmovnz", registers[a].subRegs[3], "0");
+    }
+
+    void lor(Reg a, Reg b) {
+        out("or", registers[a].subRegs[3], registers[b].subRegs[3]);
+        out("cmovnz", registers[a].subRegs[3], "1");
+    }
+
+    void land(Reg a, Reg b) {
+        if (freeReg(b)) {
+            printf("ERROR: couldn't free : %s!\n",registers[b].subRegs[Size::QWORD]);
+        }
+
+        // push b
+
+        out("cmp", registers[a].subRegs[3], "0");
+        out("cmovnz", registers[a].subRegs[3], "1");
+        out("cmp", registers[b].subRegs[3], "0");
+        out("cmovnz", registers[b].subRegs[3], "1");
+
+        out("xor", registers[a].subRegs[3], registers[a].subRegs[3]);
+
+        //pop b
+    }
+
+    void ne(Reg a, Reg b) {
+        out("cmp", registers[a].subRegs[3], registers[b].subRegs[3]);
+        out("cmovz", registers[a].subRegs[3], "0");
+        out("cmovnz", registers[a].subRegs[3], "1");
+    }
+
+    void le(Reg a, Reg b) {
+        out("cmp", registers[a].subRegs[3], registers[b].subRegs[3]);
+        out("cmovle", registers[a].subRegs[3], "1");
+        out("cmovg", registers[a].subRegs[3], "0");
+    }
+
+    void ge(Reg a, Reg b) {
+        out("cmp", registers[a].subRegs[3], registers[b].subRegs[3]);
+        out("cmoge", registers[a].subRegs[3], "1");
+        out("cmovg", registers[a].subRegs[3], "0");
+    }
+
+    void l(Reg a, Reg b) {
+        out("cmp", registers[a].subRegs[3], registers[b].subRegs[3]);
+        out("cmovl", registers[a].subRegs[3], "1");
+        out("cmovge", registers[a].subRegs[3], "0");
+    }
+
+    void g(Reg a, Reg b) {
+        out("cmp", registers[a].subRegs[3], registers[b].subRegs[3]);
+        out("cmovg", registers[a].subRegs[3], "1");
+        out("cmovle", registers[a].subRegs[3], "0");
+    }
+
     std::unordered_map<std::string, void (*)(Reg a, Reg b)> assignmentOps = {
         {"=",assign},
         {"+=",add},
@@ -77,31 +135,31 @@ namespace Compiler {
         {"%=",div},
         {"<<=",shl},
         {">>=",shr},
-        {"^=",_xor},
-        {"&=",_and},
-        {"|=",_or},
+        {"^=",xor},
+        {"&=",and},
+        {"|=",or},
     };
 
-    std::unordered_map<std::string, int> mathmaticalOps = {
-        {"||",6},
-        {"&&",7},
-        {"==",8},
-        {"!=",8},
-        {"<=",9},
-        {">=",9},
-        {">",9},
-        {"<",9},
-        {"|",10},
-        {"^",11},
-        {"&",12},
-        {"<<",13},
-        {">>",13},
-        {">>>",13},
-        {"+",14},
-        {"-",14},
-        {"*",15},
-        {"/",15},
-        {"%",15},
+    std::unordered_map<std::string, void (*)(Reg a, Reg b)> mathmaticalOps = {
+        {"||",lor},
+        {"&&",land},
+        {"==",equal},
+        {"!=",ne},
+        {"<=",le},
+        {">=",ge},
+        {">",g},
+        {"<",l},
+        {"|",_or},
+        {"^",_xor},
+        {"&",_and},
+        {"<<",shl},
+        {">>",shr},
+        //{">>>",13},
+        {"+",add},
+        {"-",sub},
+        {"*",mul},
+        {"/",div},
+        {"%",mod},
     };
 
     std::unordered_map<std::string, void (*)(Reg a)> singleOperandOps = {
@@ -119,11 +177,45 @@ namespace Compiler {
     }
 
     Reg assignmentOp(Node* op, Reg lvalue, Reg rvalue) {
-        return Reg::NUL;
+        auto pair = assignmentOps.find(op->op.value);
+        if (pair == assignmentOps.end()) {
+            printf("ERROR: %s:%d:%d: unsupported op: %s!\n",op->token.file,op->token.line,op->token.column,op->op.value);
+            return Reg::NUL;
+        }
+
+        pair->second(lvalue, rvalue);
+
+        registers[lvalue].value.modified = true;
+        
+        return lvalue;
     }
 
     Reg mathmaticalOp(Node* op, Reg lvalue, Reg rvalue) {
-        return Reg::NUL;
+        auto pair = mathmaticalOps.find(op->op.value);
+        if (pair == mathmaticalOps.end()) {
+            printf("ERROR: %s:%d:%d: unsupported op: %s!\n",op->token.file,op->token.line,op->token.column,op->op.value);
+            return Reg::NUL;
+        }
+
+        pair->second(lvalue, rvalue);
+
+        registers[lvalue].value = Value{ ValueType::INTERMEDIATE, 0, false, false, false };
+
+        return lvalue;
+    }
+
+    Reg singleOperandOp(Node* op, Reg a) {
+        auto pair = singleOperandOps.find(op->op.value);
+        if (pair == singleOperandOps.end()) {
+            printf("ERROR: %s:%d:%d: unsupported op: %s!\n",op->token.file,op->token.line,op->token.column,op->op.value);
+            return Reg::NUL;
+        }
+
+        pair->second(a);
+
+        registers[a].value.modified = true;
+
+        return a;
     }
     
     Reg doOp(Node* op, Reg a, Reg b) {
@@ -135,7 +227,7 @@ namespace Compiler {
                 return mathmaticalOp(op, a, b);
             case OpType::SINGLE_OP_POSTFIX:
             case OpType::SINGLE_OP_PREFIX:
-                break;
+                return singleOperandOp(op, a);
         }
 
         return Reg::NUL;

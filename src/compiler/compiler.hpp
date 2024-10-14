@@ -113,6 +113,8 @@ namespace Compiler {
         std::unordered_map<std::string, Local*>* locals;
     };
 
+    bool freeReg(Reg reg);
+
     bool compile(std::unordered_map<std::string, Parser::Node*>* tree, std::ofstream* out);
 };
 

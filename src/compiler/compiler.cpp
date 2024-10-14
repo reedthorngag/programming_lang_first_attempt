@@ -175,11 +175,9 @@ namespace Compiler {
             case NodeType::SYMBOL: {
 
                 Reg reg = findFreeReg();
-                bool onStack = false;
                 if (reg == Reg::NUL) { 
-                    onStack = true;
-                    pushReg(Reg::RAX);
-                    reg = Reg::RAX;
+                    printf("ERROR: %s:%d:%d: no registers available!\n",node->token.file,node->token.line,node->token.column);
+                    exit(1);
                 }
 
                 Symbol* symbol;
@@ -200,11 +198,6 @@ namespace Compiler {
                     registers[reg].value.type = ValueType::GLOBAL;
                     registers[reg].value.symbol = symbol;
                 }
-
-                if (onStack) {
-                    out("pop", "rax");
-                    return Reg::STACK;
-                }
                 
                 return reg;
             }
@@ -212,12 +205,9 @@ namespace Compiler {
             case NodeType::LITERAL: {
 
                 Reg reg = findFreeReg();
-                bool onStack = false;
-                if (reg == Reg::NUL) {
-                    onStack = true;
-                    out("sub","rsp","8");
-                    out("push","rax");
-                    reg = Reg::RAX;
+                if (reg == Reg::NUL) { 
+                    printf("ERROR: %s:%d:%d: no registers available!\n",node->token.file,node->token.line,node->token.column);
+                    exit(0);
                 }
 
                 switch (node->literal.type) {
@@ -238,12 +228,6 @@ namespace Compiler {
                     default:
                         out("mov", registers[reg].subRegs[TypeSizeMap[node->literal.type]],std::to_string(node->literal.u));
                         break;
-                }
-
-                if (onStack) {
-                    out("mov", "rax","[rsp+8]");
-                    out("pop", "rax");
-                    return Reg::STACK;
                 }
                 
                 return reg;
@@ -279,18 +263,24 @@ namespace Compiler {
             Reg reg = evaluate(paramNode,context);
 
             out("push",registers[reg].subRegs[3]);
+
+            param.reg = (Parser::Reg)Reg::STACK;
+            registers[reg].value = Value{};
         }
 
         for (Param p : *funcCall->symbol->func->params) {
             printf("hello: %s\n",registers[p.reg].subRegs[3]);
             if ((Reg)p.reg == Reg::STACK)
                 break;
+
+            freeReg((Reg)p.reg);
             
-            if (registers[param.reg].value.type != ValueType::EMPTY) {
-                printf("WARN: %s:%d:%d: register value not empty!\n",paramNode->token.file,paramNode->token.line,paramNode->token.column);
+            if (registers[p.reg].value.type != ValueType::EMPTY) {
+                printf("WARN: %s:%d:%d: register value not empty! Register: %s\n",paramNode->token.file,paramNode->token.line,paramNode->token.column,registers[p.reg].subRegs[3]);
             }
 
             out("pop",registers[p.reg].subRegs[3]);
+
         }
 
         out("call",funcCall->symbol->name);
