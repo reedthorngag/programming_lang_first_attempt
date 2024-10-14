@@ -316,7 +316,7 @@ namespace Compiler {
 
         Context* context = functionSetup(node);
 
-        if (buildScope(context)) return false;
+        if (!buildScope(context)) return false;
 
         if (context->locals->size()) {
             out("    mov rsp, rbp");

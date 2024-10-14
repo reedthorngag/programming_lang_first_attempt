@@ -40,15 +40,15 @@ namespace Compiler {
         out("shr", registers[a].subRegs[3], registers[b].subRegs[3]);
     }
 
-    void xor(Reg a, Reg b) {
+    void _xor(Reg a, Reg b) {
         out("xor", registers[a].subRegs[3], registers[b].subRegs[3]);
     }
 
-    void and(Reg a, Reg b) {
+    void _and(Reg a, Reg b) {
         out("and", registers[a].subRegs[3], registers[b].subRegs[3]);
     }
 
-    void or(Reg a, Reg b) {
+    void _or(Reg a, Reg b) {
         out("or", registers[a].subRegs[3], registers[b].subRegs[3]);
     }
 
@@ -80,20 +80,20 @@ namespace Compiler {
     }
 
     void land(Reg a, Reg b) {
-        if (freeReg(b)) {
-            printf("ERROR: couldn't free : %s!\n",registers[b].subRegs[Size::QWORD]);
-        }
+        // this code is super bad and way longer than it needs to be probably, but my brain isnt working
 
-        // push b
+        out("push", registers[b].subRegs[3]);
 
         out("cmp", registers[a].subRegs[3], "0");
         out("cmovnz", registers[a].subRegs[3], "1");
         out("cmp", registers[b].subRegs[3], "0");
         out("cmovnz", registers[b].subRegs[3], "1");
 
-        out("xor", registers[a].subRegs[3], registers[a].subRegs[3]);
+        out("test", registers[a].subRegs[3], registers[a].subRegs[3]);
+        out("cmovnz", registers[b].subRegs[3], "0");
+        out("cmovz", registers[b].subRegs[3], "1");
 
-        //pop b
+        out("pop", registers[a].subRegs[3]);
     }
 
     void ne(Reg a, Reg b) {
@@ -135,9 +135,9 @@ namespace Compiler {
         {"%=",div},
         {"<<=",shl},
         {">>=",shr},
-        {"^=",xor},
-        {"&=",and},
-        {"|=",or},
+        {"^=",_xor},
+        {"&=",_and},
+        {"|=",_or},
     };
 
     std::unordered_map<std::string, void (*)(Reg a, Reg b)> mathmaticalOps = {

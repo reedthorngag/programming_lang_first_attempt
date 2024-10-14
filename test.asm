@@ -18,10 +18,10 @@ main:
     pop rbx
     pop rcx
     call test
-    mov bl,0
-    push rbx
-    mov ebx,0
-    push rbx
+    mov al,0
+    push rax
+    mov eax,0
+    push rax
     push NULL
     pop rax
     pop rbx
@@ -30,7 +30,14 @@ main:
     push NULL
     pop rax
     call print
-    mov ebx,[rbp-14]
-    push rbx
+    mov eax,[rbp-14]
+    push rax
     pop rax
     call print
+    mov rsp, rbp
+    pop rbp
+    ret
+
+test:
+    ret
+
