@@ -66,90 +66,90 @@ namespace Compiler {
         Register{
             Reg::R8,
             {
-                "R8B",
-                "R8W",
-                "R8D",
-                "R8"
+                "r8b",
+                "r8w",
+                "r8d",
+                "r8"
             },
             {}
         },
         Register{
             Reg::R9,
             {
-                "R9B",
-                "R9W",
-                "R9D",
-                "R9"
+                "r9b",
+                "r9w",
+                "r9d",
+                "r9"
             },
             {}
         },
         Register{
             Reg::R10,
             {
-                "R1{}B",
-                "R1{}W",
-                "R1{}D",
-                "R1{}"
+                "r10b",
+                "r10w",
+                "r10d",
+                "r10"
             },
             {}
         },
         Register{
             Reg::R11,
             {
-                "R11B",
-                "R11W",
-                "R11D",
-                "R11"
+                "r11b",
+                "r11w",
+                "r11d",
+                "r11"
             },
             {}
         },
         Register{
             Reg::R12,
             {
-                "R12B",
-                "R12W",
-                "R12D",
-                "R12"
+                "r12b",
+                "r12w",
+                "r12d",
+                "r12"
             },
             {}
         },
         Register{
             Reg::R13,
             {
-                "R13B",
-                "R13W",
-                "R13D",
-                "R13"
+                "r13b",
+                "r13w",
+                "r13d",
+                "r13"
             },
             {}
         },
         Register{
             Reg::R13,
             {
-                "R13B",
-                "R13W",
-                "R13D",
-                "R13"
+                "r13b",
+                "r13w",
+                "r13d",
+                "r13"
             },
             {}
         },
         Register{
             Reg::R14,
             {
-                "R14B",
-                "R14W",
-                "R14D",
-                "R14"
+                "r14b",
+                "r14w",
+                "r14d",
+                "r14"
             },
             {}
         },
         Register{
             Reg::R15,
             {
-                "R15B",
-                "R15W",
-                "R15D",
-                "R15"
+                "r15b",
+                "r15w",
+                "r15d",
+                "r15"
             },
             {}
         },

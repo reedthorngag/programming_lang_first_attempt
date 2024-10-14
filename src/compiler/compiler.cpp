@@ -164,7 +164,10 @@ namespace Compiler {
         Reg secondArg = Reg::NUL;
         if (node->firstChild->nextSibling) {
             secondArg = evaluate(node->firstChild->nextSibling, context);
+            if (secondArg == Reg::NUL) return Reg::NUL;
         }
+
+        registers[firstArg].value.locked = false;
         
         return doOp(node, firstArg, secondArg);
     }
@@ -213,7 +216,7 @@ namespace Compiler {
                 switch (node->literal.type) {
                     case Type::string: {
                         std::stringstream ss;
-                        ss << node->token.file << node->token.line << node->token.column;
+                        ss << node->token.file << ':' << node->token.line << ':' << node->token.column;
                         strings.push_back(dataString{context->node->symbol->name,(char*)ss.str().data(),node->literal.str.str,node->literal.str.len});
                         break;
                     }
@@ -232,6 +235,9 @@ namespace Compiler {
                 
                 return reg;
             }
+
+            case NodeType::OPERATION:
+                return operation(node, context);
 
             case NodeType::INVOCATION:
                 return callFunction(node, context);
@@ -260,7 +266,15 @@ namespace Compiler {
 
             param = funcCall->symbol->func->params->at(--p);
 
+
+            printf("fergt: %s\n", NodeTypeMap[(int)paramNode->type]);
+
             Reg reg = evaluate(paramNode,context);
+
+            if (reg == Reg::NUL) exit(1);
+
+        
+        printf("Reg: %s\n", registers[reg].subRegs[Size::QWORD]);
 
             out("push",registers[reg].subRegs[3]);
 
@@ -274,6 +288,8 @@ namespace Compiler {
                 break;
 
             freeReg((Reg)p.reg);
+
+            printf("asefr: %d\n", registers[p.reg].value.locked);
             
             if (registers[p.reg].value.type != ValueType::EMPTY) {
                 printf("WARN: %s:%d:%d: register value not empty! Register: %s\n",paramNode->token.file,paramNode->token.line,paramNode->token.column,registers[p.reg].subRegs[3]);

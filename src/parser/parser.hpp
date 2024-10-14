@@ -25,6 +25,8 @@ namespace Parser {
 
     extern const char* TypeMap[];
 
+    extern const char* OpTypeMap[];
+
     enum Type {
         error, // used to indicate there is a type error, not used as a type
         i8,

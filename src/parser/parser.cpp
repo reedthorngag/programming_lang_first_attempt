@@ -49,6 +49,13 @@ namespace Parser {
         "null"
     };
 
+    const char* OpTypeMap[]{
+        "ASSIGNMENT",
+        "SINGLE_OP_PREFIX",
+        "SINGLE_OP_POSTFIX",
+        "MATH"
+    };
+
     std::unordered_map<std::string, Type> typeMap = {
         {"null",Type::null},
 

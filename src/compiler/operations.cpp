@@ -1,6 +1,8 @@
 
 #include "operations.hpp"
 
+#include <string>
+
 namespace Compiler {
 
 
@@ -179,7 +181,7 @@ namespace Compiler {
     Reg assignmentOp(Node* op, Reg lvalue, Reg rvalue) {
         auto pair = assignmentOps.find(op->op.value);
         if (pair == assignmentOps.end()) {
-            printf("ERROR: %s:%d:%d: unsupported op: %s!\n",op->token.file,op->token.line,op->token.column,op->op.value);
+            printf("ERROR: %s:%d:%d: unsupported op: '%s'!\n",op->token.file,op->token.line,op->token.column,op->op.value);
             return Reg::NUL;
         }
 
@@ -193,7 +195,7 @@ namespace Compiler {
     Reg mathmaticalOp(Node* op, Reg lvalue, Reg rvalue) {
         auto pair = mathmaticalOps.find(op->op.value);
         if (pair == mathmaticalOps.end()) {
-            printf("ERROR: %s:%d:%d: unsupported op: %s!\n",op->token.file,op->token.line,op->token.column,op->op.value);
+            printf("ERROR: %s:%d:%d: unsupported op: '%s'!\n",op->token.file,op->token.line,op->token.column,op->op.value);
             return Reg::NUL;
         }
 
@@ -207,7 +209,7 @@ namespace Compiler {
     Reg singleOperandOp(Node* op, Reg a) {
         auto pair = singleOperandOps.find(op->op.value);
         if (pair == singleOperandOps.end()) {
-            printf("ERROR: %s:%d:%d: unsupported op: %s!\n",op->token.file,op->token.line,op->token.column,op->op.value);
+            printf("ERROR: %s:%d:%d: unsupported op: '%s'!\n",op->token.file,op->token.line,op->token.column,op->op.value);
             return Reg::NUL;
         }
 
