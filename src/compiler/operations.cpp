@@ -7,7 +7,7 @@ namespace Compiler {
 
 
     void assign(Reg a, Reg b) {
-        out("mov", registers[a].subRegs[3], registers[b].subRegs[3]);
+        if (a != b) out("mov", registers[a].subRegs[3], registers[b].subRegs[3]);
     }
 
     void swap(Reg a, Reg b) {
@@ -132,9 +132,9 @@ namespace Compiler {
         {"=",assign},
         {"+=",add},
         {"-=",sub},
-        {"/=",div},
-        {"*=",mul},
-        {"%=",div},
+        //{"/=",div},
+        //{"*=",mul},
+        //{"%=",mod},
         {"<<=",shl},
         {">>=",shr},
         {"^=",_xor},
@@ -159,9 +159,9 @@ namespace Compiler {
         //{">>>",13},
         {"+",add},
         {"-",sub},
-        {"*",mul},
-        {"/",div},
-        {"%",mod},
+        //{"*",mul},
+        //{"/",div},
+        //{"%",mod},
     };
 
     std::unordered_map<std::string, void (*)(Reg a)> singleOperandOps = {

@@ -216,7 +216,7 @@ namespace Compiler {
                 switch (node->literal.type) {
                     case Type::string: {
                         std::stringstream ss;
-                        ss << node->token.file << ':' << node->token.line << ':' << node->token.column;
+                        ss << node->token.file << node->token.line << node->token.column;
                         strings.push_back(dataString{context->node->symbol->name,(char*)ss.str().data(),node->literal.str.str,node->literal.str.len});
                         break;
                     }
@@ -324,6 +324,16 @@ namespace Compiler {
         out("    mov rbp, rsp");
         out("sub","rsp",std::to_string(spaceReq));
 
+        int offset = 0;
+        for (auto& pair : *node->symbolMap) {
+            if (pair.second->refCount) {
+                offset += SizeByteMap[TypeSizeMap[pair.second->t]];
+                std::stringstream ss;
+                ss << "\tmov " << SizeString[SizeByteMap[TypeSizeMap[pair.second->t]]] << " [rbp-" << offset << "], 0";
+                out(ss.str());
+            }
+        }
+
         return context;
     }
 
@@ -400,6 +410,28 @@ namespace Compiler {
             }
         }
 
+        out("\nsection .data");
+
+        for (dataString str : strings) {
+            std::stringstream ss;
+            ss << str.parentName << '_' << str.name << ": db \"";
+            char* buf = new char[str.value.len+1]{};
+            int ptr = 0;
+            for (int i = 0; i < str.value.len; i++, ptr++) {
+                if (str.value.str[i] == '"') {
+                    buf[ptr] = 0;
+                    ss << buf << "\",0x22,\"";
+                    ptr = -1; // ptr++ then increments it to 0 for the next iteration
+                } else {
+                    buf[ptr] = str.value.str[i];
+                }
+            }
+
+            buf[ptr] = 0;
+            ss << buf << "\",0";
+
+            out(ss.str());
+        }
 
         return true;
     }

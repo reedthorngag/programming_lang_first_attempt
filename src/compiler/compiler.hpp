@@ -25,7 +25,7 @@ namespace Compiler {
     };
 
     const Size TypeSizeMap[] {
-        Size::BYTE,// error, // doesnt happen in the program
+        Size::BYTE,// error, doesnt occur in the program output
 
         Size::BYTE,// i8,
         Size::WORD,// i16,
