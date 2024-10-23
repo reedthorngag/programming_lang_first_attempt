@@ -56,6 +56,13 @@ namespace Parser {
         "MATH"
     };
 
+    const char* SizeTypeMap[]{
+        "byte",
+        "word",
+        "dword",
+        "qword"
+    };
+
     std::unordered_map<std::string, Type> typeMap = {
         {"null",Type::null},
 

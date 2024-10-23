@@ -100,10 +100,13 @@ namespace Compiler {
         bool locked;
     };
 
+    extern unsigned int position;
+
     struct Register {
         Reg reg;
         const char* subRegs[4];
         Value value;
+        unsigned int position;
     };
 
     extern Register registers[];

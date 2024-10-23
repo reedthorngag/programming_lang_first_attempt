@@ -7,7 +7,7 @@ namespace Compiler {
 
 
     void assign(Reg a, Reg b) {
-        if (a != b) out("mov", registers[a].subRegs[3], registers[b].subRegs[3]);
+        if (a != b) out("mov", registers[a].subRegs[Size::QWORD], registers[b].subRegs[Size::QWORD]);
     }
 
     void swap(Reg a, Reg b) {
@@ -35,11 +35,19 @@ namespace Compiler {
     }
 
     void shl(Reg a, Reg b) {
-        out("shl", registers[a].subRegs[3], registers[b].subRegs[3]);
+
+        if (b != Reg::RCX) swap(b, Reg::RCX);
+
+        out("shl", registers[a].subRegs[3], registers[Reg::RCX].subRegs[0]);
+
+        if (b != Reg::RCX) swap(b, Reg::RCX);
     }
 
     void shr(Reg a, Reg b) {
-        out("shr", registers[a].subRegs[3], registers[b].subRegs[3]);
+
+        if (b != Reg::RCX) swap(b, Reg::RCX);
+        out("shr", registers[a].subRegs[3], registers[Reg::RCX].subRegs[0]);
+        if (b != Reg::RCX) swap(b, Reg::RCX);
     }
 
     void _xor(Reg a, Reg b) {

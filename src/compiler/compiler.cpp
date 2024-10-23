@@ -34,6 +34,8 @@ namespace Compiler {
     std::vector<dataString> strings;
     std::vector<Symbol*> globalSymbols;
 
+    unsigned int position = 0;
+
     inline bool symbolDeclaredGlobal(char* name, Symbol** symbol) {
         if (symbolBuiltin(name, symbol)) return true;
         auto key = globals.find(name);
@@ -56,6 +58,8 @@ namespace Compiler {
     }
 
     bool freeReg(Reg reg) {
+
+        printf("Attempting to free %s locked: %d\n", registers[reg].subRegs[Size::QWORD], (int)registers[reg].value.locked);
 
         Value value = registers[reg].value;
         if (value.locked) return false;
@@ -90,6 +94,7 @@ namespace Compiler {
                 break;
 
             default:
+                printf("how tf?\n");
                 return false;
         }
 
@@ -103,38 +108,24 @@ namespace Compiler {
             if (registers[reg].value.type == ValueType::EMPTY) return reg;
         }
 
-        int minRefCount = INT_MAX;
-        Reg minRefCountReg = Reg::NUL;
+        unsigned int minRegPosition = UINT_MAX;
+        Reg firstInReg = Reg::NUL;
 
         for (; reg != Reg::NUL; reg = (Reg)(reg-1)) {
             Value value = registers[reg].value;
 
             if (value.locked) continue;
 
-            switch (value.type) {
-                case ValueType::GLOBAL:
-                    if (value.symbol->refCount < minRefCount) {
-                        minRefCount = value.symbol->refCount;
-                        minRefCountReg = reg;
-                    }
-                    break;
-                
-                case ValueType::PARAMETER:
-                case ValueType::LOCAL:
-                    if (value.local->symbol->refCount < minRefCount) {
-                        minRefCount = value.local->symbol->refCount;
-                        minRefCountReg = reg;
-                    }
-                    break;
-                
-                default:
-                    break;
+            if (registers[reg].position < minRegPosition) {
+                minRegPosition = registers[reg].position;
+                firstInReg = reg;
             }
         }
 
-        freeReg(minRefCountReg); // dont need to check it succeeds as we already only get available regs
+        printf("attempting to free: %s\n",registers[reg].subRegs[Size::QWORD]);
+        freeReg(firstInReg);
 
-        return reg;
+        return firstInReg;
     }
 
     void pushReg(Reg reg) {
@@ -160,6 +151,7 @@ namespace Compiler {
 
         Reg firstArg = evaluate(node->firstChild, context);
         registers[firstArg].value.locked = true;
+        printf("locked %s\n", registers[firstArg].subRegs[Size::QWORD]);
 
         Reg secondArg = Reg::NUL;
         if (node->firstChild->nextSibling) {
@@ -167,6 +159,7 @@ namespace Compiler {
             if (secondArg == Reg::NUL) return Reg::NUL;
         }
 
+        printf("unlocked %s\n", registers[firstArg].subRegs[Size::QWORD]);
         registers[firstArg].value.locked = false;
         
         return doOp(node, firstArg, secondArg);
@@ -188,18 +181,34 @@ namespace Compiler {
                 if (symbolDeclaredInScope(node->symbol->name,context->node,&symbol)) {
                     Local* local = context->locals->find(node->symbol->name)->second;
 
-                    out("mov",registers[reg].subRegs[local->size],refLocalVar(local));
+                    if (SizeByteMap[local->size] >= 4) { // 32 bit loads clear top 32 bits (e.g mov eax, eax clears top 32 bits)
+                        out("mov", registers[reg].subRegs[local->size],refLocalVar(local));
+                    } else {
+                        std::stringstream ss;
+                        ss << SizeTypeMap[local->size] << ' ' << refLocalVar(local);
+                        out("movzx qword ",registers[reg].subRegs[Size::QWORD], ss.str().c_str());
+                    }
 
                     registers[reg].value.type = ValueType::LOCAL;
                     registers[reg].value.local = local;
+                    registers[reg].position = position++;
 
                 } else if (Compiler::symbolDeclaredGlobal(node->symbol->name,&symbol)) { // this covers builtins too
                     std::stringstream ss;
                     ss << "[" << node->symbol->name << "]";
                     out("mov",registers[reg].subRegs[TypeSizeMap[node->symbol->t]],ss.str());
 
+                    if (SizeByteMap[TypeSizeMap[node->symbol->t]] >= 4) { // 32 bit loads clear top 32 bits
+                        out("mov", registers[reg].subRegs[TypeSizeMap[node->symbol->t]],ss.str());
+                    } else {
+                        std::stringstream ss2;
+                        ss2 << SizeTypeMap[TypeSizeMap[node->symbol->t]] << ' ' << ss.str();
+                        out("movzx qword ",registers[reg].subRegs[Size::QWORD], ss2.str().c_str());
+                    }
+
                     registers[reg].value.type = ValueType::GLOBAL;
                     registers[reg].value.symbol = symbol;
+                    registers[reg].position = position++;
                 }
                 
                 return reg;
@@ -208,28 +217,48 @@ namespace Compiler {
             case NodeType::LITERAL: {
 
                 Reg reg = findFreeReg();
+                printf("register: %s\n", registers[reg].subRegs[Size::QWORD]);
                 if (reg == Reg::NUL) { 
-                    printf("ERROR: %s:%d:%d: no registers available!\n",node->token.file,node->token.line,node->token.column);
+                    printf("ERRORg: %s:%d:%d: no registers available!\n",node->token.file,node->token.line,node->token.column);
                     exit(0);
                 }
 
                 switch (node->literal.type) {
                     case Type::string: {
                         std::stringstream ss;
-                        ss << node->token.file << node->token.line << node->token.column;
-                        strings.push_back(dataString{context->node->symbol->name,(char*)ss.str().data(),node->literal.str.str,node->literal.str.len});
+                        ss << context->node->symbol->name << '_' << node->token.file << '_' << std::to_string(node->token.line) << '_' << std::to_string(node->token.column);
+                        std::string* s = new std::string(ss.str().c_str());
+                        for (int i = 0; i < (int)s->length(); i++) {
+                            if ((*s)[i] == '.') (*s)[i] = '_';
+                        }
+                        strings.push_back(dataString{context->node->symbol->name,(char*)s->c_str(),node->literal.str.str,node->literal.str.len});
+
+                        out("mov", registers[reg].subRegs[Size::QWORD], *s);
+
+                        registers[reg].value.type = ValueType::INTERMEDIATE;
+                        registers[reg].value.symbol = node->symbol;
+                        registers[reg].position = position++;
+
                         break;
                     }
 
                     case Type::chr: {
-                        std::stringstream ss;
-                        ss << '\'' << node->literal.chr << '\'';
-                        out("mov", registers[reg].subRegs[0],ss.str());
+                        out("mov ", registers[reg].subRegs[Size::QWORD],std::to_string(node->literal.chr));
+
+                        registers[reg].value.type = ValueType::INTERMEDIATE;
+                        registers[reg].value.symbol = node->symbol;
+                        registers[reg].position = position++;
+
                         break;
                     }
 
                     default:
                         out("mov", registers[reg].subRegs[TypeSizeMap[node->literal.type]],std::to_string(node->literal.u));
+
+                        registers[reg].value.type = ValueType::INTERMEDIATE;
+                        registers[reg].value.symbol = node->symbol;
+                        registers[reg].position = position++;
+
                         break;
                 }
                 
@@ -266,15 +295,10 @@ namespace Compiler {
 
             param = funcCall->symbol->func->params->at(--p);
 
-
-            printf("fergt: %s\n", NodeTypeMap[(int)paramNode->type]);
-
             Reg reg = evaluate(paramNode,context);
 
             if (reg == Reg::NUL) exit(1);
 
-        
-        printf("Reg: %s\n", registers[reg].subRegs[Size::QWORD]);
 
             out("push",registers[reg].subRegs[3]);
 
@@ -283,16 +307,13 @@ namespace Compiler {
         }
 
         for (Param p : *funcCall->symbol->func->params) {
-            printf("hello: %s\n",registers[p.reg].subRegs[3]);
             if ((Reg)p.reg == Reg::STACK)
                 break;
 
             freeReg((Reg)p.reg);
-
-            printf("asefr: %d\n", registers[p.reg].value.locked);
             
             if (registers[p.reg].value.type != ValueType::EMPTY) {
-                printf("WARN: %s:%d:%d: register value not empty! Register: %s\n",paramNode->token.file,paramNode->token.line,paramNode->token.column,registers[p.reg].subRegs[3]);
+                printf("WARN: %s:%d:%d: register value locked! Register: %s\n",paramNode->token.file,paramNode->token.line,paramNode->token.column,registers[p.reg].subRegs[3]);
             }
 
             out("pop",registers[p.reg].subRegs[3]);
@@ -329,7 +350,7 @@ namespace Compiler {
             if (pair.second->refCount) {
                 offset += SizeByteMap[TypeSizeMap[pair.second->t]];
                 std::stringstream ss;
-                ss << "\tmov " << SizeString[SizeByteMap[TypeSizeMap[pair.second->t]]] << " [rbp-" << offset << "], 0";
+                ss << "\tmov " << SizeString[TypeSizeMap[pair.second->t]] << " [rbp-" << offset << "], 0";
                 out(ss.str());
             }
         }
@@ -414,7 +435,7 @@ namespace Compiler {
 
         for (dataString str : strings) {
             std::stringstream ss;
-            ss << str.parentName << '_' << str.name << ": db \"";
+            ss << str.name << ": db \"";
             char* buf = new char[str.value.len+1]{};
             int ptr = 0;
             for (int i = 0; i < str.value.len; i++, ptr++) {
