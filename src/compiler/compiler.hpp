@@ -114,6 +114,7 @@ namespace Compiler {
     struct Context {
         Parser::Node* node;
         std::unordered_map<std::string, Local*>* locals;
+        int spaceReq;
     };
 
     bool freeReg(Reg reg);

@@ -1,11 +1,11 @@
 BITS 64
 section .text
 _start:
-    call main
+    call main_null
     xor rax, rax
     ret
 
-main:
+main_i32:
     push rbp
     mov rbp, rsp
     sub rsp,20
@@ -15,7 +15,7 @@ main:
 	mov dword [rbp-14], 0
 	mov word [rbp-16], 0
 	mov dword [rbp-20], 0
-    movzx qword  rax,word [rbp-16]
+    movzx qword rax,word [rbp-16]
     mov bx,5
     mov cx,1
     add rbx,rcx
@@ -55,61 +55,60 @@ main:
     pop rax
     pop rbx
     pop rcx
-    call test
+    call test_i64_u32_u8
     mov eax,[rbp-14]
-    mov ecx,5
-    mov edx,3
-    mov r8d,4
-    sub rdx,r8
-    mov r9d,1
-    add rdx,r9
-    add rcx,rdx
-    mov rax,rcx
-    mov r10b,0
-    push r10
-    mov r10d,0
-    push r10
-    mov r10d,[rbp-14]
-    mov r11d,8
-    add r10,r11
-    push r10
+    mov ebx,5
+    mov ecx,3
+    mov edx,4
+    sub rcx,rdx
+    mov r8d,1
+    add rcx,r8
+    add rbx,rcx
+    mov rax,rbx
+    mov al,0
+    push rax
+    mov eax,0
+    push rax
+    mov eax,[rbp-14]
+    mov ebx,8
+    add rax,rbx
+    push rax
     pop rax
     pop rbx
     pop rcx
-    call test
+    call test_i64_u32_u8
     mov eax,[rbp-14]
-    mov r10d,8
-    add rax,r10
+    mov ebx,8
+    add rax,rbx
     push rax
     pop rax
-    call print
+    call print_i64
     mov eax,[rbp-14]
     push rax
     pop rax
-    call print
-    movzx qword  rax,byte [rbp-2]
-    mov  r12,104
-    mov rax,r12
-    mov r13,[rbp-10]
-    mov r13,524421
-    mov r13,r13
-    mov r14,[rbp-10]
-    mov r15,113
-    add r14,r15
-    movzx qword  rsi,byte [rbp-1]
-    mov rdi,main_test_tmp_27_27
-    mov rsi,rdi
-    mov ebx,[rbp-14]
-    mov ecx,5
-    shl rbx,cl
+    call print_i64
+    movzx qword rax,byte [rbp-2]
+    mov  rbx,104
+    mov rax,rbx
+    mov rcx,[rbp-10]
+    mov rdx,524421
+    mov rcx,rdx
+    mov r8,[rbp-10]
+    mov r9,113
+    add r8,r9
+    movzx qword r10,byte [rbp-1]
+    mov r11,main_test_tmp_27_27
+    mov r10,r11
+    mov r12d,[rbp-14]
+    mov r13d,5
+    xchg r13,rcx
+    shl r12,cl
+    xchg r13,rcx
+    add rsp,20
     mov rsp, rbp
     pop rbp
     ret
 
-test:
+test_i64_u32_u8:
     ret
 
-print:
-
-section .data
-main_test_tmp_27_27: db "he",0x22,"llo",0

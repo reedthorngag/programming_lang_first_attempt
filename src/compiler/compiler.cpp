@@ -22,6 +22,15 @@ namespace Compiler {
 
     const std::unordered_map<std::string,Symbol*> globals;
 
+    std::unordered_map<std::string, Node*> typedFunctions;
+
+    struct FuncCall{
+        std::string name;
+        Node* node;
+    };
+
+    std::vector<FuncCall> undefinedFunctions;
+
     struct dataString {
         char* parentName;
         char* name;
@@ -59,8 +68,6 @@ namespace Compiler {
 
     bool freeReg(Reg reg) {
 
-        printf("Attempting to free %s locked: %d\n", registers[reg].subRegs[Size::QWORD], (int)registers[reg].value.locked);
-
         Value value = registers[reg].value;
         if (value.locked) return false;
 
@@ -93,8 +100,11 @@ namespace Compiler {
                 registers[reg].value = Value{};
                 break;
 
+            case ValueType::INTERMEDIATE:
+                registers[reg].value = Value{};
+                break;
+
             default:
-                printf("how tf?\n");
                 return false;
         }
 
@@ -122,7 +132,6 @@ namespace Compiler {
             }
         }
 
-        printf("attempting to free: %s\n",registers[reg].subRegs[Size::QWORD]);
         freeReg(firstInReg);
 
         return firstInReg;
@@ -151,7 +160,6 @@ namespace Compiler {
 
         Reg firstArg = evaluate(node->firstChild, context);
         registers[firstArg].value.locked = true;
-        printf("locked %s\n", registers[firstArg].subRegs[Size::QWORD]);
 
         Reg secondArg = Reg::NUL;
         if (node->firstChild->nextSibling) {
@@ -159,7 +167,6 @@ namespace Compiler {
             if (secondArg == Reg::NUL) return Reg::NUL;
         }
 
-        printf("unlocked %s\n", registers[firstArg].subRegs[Size::QWORD]);
         registers[firstArg].value.locked = false;
         
         return doOp(node, firstArg, secondArg);
@@ -186,7 +193,7 @@ namespace Compiler {
                     } else {
                         std::stringstream ss;
                         ss << SizeTypeMap[local->size] << ' ' << refLocalVar(local);
-                        out("movzx qword ",registers[reg].subRegs[Size::QWORD], ss.str().c_str());
+                        out("movzx qword",registers[reg].subRegs[Size::QWORD], ss.str().c_str());
                     }
 
                     registers[reg].value.type = ValueType::LOCAL;
@@ -203,7 +210,7 @@ namespace Compiler {
                     } else {
                         std::stringstream ss2;
                         ss2 << SizeTypeMap[TypeSizeMap[node->symbol->t]] << ' ' << ss.str();
-                        out("movzx qword ",registers[reg].subRegs[Size::QWORD], ss2.str().c_str());
+                        out("movzx qword",registers[reg].subRegs[Size::QWORD], ss2.str().c_str());
                     }
 
                     registers[reg].value.type = ValueType::GLOBAL;
@@ -217,9 +224,8 @@ namespace Compiler {
             case NodeType::LITERAL: {
 
                 Reg reg = findFreeReg();
-                printf("register: %s\n", registers[reg].subRegs[Size::QWORD]);
                 if (reg == Reg::NUL) { 
-                    printf("ERRORg: %s:%d:%d: no registers available!\n",node->token.file,node->token.line,node->token.column);
+                    printf("ERROR: %s:%d:%d: no registers available!\n",node->token.file,node->token.line,node->token.column);
                     exit(0);
                 }
 
@@ -280,6 +286,19 @@ namespace Compiler {
 
     Reg callFunction(Node* funcCall, Context* context) {
 
+        std::stack<Reg> pushedRegs;
+        for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
+            if (!freeReg(reg)) {
+                if (reg == Reg::RAX && funcCall->symbol->func->returnType != Type::null) {
+                    printf("ERROR: %s:%d:%d: no registers available!\nCompile failed!",funcCall->token.file,funcCall->token.line,funcCall->token.column);
+                    exit(1);
+                } 
+                pushedRegs.push(reg);
+                out("push", registers[reg].subRegs[Size::QWORD]);
+                registers[reg].value = Value{};
+            }
+        }
+
         std::stack<Node*> params;
 
         Node* paramNode = funcCall->firstChild;
@@ -313,14 +332,24 @@ namespace Compiler {
             freeReg((Reg)p.reg);
             
             if (registers[p.reg].value.type != ValueType::EMPTY) {
-                printf("WARN: %s:%d:%d: register value locked! Register: %s\n",paramNode->token.file,paramNode->token.line,paramNode->token.column,registers[p.reg].subRegs[3]);
+                printf("WARN: %s:%d:%d: register value locked! (this shouldn't be possible) Register: %s\n",paramNode->token.file,paramNode->token.line,paramNode->token.column,registers[p.reg].subRegs[3]);
             }
 
             out("pop",registers[p.reg].subRegs[3]);
 
         }
 
-        out("call",funcCall->symbol->name);
+        std::stringstream ss;
+        ss << funcCall->symbol->name;
+        for (Param p : *funcCall->symbol->func->params) {
+            ss << '_' << TypeMap[p.type];
+        }
+
+        if (auto key = typedFunctions.find(ss.str()); key == typedFunctions.end()) {
+            undefinedFunctions.push_back(FuncCall{*new std::string(ss.str()),funcCall});
+        }
+
+        out("call",ss.str());
 
         return funcCall->symbol->func->returnType == Type::null ? Reg::NUL : Reg::RAX;
     }
@@ -329,7 +358,7 @@ namespace Compiler {
 
         int spaceReq = 0;
 
-        Context* context = new Context{node,new std::unordered_map<std::string, Local*>};
+        Context* context = new Context{node,new std::unordered_map<std::string, Local*>,0};
 
         for (auto& pair : *node->symbolMap) {
             if (pair.second->refCount) {
@@ -340,6 +369,8 @@ namespace Compiler {
         }
 
         if (spaceReq == 0) return context;
+
+        context->spaceReq = spaceReq;
 
         out("    push rbp");
         out("    mov rbp, rsp");
@@ -359,13 +390,36 @@ namespace Compiler {
     }
 
     bool createFunction(Node* node) {
-        (*output) << node->symbol->name << ":\n";
+
+        std::stringstream ss;
+        ss << node->symbol->name;
+
+        for (Param p : *node->symbol->func->params) ss << '_' << TypeMap[p.type];
+
+        typedFunctions.insert(std::make_pair(*new std::string(ss.str()), node));
+        printf("added %s to typed functions\n",ss.str().c_str());
+
+        ss << ':';
+        out(ss.str());
+
+        for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
+            bool isParam = false;
+            for (Param p : *node->symbol->func->params) {
+                if (p.reg == (Parser::Reg)reg) {
+                    isParam = true;
+                    break;
+                }
+            }
+            if (isParam) continue;
+            if (!freeReg(reg)) printf("ERROR: %s:%d:%d: register locked when it shouldn't be! can't free %s!\n",node->token.file,node->token.line,node->token.column,registers[reg].subRegs[Size::QWORD]);
+        }
 
         Context* context = functionSetup(node);
 
         if (!buildScope(context)) return false;
 
         if (context->locals->size()) {
+            out("add", "rsp",std::to_string(context->spaceReq));
             out("    mov rsp, rbp");
             out("    pop rbp");
         }
@@ -406,9 +460,20 @@ namespace Compiler {
         out("section .text");
 
         (*output) << "_start:\n";
-        out("    call main");
 
-        auto key = tree->find("main");
+        std:: stringstream ss;
+
+        auto key = Parser::globals.find(std::string("main"));
+
+        if (key == Parser::globals.end()) {
+            printf("ERROR: no main function!\n");
+            return false;
+        }
+
+        ss << "main_" << TypeMap[key->second->symbol->func->returnType];
+
+        out("call", ss.str());
+
         if (key->second->symbol->func->returnType == Type::null) {
             out("    xor rax, rax");
         }
@@ -431,6 +496,16 @@ namespace Compiler {
             }
         }
 
+        bool error = false;
+        for (FuncCall f : undefinedFunctions) {
+            if (auto key = typedFunctions.find(f.name); key == typedFunctions.end()) {
+                printf("ERROR: %s:%d:%d: undefined function! function name: %s\n",f.node->token.file,f.node->token.line,f.node->token.column, f.name.c_str());
+                error = true;
+            }
+        }
+
+        if (error) return false;
+
         out("\nsection .data");
 
         for (dataString str : strings) {
@@ -442,7 +517,7 @@ namespace Compiler {
                 if (str.value.str[i] == '"') {
                     buf[ptr] = 0;
                     ss << buf << "\",0x22,\"";
-                    ptr = -1; // ptr++ then increments it to 0 for the next iteration
+                    ptr = -1; // ptr++ then increments it to 0 at the start of the next iteration
                 } else {
                     buf[ptr] = str.value.str[i];
                 }
