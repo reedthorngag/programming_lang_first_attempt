@@ -20,7 +20,7 @@ main:
     mov eax,[rbp-20]
     mov ebx,2
     mov rax,rbx
-    movzx qword rcx,word [rbp-16]
+    movzx qword rcx,word [rbp-16]; var: test
     mov dx,5
     mov r8w,1
     add rdx,r8
@@ -87,35 +87,35 @@ main:
     add rax,rbx
     push rax
     pop rax
-    call print_i64
+    call printNum_i64
     mov eax,[rbp-14]
     push rax
     pop rax
-    call print_i64
+    call printNum_i64
     mov rax,1500
     push rax
     pop rax
-    call print_i64
-    movzx qword rax,byte [rbp-2]
+    call printNum_i64
+    movzx qword rax,byte [rbp-2]; var: a
     mov  rbx,104
     mov rax,rbx
     mov rax,1500
     push rax
     pop rax
-    call print_i64
+    call printNum_i64
     mov rax,[rbp-10]
     mov rbx,524421
     mov rax,rbx
     mov rcx,[rbp-10]
     mov rdx,113
     add rcx,rdx
-    movzx qword r8,byte [rbp-1]
+    movzx qword r8,byte [rbp-1]; var: test3
     mov r9,main_test_tmp_30_27
     mov r8,r9
-    mov rax,1300
+    movzx qword rax,byte [rbp-1]; var: test3
     push rax
     pop rax
-    call print_i64
+    call printStr_str
     mov eax,[rbp-14]
     mov ebx,5
     xchg rbx,rcx
@@ -124,7 +124,7 @@ main:
     mov rax,1600
     push rax
     pop rax
-    call print_i64
+    call printNum_i64
     add rsp,20
     mov rsp, rbp
     pop rbp
@@ -133,12 +133,12 @@ main:
 test_i64_u32_u8:
     ret
 
-extern print_i64
-extern print_i64
-extern print_i64
-extern print_i64
-extern print_i64
-extern print_i64
+extern printNum_i64
+extern printNum_i64
+extern printNum_i64
+extern printNum_i64
+extern printStr_str
+extern printNum_i64
 
 
 section .data

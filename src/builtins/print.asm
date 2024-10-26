@@ -1,9 +1,9 @@
-global print_str
+global printStr_str
 global printLine_str
-global print_u32
-global print_i32
-global print_u64
-global print_i64
+global printNum_u32
+global printNum_i32
+global printNum_u64
+global printNum_i64
 global print_char
 global strLen_str
 
@@ -11,7 +11,7 @@ global strLen_str
 section .text
 
 ; string in rax, null terminated
-print_str:
+printStr_str:
 
     mov rsi, rax
     call strLen ; preserves rsi
@@ -53,10 +53,10 @@ hexChars db "0123456789abcdef",0
 hexPrefix db "0x",0
 
 ; number to print in rax, doesnt print leading zeros
-print_u32:
-print_i32:
-print_u64:
-print_i64:
+printNum_u32:
+printNum_i32:
+printNum_u64:
+printNum_i64:
     mov byte [endChar], 0x20
     jmp printHex
 

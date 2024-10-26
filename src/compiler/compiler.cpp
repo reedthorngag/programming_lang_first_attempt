@@ -193,7 +193,7 @@ namespace Compiler {
                         out("mov", registers[reg].subRegs[local->size],refLocalVar(local));
                     } else {
                         std::stringstream ss;
-                        ss << SizeTypeMap[local->size] << ' ' << refLocalVar(local);
+                        ss << SizeTypeMap[local->size] << ' ' << refLocalVar(local) << "; var: " << node->symbol->name;
                         out("movzx qword",registers[reg].subRegs[Size::QWORD], ss.str().c_str());
                     }
 
