@@ -2,3 +2,6 @@
 
 test
 test.*
+!test.tmp
+builtins.o
+bin/
