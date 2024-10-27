@@ -44,8 +44,8 @@ namespace Parser {
         "f32",
         "f64",
         "chr",
-        "string",
-        "boolean",
+        "str",
+        "bool",
         "null"
     };
 

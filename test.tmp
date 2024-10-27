@@ -28,7 +28,7 @@ func main(): null {
     b += 0b111_000_111;
     //print();
     const test3: string = "he\"llo";
-    print(1300);
+    //print(test3);
     test2 <<= 5;
     print(1600);
 }

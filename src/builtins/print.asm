@@ -1,20 +1,21 @@
-global print_string
-global printLine_string
+global print_str
+global printLine_str
 global print_u32
 global print_i32
 global print_u64
 global print_i64
 global print_char
+global strLen_str
 
 
 section .text
 
 ; string in rax, null terminated
-print_string:
-
-    call strLen
+print_str:
 
     mov rsi, rax
+    call strLen ; preserves rsi
+
     ; rsi containes string pointer
     mov rdx, rax ; length
     mov rax, 1 ; exit
@@ -24,11 +25,11 @@ print_string:
     ret
 
 ; string in rax, null terminated
-printLine_string:
-
-    call strLen
+printLine_str:
 
     mov rsi, rax
+    call strLen
+
     push rsi
     add rsi, rax
     mov byte [rsi], 0x0a ; \n
@@ -95,7 +96,17 @@ printHex:
     shr rax, cl
 
     mov al, [rsi+rax]
+    push rsi
+    push r10
+    push rcx
+    push r9
+    push r8
     call print_char
+    pop r8
+    pop r9
+    pop rcx
+    pop r10
+    pop rsi
 
 .updateValues:
     mov r10, 0
@@ -127,10 +138,14 @@ print_char:
 
     ret
 
-; string pointer in rax
+
+strLen_str:
+    mov rsi, rax
+
+; string pointer in rsi
 ; returns length in rax
 strLen:
-    mov rsi, rax
+    push rsi
 
     xor rax, rax
 .loop:
@@ -141,6 +156,7 @@ strLen:
     jmp .loop
 
 .return:
+    pop rsi
     ret
 
 
