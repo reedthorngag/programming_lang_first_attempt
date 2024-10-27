@@ -7,5 +7,5 @@ g++ -Wall -g -W -Werror -Wno-unused-parameter -Wno-unused-variable -Wno-missing-
     src/parser/*.cpp ^
     src/typechecker/*.cpp ^
     src/compiler/*.cpp ^
-    -o bin/output.exe || echo boo
+    -o bin/output.exe || echo compile failed :^(
 

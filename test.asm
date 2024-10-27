@@ -1,11 +1,13 @@
 BITS 64
 section .text
+global _start
 _start:
-    call main_null
-    xor rax, rax
-    ret
+    call main
+    xor rdi, rdi
+    mov rax, 60
+    syscall
 
-main_i32:
+main:
     push rbp
     mov rbp, rsp
     sub rsp,20
@@ -15,35 +17,38 @@ main_i32:
 	mov dword [rbp-14], 0
 	mov word [rbp-16], 0
 	mov dword [rbp-20], 0
-    movzx qword rax,word [rbp-16]
-    mov bx,5
-    mov cx,1
-    add rbx,rcx
-    mov dx,3
-    add rbx,rdx
+    mov eax,[rbp-20]
+    mov ebx,2
     mov rax,rbx
-    mov r8d,[rbp-14]
-    mov r9d,[rbp-20]
-    mov r10d,5
-    mov r11d,2
-    sub r10,r11
-    mov r12d,8
-    mov r13d,1
+    movzx qword rcx,word [rbp-16]
+    mov dx,5
+    mov r8w,1
+    add rdx,r8
+    mov r9w,3
+    add rdx,r9
+    mov rcx,rdx
+    mov r10d,[rbp-14]
+    mov r11d,[rbp-20]
+    mov r12d,5
     mov r13d,2
-    add r13,r13
-    xchg r13,rcx
-    shr r12,cl
-    xchg r13,rcx
-    add r10,r12
-    add r9,r10
-    mov r8,r9
-    mov r14d,[rbp-14]
-    mov r15d,5
-    mov esi,1
-    add r15,rsi
-    mov edi,3
-    sub r15,rdi
+    sub r12,r13
+    mov r13d,8
+    mov r14d,1
+    mov r15d,2
     add r14,r15
+    xchg r14,rcx
+    shr r13,cl
+    xchg r14,rcx
+    add r12,r13
+    add r11,r12
+    mov r10,r11
+    mov esi,[rbp-14]
+    mov edi,5
+    mov eax,1
+    add rdi,rax
+    mov ebx,3
+    sub rdi,rbx
+    add rsi,rdi
     mov al,100
     push rax
     mov eax,5
@@ -87,23 +92,39 @@ main_i32:
     push rax
     pop rax
     call print_i64
+    mov rax,1500
+    push rax
+    pop rax
+    call print_i64
     movzx qword rax,byte [rbp-2]
     mov  rbx,104
     mov rax,rbx
+    mov rax,1500
+    push rax
+    pop rax
+    call print_i64
+    mov rax,[rbp-10]
+    mov rbx,524421
+    mov rax,rbx
     mov rcx,[rbp-10]
-    mov rdx,524421
-    mov rcx,rdx
-    mov r8,[rbp-10]
-    mov r9,113
-    add r8,r9
-    movzx qword r10,byte [rbp-1]
-    mov r11,main_test_tmp_27_27
-    mov r10,r11
-    mov r12d,[rbp-14]
-    mov r13d,5
-    xchg r13,rcx
-    shl r12,cl
-    xchg r13,rcx
+    mov rdx,113
+    add rcx,rdx
+    movzx qword r8,byte [rbp-1]
+    mov r9,main_test_tmp_30_27
+    mov r8,r9
+    mov rax,1300
+    push rax
+    pop rax
+    call print_i64
+    mov eax,[rbp-14]
+    mov ebx,5
+    xchg rbx,rcx
+    shl rax,cl
+    xchg rbx,rcx
+    mov rax,1600
+    push rax
+    pop rax
+    call print_i64
     add rsp,20
     mov rsp, rbp
     pop rbp
@@ -112,3 +133,13 @@ main_i32:
 test_i64_u32_u8:
     ret
 
+extern print_i64
+extern print_i64
+extern print_i64
+extern print_i64
+extern print_i64
+extern print_i64
+
+
+section .data
+main_test_tmp_30_27: db "he",0x22,"llo",0

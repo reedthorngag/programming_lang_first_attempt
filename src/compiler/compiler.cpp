@@ -23,6 +23,7 @@ namespace Compiler {
     const std::unordered_map<std::string,Symbol*> globals;
 
     std::unordered_map<std::string, Node*> typedFunctions;
+    std::unordered_map<std::string, Symbol*> typedBuiltins;
 
     struct FuncCall{
         std::string name;
@@ -397,7 +398,6 @@ namespace Compiler {
         for (Param p : *node->symbol->func->params) ss << '_' << TypeMap[p.type];
 
         typedFunctions.insert(std::make_pair(*new std::string(ss.str()), node));
-        printf("added %s to typed functions\n",ss.str().c_str());
 
         ss << ':';
         out(ss.str());
@@ -459,7 +459,7 @@ namespace Compiler {
         out("BITS 64");
         out("section .text");
 
-        (*output) << "_start:\n";
+        (*output) << "global _start\n_start:\n";
 
         std:: stringstream ss;
 
@@ -470,15 +470,18 @@ namespace Compiler {
             return false;
         }
 
-        ss << "main_" << TypeMap[key->second->symbol->func->returnType];
-
-        out("call", ss.str());
-
-        if (key->second->symbol->func->returnType == Type::null) {
-            out("    xor rax, rax");
+        ss << "main";
+        for (Param p : *key->second->symbol->func->params) {
+            ss << '_' << TypeMap[p.type];
         }
 
-        out("    ret\n");
+        out("call", ss.str()); // call the main function
+
+        if (key->second->symbol->func->returnType == Type::null) {
+            out("    xor rdi, rdi");
+        } else out("    mov rdi, rax"); // rdi contains exit code
+
+        out("    mov rax, 60\n    syscall\n"); // exit syscall
 
         for (auto& pair : *tree) {
             switch (pair.second->type) {
@@ -491,18 +494,33 @@ namespace Compiler {
                     break;
 
                 default:
-                    // this can't happen
+                    // this can't happen (yet)
                     break;
             }
         }
 
+        for (auto& pair : Parser::builtins) {
+            std::stringstream ss2;
+            ss2 << pair.second->name;
+            for (Param p : *pair.second->func->params) {
+                ss2 << '_' << TypeMap[p.type];
+            }
+            typedBuiltins.insert(std::make_pair(ss2.str(), pair.second));
+        }
+
         bool error = false;
+        std::stringstream externs;
         for (FuncCall f : undefinedFunctions) {
-            if (auto key = typedFunctions.find(f.name); key == typedFunctions.end()) {
+
+            if (auto key = typedBuiltins.find(f.name); key != typedBuiltins.end()) {
+                externs << "extern " << key->first << '\n';
+
+            } else if (auto key = typedFunctions.find(f.name); key == typedFunctions.end()) {
                 printf("ERROR: %s:%d:%d: undefined function! function name: %s\n",f.node->token.file,f.node->token.line,f.node->token.column, f.name.c_str());
                 error = true;
             }
         }
+        out(externs.str());
 
         if (error) return false;
 

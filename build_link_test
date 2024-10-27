@@ -1,0 +1,7 @@
+#!/bin/bash
+
+clear
+./bin/output.exe test.tmp && \
+    nasm -f elf64 test.asm -o test.o && \
+    gcc -no-pie -nostdlib test.o builtins.o -o test && \
+    ./test
