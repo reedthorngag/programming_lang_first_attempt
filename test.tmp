@@ -16,7 +16,7 @@ func main(): null {
     test(test2+8,0,0);
     
     ;;;
-    printNum(test2+8);
+    printNum(test2+=8);
     /* this is a multi line
     comment test
     */

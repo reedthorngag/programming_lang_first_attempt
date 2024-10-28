@@ -89,15 +89,15 @@ namespace Compiler {
     };
 
     struct Value {
-        ValueType type;
+        ValueType type = ValueType::EMPTY;
         union {
             Local* local;
             Symbol* symbol;
             Parser::Node* parent;
         };
-        bool modified;
-        bool preserveModified;
-        bool locked;
+        bool modified = false;
+        bool preserveModified = true;
+        bool locked = false;
     };
 
     extern unsigned int position;

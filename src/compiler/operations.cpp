@@ -187,6 +187,7 @@ namespace Compiler {
     }
 
     Reg assignmentOp(Node* op, Reg lvalue, Reg rvalue) {
+        printf("%d: %s %s %s\n",op->token.line,registers[lvalue].subRegs[Size::QWORD],op->op.value,registers[rvalue].subRegs[Size::QWORD]);
         auto pair = assignmentOps.find(op->op.value);
         if (pair == assignmentOps.end()) {
             printf("ERROR: %s:%d:%d: unsupported op: '%s'!\n",op->token.file,op->token.line,op->token.column,op->op.value);
@@ -207,6 +208,7 @@ namespace Compiler {
             return Reg::NUL;
         }
 
+        freeReg(lvalue); // this preserves the value if it should be preserved
         pair->second(lvalue, rvalue);
 
         registers[lvalue].value = Value{ ValueType::INTERMEDIATE, 0, false, false, false };

@@ -29,11 +29,6 @@ printLine_str:
 
     mov rsi, rax
     call strLen
-    push rsi
-    push rax
-    call printHex
-    pop rax
-    pop rsi
 
     push rsi
     add rsi, rax
@@ -43,7 +38,7 @@ printLine_str:
     mov rsi, rbx
 
     inc rax ; so the \n also gets printed
-    
+
     ; rsi containes string pointer
     mov rdx, rax ; length
     mov rax, 1 ; write

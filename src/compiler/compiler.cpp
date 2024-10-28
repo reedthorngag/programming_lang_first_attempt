@@ -67,7 +67,9 @@ namespace Compiler {
         return str;
     }
 
-    bool freeReg(Reg reg) {
+    bool freeReg(Reg reg, bool dontEmpty) {
+
+        printf("attempting to free %d %s, %d %d\n",dontEmpty, registers[reg].subRegs[Size::QWORD],registers[reg].value.type,(int)registers[reg].value.modified);
 
         Value value = registers[reg].value;
         if (value.locked) return false;
@@ -84,7 +86,12 @@ namespace Compiler {
                             fmt.str(),
                             registers[reg].subRegs[TypeSizeMap[value.symbol->t]]
                         );
-                }   
+                }
+                if (dontEmpty) {
+                    if (value.preserveModified)
+                        registers[reg].value.modified = false;
+                    break;
+                }
                 value.symbol->location = (Parser::Reg)Reg::NUL;
                 registers[reg].value = Value{};
                 break;
@@ -94,14 +101,22 @@ namespace Compiler {
                 if (value.modified && value.preserveModified) {
                     out("mov",
                             refLocalVar(value.local),
-                            registers[reg].subRegs[TypeSizeMap[value.local->size]]
+                            registers[reg].subRegs[value.local->size]
                         );
+                }
+                if (dontEmpty) {
+                    if (value.preserveModified)
+                        registers[reg].value.modified = false;
+                    break;
                 }
                 value.local->symbol->location = (Parser::Reg)Reg::NUL;
                 registers[reg].value = Value{};
                 break;
 
             case ValueType::INTERMEDIATE:
+                //if (dontEmpty) return true; // should this be false or true? I think true will break nested function calls?
+                // I *think* this should just be cleared either way? But what if someone does func(5+func2())? 5 will be an intermediate.
+                // TODO: solve that problem
                 registers[reg].value = Value{};
                 break;
 
@@ -110,6 +125,10 @@ namespace Compiler {
         }
 
         return true;
+    }
+
+    bool freeReg(Reg reg) {
+        return freeReg(reg, false);
     }
 
     Reg findFreeReg() {
@@ -138,27 +157,8 @@ namespace Compiler {
         return firstInReg;
     }
 
-    void pushReg(Reg reg) {
-
-        switch (registers[reg].value.type) {
-            case GLOBAL:
-                out("push", registers[reg].subRegs[3]);
-                registers[reg].value.symbol->location = Parser::Reg::STACK;
-                registers[reg].value = {};
-                break;
-            case PARAMETER:
-            case LOCAL:
-                out("push", registers[reg].subRegs[3]);
-                registers[reg].value.local->symbol->location = Parser::Reg::STACK;
-                registers[reg].value = {};
-                break;
-            default:
-                break;
-        }
-    }
-
     Reg operation(Node* node, Context* context) {
-
+        
         Reg firstArg = evaluate(node->firstChild, context);
         registers[firstArg].value.locked = true;
 
@@ -170,6 +170,7 @@ namespace Compiler {
 
         registers[firstArg].value.locked = false;
         
+        printf("operation: %d: %s %d  %s  %s %d\n",node->token.line,registers[firstArg].subRegs[Size::QWORD],registers[firstArg].value.type,node->op.value,registers[secondArg].subRegs[Size::QWORD],registers[secondArg].value.type);
         return doOp(node, firstArg, secondArg);
     }
 
@@ -178,6 +179,7 @@ namespace Compiler {
         switch (node->type) {
             case NodeType::SYMBOL: {
 
+                printf("evaluating: %d: %s\n",node->token.line,node->symbol->name);
                 for (Reg r = Reg::RAX; r != Reg::RBP; r=(Reg)(r+1)) {
                     Value v = registers[r].value;
                     char* name = nullptr;
@@ -197,6 +199,7 @@ namespace Compiler {
                         // which works, because everything (pretty much) uses the same string and just
                         // passes around pointers. be aware of this when modifying stuff tho.
                         if (name && name == node->symbol->name) {
+                            if (v.modified && !v.preserveModified) break;
                             return r;
                         }
                     }
@@ -221,6 +224,7 @@ namespace Compiler {
                         out("movzx qword",registers[reg].subRegs[Size::QWORD], ss.str().c_str());
                     }
 
+                    registers[reg].value = Value{};
                     registers[reg].value.type = ValueType::LOCAL;
                     registers[reg].value.local = local;
                     registers[reg].position = position++;
@@ -238,11 +242,12 @@ namespace Compiler {
                         out("movzx qword",registers[reg].subRegs[Size::QWORD], ss2.str().c_str());
                     }
 
+                    registers[reg].value = Value{};
                     registers[reg].value.type = ValueType::GLOBAL;
                     registers[reg].value.symbol = symbol;
                     registers[reg].position = position++;
                 }
-                
+
                 return reg;
             }
             
@@ -266,8 +271,10 @@ namespace Compiler {
 
                         out("mov", registers[reg].subRegs[Size::QWORD], *s);
 
+                        registers[reg].value = Value{};
                         registers[reg].value.type = ValueType::INTERMEDIATE;
                         registers[reg].value.symbol = node->symbol;
+                        registers[reg].value.preserveModified = false;
                         registers[reg].position = position++;
 
                         break;
@@ -276,8 +283,10 @@ namespace Compiler {
                     case Type::chr: {
                         out("mov ", registers[reg].subRegs[Size::QWORD],std::to_string(node->literal.chr));
 
+                        registers[reg].value = Value{};
                         registers[reg].value.type = ValueType::INTERMEDIATE;
                         registers[reg].value.symbol = node->symbol;
+                        registers[reg].value.preserveModified = false;
                         registers[reg].position = position++;
 
                         break;
@@ -286,8 +295,10 @@ namespace Compiler {
                     default:
                         out("mov", registers[reg].subRegs[TypeSizeMap[node->literal.type]],std::to_string(node->literal.u));
 
+                        registers[reg].value = Value{};
                         registers[reg].value.type = ValueType::INTERMEDIATE;
                         registers[reg].value.symbol = node->symbol;
+                        registers[reg].value.preserveModified = false;
                         registers[reg].position = position++;
 
                         break;
@@ -310,6 +321,27 @@ namespace Compiler {
     }
 
     Reg callFunction(Node* funcCall, Context* context) {
+
+        printf("saving registers before %s func call, line %d\n",funcCall->symbol->name,funcCall->token.line);
+        // save registers, as the function call will batter them
+        struct RegData {
+            Reg reg;
+            Value value;
+            unsigned int position;
+        };
+        std::stack<RegData> pushedRegs;
+        for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
+            if (!freeReg(reg, true)) {
+                if (reg == Reg::RAX && funcCall->symbol->func->returnType != Type::null) {
+                    printf("ERROR: %s:%d:%d: no registers available!\nCompile failed!",funcCall->token.file,funcCall->token.line,funcCall->token.column);
+                    exit(1);
+                }
+                printf("saving %s\n",registers[reg].subRegs[Size::QWORD]);
+                pushedRegs.push(RegData{reg,registers[reg].value,registers[reg].position});
+                out("push", registers[reg].subRegs[Size::QWORD]);
+                registers[reg].value = Value{};
+            }
+        }
 
         std::stack<Node*> params;
 
@@ -334,20 +366,13 @@ namespace Compiler {
 
             out("push",registers[reg].subRegs[3]);
 
-            param.reg = (Parser::Reg)Reg::STACK;
-            registers[reg].value = Value{};
+            freeReg(reg);
         }
 
-        // clear registers, as the function call will batter them
-        std::stack<Reg> pushedRegs;
+        // clear all register values, the function call will batter them
+        // if they have been modified in between this and the last call, then they will be saved again
         for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
             if (!freeReg(reg)) {
-                if (reg == Reg::RAX && funcCall->symbol->func->returnType != Type::null) {
-                    printf("ERROR: %s:%d:%d: no registers available!\nCompile failed!",funcCall->token.file,funcCall->token.line,funcCall->token.column);
-                    exit(1);
-                } 
-                pushedRegs.push(reg);
-                out("push", registers[reg].subRegs[Size::QWORD]);
                 registers[reg].value = Value{};
             }
         }
@@ -355,12 +380,6 @@ namespace Compiler {
         for (Param p : *funcCall->symbol->func->params) {
             if ((Reg)p.reg == Reg::STACK)
                 break;
-
-            freeReg((Reg)p.reg);
-            
-            if (registers[p.reg].value.type != ValueType::EMPTY) {
-                printf("WARN: %s:%d:%d: register value locked! (this shouldn't be possible) Register: %s\n",paramNode->token.file,paramNode->token.line,paramNode->token.column,registers[p.reg].subRegs[3]);
-            }
 
             out("pop",registers[p.reg].subRegs[3]);
 
@@ -377,6 +396,15 @@ namespace Compiler {
         }
 
         out("call",ss.str());
+
+        while (!pushedRegs.empty()) {
+            RegData r = pushedRegs.top();
+            pushedRegs.pop();
+            out("pop",registers[r.reg].subRegs[Size::QWORD]);
+            registers[r.reg].position = r.position;
+            registers[r.reg].value = r.value;
+            printf("retrieving %s\n",registers[r.reg].subRegs[Size::QWORD]);
+        }
 
         return funcCall->symbol->func->returnType == Type::null ? Reg::NUL : Reg::RAX;
     }
