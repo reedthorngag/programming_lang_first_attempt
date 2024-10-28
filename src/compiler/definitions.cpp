@@ -124,16 +124,6 @@ namespace Compiler {
             {}
         },
         Register{
-            Reg::R13,
-            {
-                "r13b",
-                "r13w",
-                "r13d",
-                "r13"
-            },
-            {}
-        },
-        Register{
             Reg::R14,
             {
                 "r14b",

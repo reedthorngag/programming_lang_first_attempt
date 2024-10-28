@@ -69,7 +69,7 @@ namespace Compiler {
 
     bool freeReg(Reg reg, bool dontEmpty) {
 
-        printf("attempting to free %d %s, %d %d\n",dontEmpty, registers[reg].subRegs[Size::QWORD],registers[reg].value.type,(int)registers[reg].value.modified);
+        //printf("attempting to free %d %s, %d %d\n",dontEmpty, registers[reg].subRegs[Size::QWORD],registers[reg].value.type,(int)registers[reg].value.modified);
 
         Value value = registers[reg].value;
         if (value.locked) return false;
@@ -132,16 +132,16 @@ namespace Compiler {
     }
 
     Reg findFreeReg() {
-        Reg reg = Reg::RAX;
 
-        for (; reg != Reg::RBP; reg = (Reg)(reg+1)) {
+
+        for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
             if (registers[reg].value.type == ValueType::EMPTY) return reg;
         }
 
         unsigned int minRegPosition = UINT_MAX;
         Reg firstInReg = Reg::NUL;
 
-        for (; reg != Reg::NUL; reg = (Reg)(reg-1)) {
+        for (Reg reg = Reg::RAX; reg != Reg::NUL; reg = (Reg)(reg-1)) {
             Value value = registers[reg].value;
 
             if (value.locked) continue;
@@ -159,8 +159,11 @@ namespace Compiler {
 
     Reg operation(Node* node, Context* context) {
         
+        printf("operation: %d: %s\n",node->token.line,node->op.value);
+
         Reg firstArg = evaluate(node->firstChild, context);
         registers[firstArg].value.locked = true;
+        printf("type: %d\n",registers[firstArg].value.type);
 
         Reg secondArg = Reg::NUL;
         if (node->firstChild->nextSibling) {
@@ -253,6 +256,7 @@ namespace Compiler {
             
             case NodeType::LITERAL: {
 
+                printf("reg: %d\n",registers[Reg::R13].value.locked);
                 Reg reg = findFreeReg();
                 if (reg == Reg::NUL) { 
                     printf("ERROR: %s:%d:%d: no registers available!\n",node->token.file,node->token.line,node->token.column);
@@ -294,7 +298,7 @@ namespace Compiler {
 
                     default:
                         out("mov", registers[reg].subRegs[TypeSizeMap[node->literal.type]],std::to_string(node->literal.u));
-
+                        printf("loading %s into %s\n",std::to_string(node->literal.u).c_str(),registers[reg].subRegs[Size::QWORD]);
                         registers[reg].value = Value{};
                         registers[reg].value.type = ValueType::INTERMEDIATE;
                         registers[reg].value.symbol = node->symbol;
