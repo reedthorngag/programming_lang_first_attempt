@@ -27,7 +27,7 @@ func main(): null {
     var a: char = 'h';
     printNum(1500);
     var b: i64 = 0x80085;
-    b += 0b111_000_111;
+    b += 0b111_000_1ff;
     printNum(b);
     const test3: string = "he\"llo world";
     printLine(test3);

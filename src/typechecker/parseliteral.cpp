@@ -64,8 +64,9 @@ namespace TypeChecker {
         while (n--) {
             if (c[n] != '_') {
                 int num = parseNum(c[n]);
-                if (num >= base) {
+                if (num >= base) { // this is currently unecessary, but good to have in case the tokenizer changes and stops verifying literals
                     printf("ERROR: %s:%d:%d: literal '%s' invalid!\n",node->token.file,node->token.line,node->token.column,c);
+                    exit(1);
                 }
                 out += num * pow(base,len++);
             }
