@@ -133,7 +133,6 @@ namespace Compiler {
 
     Reg findFreeReg() {
 
-
         for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
             if (registers[reg].value.type == ValueType::EMPTY) return reg;
         }
@@ -159,11 +158,10 @@ namespace Compiler {
 
     Reg operation(Node* node, Context* context) {
         
-        printf("operation: %d: %s\n",node->token.line,node->op.value);
+        //printf("operation: %d: %s\n",node->token.line,node->op.value);
 
         Reg firstArg = evaluate(node->firstChild, context);
         registers[firstArg].value.locked = true;
-        printf("type: %d\n",registers[firstArg].value.type);
 
         Reg secondArg = Reg::NUL;
         if (node->firstChild->nextSibling) {
@@ -173,7 +171,7 @@ namespace Compiler {
 
         registers[firstArg].value.locked = false;
         
-        printf("operation: %d: %s %d  %s  %s %d\n",node->token.line,registers[firstArg].subRegs[Size::QWORD],registers[firstArg].value.type,node->op.value,registers[secondArg].subRegs[Size::QWORD],registers[secondArg].value.type);
+        //printf("operation: %d: %s %d  %s  %s %d\n",node->token.line,registers[firstArg].subRegs[Size::QWORD],registers[firstArg].value.type,node->op.value,registers[secondArg].subRegs[Size::QWORD],registers[secondArg].value.type);
         return doOp(node, firstArg, secondArg);
     }
 
@@ -182,7 +180,6 @@ namespace Compiler {
         switch (node->type) {
             case NodeType::SYMBOL: {
 
-                printf("evaluating: %d: %s\n",node->token.line,node->symbol->name);
                 for (Reg r = Reg::RAX; r != Reg::RBP; r=(Reg)(r+1)) {
                     Value v = registers[r].value;
                     char* name = nullptr;
@@ -256,7 +253,6 @@ namespace Compiler {
             
             case NodeType::LITERAL: {
 
-                printf("reg: %d\n",registers[Reg::R13].value.locked);
                 Reg reg = findFreeReg();
                 if (reg == Reg::NUL) { 
                     printf("ERROR: %s:%d:%d: no registers available!\n",node->token.file,node->token.line,node->token.column);
@@ -298,7 +294,7 @@ namespace Compiler {
 
                     default:
                         out("mov", registers[reg].subRegs[TypeSizeMap[node->literal.type]],std::to_string(node->literal.u));
-                        printf("loading %s into %s\n",std::to_string(node->literal.u).c_str(),registers[reg].subRegs[Size::QWORD]);
+                        
                         registers[reg].value = Value{};
                         registers[reg].value.type = ValueType::INTERMEDIATE;
                         registers[reg].value.symbol = node->symbol;
@@ -326,7 +322,7 @@ namespace Compiler {
 
     Reg callFunction(Node* funcCall, Context* context) {
 
-        printf("saving registers before %s func call, line %d\n",funcCall->symbol->name,funcCall->token.line);
+        //printf("saving registers before %s func call, line %d\n",funcCall->symbol->name,funcCall->token.line);
         // save registers, as the function call will batter them
         struct RegData {
             Reg reg;

@@ -55,15 +55,20 @@ namespace TypeChecker {
         return 9999999; // make it obvious there was an error, this shouldnt happen tho
     }
 
-    uint64_t parseNum(char* c, int base) {
+    uint64_t parseNum(char* c, int base, Node* node) {
         uint64_t out = 0;
         int len = 0;
         int n = 0;
-        while (c[n]) if (c[n++] != '_') len++;
-        
-        n = 0;
-        while (len--) {
-            if (c[len] != '_') out += parseNum(c[len]) * pow(base,n++);
+        while (c[++n]);
+
+        while (n--) {
+            if (c[n] != '_') {
+                int num = parseNum(c[n]);
+                if (num >= base) {
+                    printf("ERROR: %s:%d:%d: literal '%s' invalid!\n",node->token.file,node->token.line,node->token.column,c);
+                }
+                out += num * pow(base,len++);
+            }
         }
 
         return out;
@@ -75,27 +80,27 @@ namespace TypeChecker {
         if (value[0] == '0') {
             switch (value[1]) {
                 case 'x':
-                    node->literal.i = parseNum(node->literal.value+2,16);
+                    node->literal.i = parseNum(node->literal.value+2,16, node);
                     break;
 
                 case 'b':
-                    node->literal.i = parseNum(node->literal.value+2,2);
+                    node->literal.i = parseNum(node->literal.value+2,2, node);
                     break;
 
                 case 'o':
-                    node->literal.i = parseNum(node->literal.value+2,8);
+                    node->literal.i = parseNum(node->literal.value+2,8, node);
                     break;
 
                 default:
-                    node->literal.i = parseNum(node->literal.value,10);
+                    node->literal.i = parseNum(node->literal.value,10, node);
                     break;
             }
         } else {
-            node->literal.i = parseNum(node->literal.value,10);
+            node->literal.i = parseNum(node->literal.value,10, node);
         }
         node->literal.type = smallestNumType(node->literal.i,parent);
         if (node->literal.type == Type::error) {
-            printf("ERROR: %s:%d:%d: literal '%s' doesnt fit in required type! ('%s')\n",node->token.file,node->token.line,node->token.column,value,TypeMap[parent]);
+            printf("ERROR: %s:%d:%d: literal '%s' doesn't fit in required type! ('%s')\n",node->token.file,node->token.line,node->token.column,value,TypeMap[parent]);
             return false;
         }
 
