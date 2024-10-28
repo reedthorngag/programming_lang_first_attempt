@@ -42,8 +42,8 @@ namespace Compiler {
         Size::QWORD,// f64,
 
         Size::BYTE,// chr,
-        Size::BYTE,// string, // this also requires special handling
-        Size::BYTE,// boolean, // may be handled seperately to only take 1 bit in future
+        Size::QWORD,// string, this is a pointer to the string, this also requires special handling
+        Size::BYTE,// boolean, // may be handled separately to only take 1 bit in future
         Size::BYTE,// null
     };
 

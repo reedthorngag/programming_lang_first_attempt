@@ -9,3 +9,5 @@ g++ -Wall -g -W -Werror -Wno-unused-parameter -Wno-unused-variable -Wno-missing-
     src/compiler/*.cpp \
     -o bin/output.exe && ./bin/output.exe test.tmp || echo boo
 
+rm bin/*.o
+

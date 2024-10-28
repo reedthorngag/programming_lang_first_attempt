@@ -154,6 +154,23 @@ namespace Parser {
         delete tmp;
 
         builtins.insert(std::make_pair(f,sym));
+
+        f = newStr("printLine");
+        p1 = newStr("string");
+
+        func = new Function{};
+        func->returnType = Type::null;
+        func->params = new std::vector<Param>;
+        func->params->push_back(Param{p1,Type::string,Reg::NUL});
+        sym = new Symbol{SymbolType::FUNC,f,{.func = {func}},0,Reg::NUL};
+
+        tmp = new Node{};
+        tmp->symbol = sym;
+
+        generateParamMapping(tmp);
+        delete tmp;
+
+        builtins.insert(std::make_pair(f,sym));
     }
 
     void appendChild(Node* parent, Node* child) {

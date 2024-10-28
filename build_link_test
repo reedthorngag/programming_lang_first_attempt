@@ -3,5 +3,6 @@
 clear
 ./bin/output.exe test.tmp && \
     nasm -f elf64 test.asm -o test.o && \
+    nasm -f elf64 src/builtins/builtins.asm -o builtins.o && \
     gcc -no-pie -nostdlib test.o builtins.o -o test && \
     ./test

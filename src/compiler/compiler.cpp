@@ -178,6 +178,30 @@ namespace Compiler {
         switch (node->type) {
             case NodeType::SYMBOL: {
 
+                for (Reg r = Reg::RAX; r != Reg::RBP; r=(Reg)(r+1)) {
+                    Value v = registers[r].value;
+                    char* name = nullptr;
+                    if (v.symbol) {
+                        switch (v.type) {
+                            case ValueType::GLOBAL:
+                                name = v.symbol->name;
+                                break;
+                            case ValueType::PARAMETER:
+                            case ValueType::LOCAL:
+                                name = v.local->symbol->name;
+                                break;
+                            default: break;
+                        }
+
+                        // this actually tests the equality of the pointers, not the strings themselves,
+                        // which works, because everything (pretty much) uses the same string and just
+                        // passes around pointers. be aware of this when modifying stuff tho.
+                        if (name && name == node->symbol->name) {
+                            return r;
+                        }
+                    }
+                }
+
                 Reg reg = findFreeReg();
                 if (reg == Reg::NUL) { 
                     printf("ERROR: %s:%d:%d: no registers available!\n",node->token.file,node->token.line,node->token.column);
@@ -287,19 +311,6 @@ namespace Compiler {
 
     Reg callFunction(Node* funcCall, Context* context) {
 
-        std::stack<Reg> pushedRegs;
-        for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
-            if (!freeReg(reg)) {
-                if (reg == Reg::RAX && funcCall->symbol->func->returnType != Type::null) {
-                    printf("ERROR: %s:%d:%d: no registers available!\nCompile failed!",funcCall->token.file,funcCall->token.line,funcCall->token.column);
-                    exit(1);
-                } 
-                pushedRegs.push(reg);
-                out("push", registers[reg].subRegs[Size::QWORD]);
-                registers[reg].value = Value{};
-            }
-        }
-
         std::stack<Node*> params;
 
         Node* paramNode = funcCall->firstChild;
@@ -319,11 +330,26 @@ namespace Compiler {
 
             if (reg == Reg::NUL) exit(1);
 
+            // TODO: optimize this to only push reg if necessary
 
             out("push",registers[reg].subRegs[3]);
 
             param.reg = (Parser::Reg)Reg::STACK;
             registers[reg].value = Value{};
+        }
+
+        // clear registers, as the function call will batter them
+        std::stack<Reg> pushedRegs;
+        for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
+            if (!freeReg(reg)) {
+                if (reg == Reg::RAX && funcCall->symbol->func->returnType != Type::null) {
+                    printf("ERROR: %s:%d:%d: no registers available!\nCompile failed!",funcCall->token.file,funcCall->token.line,funcCall->token.column);
+                    exit(1);
+                } 
+                pushedRegs.push(reg);
+                out("push", registers[reg].subRegs[Size::QWORD]);
+                registers[reg].value = Value{};
+            }
         }
 
         for (Param p : *funcCall->symbol->func->params) {
@@ -508,12 +534,17 @@ namespace Compiler {
             typedBuiltins.insert(std::make_pair(ss2.str(), pair.second));
         }
 
+        std::unordered_map<std::string, int> externFunctions;
+
         bool error = false;
         std::stringstream externs;
         for (FuncCall f : undefinedFunctions) {
 
             if (auto key = typedBuiltins.find(f.name); key != typedBuiltins.end()) {
-                externs << "extern " << key->first << '\n';
+                if (auto key2 = externFunctions.find(f.name); key2 == externFunctions.end()) {
+                    externs << "extern " << f.name << '\n';
+                    externFunctions.insert(std::make_pair(f.name, 0));
+                }
 
             } else if (auto key = typedFunctions.find(f.name); key == typedFunctions.end()) {
                 printf("ERROR: %s:%d:%d: undefined function! function name: %s\n",f.node->token.file,f.node->token.line,f.node->token.column, f.name.c_str());
