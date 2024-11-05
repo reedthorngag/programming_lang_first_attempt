@@ -28,6 +28,7 @@ namespace Parser {
         "LITERAL",
         "OPERATION",
         "INVOCATION",
+        "IF"
     };
 
     const char* TypeMap[] {
@@ -248,26 +249,6 @@ namespace Parser {
                 depth++;
                 return buildWhileNode();
 
-            case Keyword::GLOBAL: {
-                if (!parent) {
-                    printf("ERROR: %s:%d:%d: only variable and function definitions allowed in global scope!\n",token.file,token.line,token.column);
-                    depth++;
-                    return nullptr;
-                }
-                Token t = tokens->at(index);
-                if (t.type != TokenType::SYMBOL) {
-                    printf("ERROR: %s:%d:%d: expecting name, found %s!\n",t.file,t.line,t.column,TokenTypeMap[token.type]);
-                    return nullptr;
-                }
-                Node* node = assignment(token);
-                if (!node) {
-                    depth++;
-                    return nullptr;
-                }
-                appendChild(parent,node);
-                return parent;
-            }
-
             case Keyword::VAR:
             case Keyword::CONST:
                 if (buildDeclerationNode(token.keyword)) return parent;
@@ -283,7 +264,7 @@ namespace Parser {
     }
 
     Node* processSymbol(Token token) {
-        // assignment handles function calls (yes its bad, I'll fix at some point hopefully)
+        // assignment handles function calls (yes its not ideal, I'll fix at some point hopefully)
         Node* node = assignment(token);
         if (!node) {
             depth++;

@@ -21,9 +21,6 @@ namespace Lexer {
         },
         {
             "while",Keyword::WHILE
-        },
-        {
-            "global",Keyword::GLOBAL
         }
         
     };

@@ -16,7 +16,7 @@ func main(): null {
     test(default,(5+2),100);
     test2 = 5 + (3 - 4 + 1);
     test(test2+8,0,0);
-    
+    ++test2;
     ;;;
     printNum(test2+=8);
     /* this is a multi line
@@ -27,11 +27,15 @@ func main(): null {
     var a: char = 'h';
     printNum(1500);
     var b: i64 = 0x80085;
-    b += 0b111_000_1ff;
+    b += 0b111_000_111;
     printNum(b);
     const test3: string = "he\"llo world";
     printLine(test3);
     test2 <<= 5;
     printNum(1600);
+    const test3: i64 = 5;
+    if (test3 == 5) {
+        printLine("it worked!");
+    }
 }
 

@@ -19,6 +19,7 @@ namespace Parser {
         LITERAL,
         OPERATION,
         INVOCATION,
+        IF
     };
 
     extern const char* NodeTypeMap[];
