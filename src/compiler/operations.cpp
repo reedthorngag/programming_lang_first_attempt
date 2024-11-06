@@ -122,7 +122,7 @@ namespace Compiler {
     void ge(Reg a, Reg b) {
         out("cmp", registers[a].subRegs[Size::QWORD], registers[b].subRegs[Size::QWORD]);
         out("mov", registers[a].subRegs[Size::QWORD], "0");
-        out("setge", registers[a].subRegs[Size::BYTE], "1");
+        out("setge", registers[a].subRegs[Size::BYTE]);
     }
 
     void l(Reg a, Reg b) {
@@ -134,7 +134,7 @@ namespace Compiler {
     void g(Reg a, Reg b) {
         out("cmp", registers[a].subRegs[Size::QWORD], registers[b].subRegs[Size::QWORD]);
         out("mov", registers[a].subRegs[Size::QWORD], "0");
-        out("setg", registers[a].subRegs[Size::BYTE], "1");
+        out("setg", registers[a].subRegs[Size::BYTE]);
     }
 
     std::unordered_map<std::string, void (*)(Reg a, Reg b)> assignmentOps = {
