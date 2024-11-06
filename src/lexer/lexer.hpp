@@ -19,6 +19,7 @@ namespace Lexer {
         FUNC,
         VAR,
         CONST,
+        GLOBAL,
         IF,
         ELSE,
         WHILE

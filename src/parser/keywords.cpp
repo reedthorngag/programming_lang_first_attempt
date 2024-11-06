@@ -108,6 +108,18 @@ namespace Parser {
 
     Node* buildIfNode() {
 
+        Node* node = new Node{};
+        node->type = NodeType::IF;
+
+
+
+        return nullptr;
+    }
+
+    Node* buildElseNode() {
+
+        
+
         return nullptr;
     }
 
@@ -116,7 +128,7 @@ namespace Parser {
         return nullptr;
     }
 
-    bool buildDeclerationNode(Keyword type) {
+    bool buildDeclarationNode(Keyword type) {
 
         const char* typeStr = type==Keyword::VAR?"variable":"constant";
 

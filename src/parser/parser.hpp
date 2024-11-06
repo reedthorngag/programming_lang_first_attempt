@@ -19,7 +19,8 @@ namespace Parser {
         LITERAL,
         OPERATION,
         INVOCATION,
-        IF
+        IF,
+        ELSE
     };
 
     extern const char* NodeTypeMap[];
@@ -247,8 +248,9 @@ namespace Parser {
 
     Node* buildFunctionNode();
     Node* buildIfNode();
+    Node* buildElseNode();
     Node* buildWhileNode();
-    bool buildDeclerationNode(Keyword type);
+    bool buildDeclarationNode(Keyword type);
 
     Node* assignment(Token token);
     Node* operation(Node* lvalue, Token op);

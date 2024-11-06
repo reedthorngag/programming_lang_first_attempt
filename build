@@ -1,7 +1,7 @@
 #!/bin/bash
 
 clear
-g++ -S -Wall -g -W -Werror -Wno-unused-parameter -Wno-unused-variable -Wno-missing-field-initializers \
+g++ -Wall -g -W -Werror -Wno-unused-parameter -Wno-unused-variable -Wno-missing-field-initializers \
     src/*.cpp \
     src/lexer/*.cpp \
     src/parser/*.cpp \

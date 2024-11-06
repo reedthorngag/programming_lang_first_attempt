@@ -28,7 +28,8 @@ namespace Parser {
         "LITERAL",
         "OPERATION",
         "INVOCATION",
-        "IF"
+        "IF",
+        "ELSE"
     };
 
     const char* TypeMap[] {
@@ -239,6 +240,15 @@ namespace Parser {
                 }
                 depth++;
                 return buildIfNode();
+            
+            case Keyword::ELSE:
+                if (!parent) {
+                    printf("ERROR: %s:%d:%d: only variable and function definitions allowed in global scope!\n",token.file,token.line,token.column);
+                    depth++;
+                    return nullptr;
+                }
+                depth++;
+                return buildElseNode();
 
             case Keyword::WHILE:
                 if (!parent) {
@@ -249,9 +259,30 @@ namespace Parser {
                 depth++;
                 return buildWhileNode();
 
+            
+            case Keyword::GLOBAL: {
+                if (!parent) {
+                    printf("ERROR: %s:%d:%d: only variable and function definitions allowed in global scope!\n",token.file,token.line,token.column);
+                    depth++;
+                    return nullptr;
+                }
+                Token t = tokens->at(index);
+                if (t.type != TokenType::SYMBOL) {
+                    printf("ERROR: %s:%d:%d: expecting name, found %s!\n",t.file,t.line,t.column,TokenTypeMap[token.type]);
+                    return nullptr;
+                }
+                Node* node = assignment(token);
+                if (!node) {
+                    depth++;
+                    return nullptr;
+                }
+                appendChild(parent,node);
+                return parent;
+            }
+
             case Keyword::VAR:
             case Keyword::CONST:
-                if (buildDeclerationNode(token.keyword)) return parent;
+                if (buildDeclarationNode(token.keyword)) return parent;
                 else {
                     depth++;
                     return nullptr;

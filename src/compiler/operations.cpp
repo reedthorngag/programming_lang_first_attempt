@@ -11,15 +11,15 @@ namespace Compiler {
     }
 
     void swap(Reg a, Reg b) {
-        out("xchg", registers[a].subRegs[3], registers[b].subRegs[3]);
+        out("xchg", registers[a].subRegs[Size::QWORD], registers[b].subRegs[Size::QWORD]);
     }
 
     void add(Reg a, Reg b) {
-        out("add", registers[a].subRegs[3], registers[b].subRegs[3]);
+        out("add", registers[a].subRegs[Size::QWORD], registers[b].subRegs[Size::QWORD]);
     }
 
     void sub(Reg a, Reg b) {
-        out("sub", registers[a].subRegs[3], registers[b].subRegs[3]);
+        out("sub", registers[a].subRegs[Size::QWORD], registers[b].subRegs[Size::QWORD]);
     }
 
     void div(Reg a, Reg b) {
@@ -38,7 +38,7 @@ namespace Compiler {
 
         if (b != Reg::RCX) swap(b, Reg::RCX);
 
-        out("shl", registers[a].subRegs[3], registers[Reg::RCX].subRegs[0]);
+        out("shl", registers[a].subRegs[Size::QWORD], registers[Reg::RCX].subRegs[0]);
 
         if (b != Reg::RCX) swap(b, Reg::RCX);
     }
@@ -46,94 +46,95 @@ namespace Compiler {
     void shr(Reg a, Reg b) {
 
         if (b != Reg::RCX) swap(b, Reg::RCX);
-        out("shr", registers[a].subRegs[3], registers[Reg::RCX].subRegs[0]);
+        out("shr", registers[a].subRegs[Size::QWORD], registers[Reg::RCX].subRegs[0]);
         if (b != Reg::RCX) swap(b, Reg::RCX);
     }
 
     void _xor(Reg a, Reg b) {
-        out("xor", registers[a].subRegs[3], registers[b].subRegs[3]);
+        out("xor", registers[a].subRegs[Size::QWORD], registers[b].subRegs[Size::QWORD]);
     }
 
     void _and(Reg a, Reg b) {
-        out("and", registers[a].subRegs[3], registers[b].subRegs[3]);
+        out("and", registers[a].subRegs[Size::QWORD], registers[b].subRegs[Size::QWORD]);
     }
 
     void _or(Reg a, Reg b) {
-        out("or", registers[a].subRegs[3], registers[b].subRegs[3]);
+        out("or", registers[a].subRegs[Size::QWORD], registers[b].subRegs[Size::QWORD]);
     }
 
     void _not(Reg a) {
-        out("not", registers[a].subRegs[3]);
+        out("not", registers[a].subRegs[Size::QWORD]);
     }
 
     void dec(Reg a) {
-        out("dec", registers[a].subRegs[3]);
+        out("dec", registers[a].subRegs[Size::QWORD]);
     }
 
     void inc(Reg a) {
-        out("inc", registers[a].subRegs[3]);
+        out("inc", registers[a].subRegs[Size::QWORD]);
     }
 
     void cmp(Reg a, Reg b) {
-        out("cmp", registers[a].subRegs[3], registers[b].subRegs[3]);
+        out("cmp", registers[a].subRegs[Size::QWORD], registers[b].subRegs[Size::QWORD]);
     }
 
     void equal(Reg a, Reg b) {
-        out("cmp", registers[a].subRegs[3], registers[b].subRegs[3]);
-        out("cmovz", registers[a].subRegs[3], "1");
-        out("cmovnz", registers[a].subRegs[3], "0");
+        out("xor", registers[a].subRegs[Size::QWORD], registers[b].subRegs[Size::QWORD]);
+        out("mov", registers[a].subRegs[Size::QWORD], "0");
+        out("setz", registers[a].subRegs[Size::BYTE]);
     }
 
     void lor(Reg a, Reg b) {
-        out("or", registers[a].subRegs[3], registers[b].subRegs[3]);
-        out("cmovnz", registers[a].subRegs[3], "1");
+        out("or", registers[a].subRegs[Size::QWORD], registers[b].subRegs[Size::QWORD]);
+        out("setnz", registers[a].subRegs[Size::BYTE]);
     }
 
+    // logical and
     void land(Reg a, Reg b) {
         // this code is super bad and way longer than it needs to be probably, but my brain isnt working
 
-        out("push", registers[b].subRegs[3]);
+        out("push", registers[b].subRegs[Size::QWORD]);
 
-        out("cmp", registers[a].subRegs[3], "0");
-        out("cmovnz", registers[a].subRegs[3], "1");
-        out("cmp", registers[b].subRegs[3], "0");
-        out("cmovnz", registers[b].subRegs[3], "1");
+        out("cmp", registers[a].subRegs[Size::QWORD], "0");
+        out("setnz", registers[a].subRegs[Size::BYTE]);
+        out("cmp", registers[b].subRegs[Size::QWORD], "0");
+        out("setnz", registers[b].subRegs[Size::BYTE]);
 
-        out("test", registers[a].subRegs[3], registers[a].subRegs[3]);
-        out("cmovnz", registers[b].subRegs[3], "0");
-        out("cmovz", registers[b].subRegs[3], "1");
+        out("test", registers[a].subRegs[Size::QWORD], registers[a].subRegs[Size::QWORD]);
+        out("mov", registers[a].subRegs[Size::QWORD], "0");
+        out("setz", registers[a].subRegs[Size::BYTE]);
 
-        out("pop", registers[a].subRegs[3]);
+        out("pop", registers[b].subRegs[Size::QWORD]);
     }
 
     void ne(Reg a, Reg b) {
-        out("cmp", registers[a].subRegs[3], registers[b].subRegs[3]);
-        out("cmovz", registers[a].subRegs[3], "0");
-        out("cmovnz", registers[a].subRegs[3], "1");
+        out("cmp", registers[a].subRegs[Size::QWORD], registers[b].subRegs[Size::QWORD]);
+        out("mov", registers[a].subRegs[Size::QWORD], "0");
+        out("setnz", registers[a].subRegs[Size::BYTE]);
     }
 
     void le(Reg a, Reg b) {
-        out("cmp", registers[a].subRegs[3], registers[b].subRegs[3]);
-        out("cmovle", registers[a].subRegs[3], "1");
-        out("cmovg", registers[a].subRegs[3], "0");
+        out("cmp", registers[a].subRegs[Size::QWORD], registers[b].subRegs[Size::QWORD]);
+        out("mov", registers[a].subRegs[Size::QWORD], "0");
+        out("setle", registers[a].subRegs[Size::BYTE]);
     }
 
     void ge(Reg a, Reg b) {
-        out("cmp", registers[a].subRegs[3], registers[b].subRegs[3]);
-        out("cmoge", registers[a].subRegs[3], "1");
-        out("cmovg", registers[a].subRegs[3], "0");
+        out("cmp", registers[a].subRegs[Size::QWORD], registers[b].subRegs[Size::QWORD]);
+        out("mov", registers[a].subRegs[Size::QWORD], "0");
+        out("setge", registers[a].subRegs[Size::BYTE], "1");
     }
 
     void l(Reg a, Reg b) {
-        out("cmp", registers[a].subRegs[3], registers[b].subRegs[3]);
-        out("cmovl", registers[a].subRegs[3], "1");
-        out("cmovge", registers[a].subRegs[3], "0");
+        out("cmp", registers[a].subRegs[Size::QWORD], registers[b].subRegs[Size::QWORD]);
+        out("mov", registers[a].subRegs[Size::QWORD], "0");
+        out("setl", registers[a].subRegs[Size::BYTE]);
     }
 
     void g(Reg a, Reg b) {
-        out("cmp", registers[a].subRegs[3], registers[b].subRegs[3]);
-        out("cmovg", registers[a].subRegs[3], "1");
-        out("cmovle", registers[a].subRegs[3], "0");
+        out("cmp", registers[a].subRegs[Size::QWORD], registers[b].subRegs[Size::QWORD]);
+        out("mov", registers[a].subRegs[Size::QWORD], "0");
+        out("setg", registers[a].subRegs[Size::BYTE], "1");
     }
 
     std::unordered_map<std::string, void (*)(Reg a, Reg b)> assignmentOps = {
