@@ -92,7 +92,7 @@ namespace TypeChecker {
         }
 
         if (paramNum != (int)node->symbol->func->params->size()) {
-            printf("ERROR: %s:%d:%d: expecting %d paramaters, found %d\n",node->token.file,node->token.line,node->token.column,(int)node->symbol->func->params->size(),paramNum);
+            printf("ERROR: %s:%d:%d: expecting %d parameters, found %d\n",node->token.file,node->token.line,node->token.column,(int)node->symbol->func->params->size(),paramNum);
             return Type::error;
         }
 
@@ -111,13 +111,13 @@ namespace TypeChecker {
         return node->symbol->func->returnType;
     }
 
-    bool processBlock(Node* node) {
+    bool processScope(Node* node) {
         Node* child = node->firstChild;
         while (child) {
             switch (child->type) {
                 case NodeType::FUNCTION:
-                case NodeType::BLOCK:
-                    if (!processBlock(child)) return false;
+                case NodeType::SCOPE:
+                    if (!processScope(child)) return false;
                     break;
 
                 case NodeType::OPERATION:
@@ -143,7 +143,7 @@ namespace TypeChecker {
         for (auto& pair : *tree) {
             switch (pair.second->type) {
                 case NodeType::FUNCTION:
-                    if (!processBlock(pair.second)) return false;
+                    if (!processScope(pair.second)) return false;
                     break; 
 
                 case NodeType::SYMBOL:

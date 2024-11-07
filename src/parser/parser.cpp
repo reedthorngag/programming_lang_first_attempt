@@ -23,7 +23,7 @@ namespace Parser {
 
     const char* NodeTypeMap[]{
         "FUNCTION",
-        "BLOCK",
+        "SCOPE",
         "SYMBOL",
         "LITERAL",
         "OPERATION",
@@ -311,8 +311,17 @@ namespace Parser {
     }
 
     Node* newScope(Token token) {
-        printf("not implemented\n");
-        return nullptr;
+        
+        Node* node = new Node{};
+        node->type = NodeType::SCOPE;
+        node->parent = parent;
+
+        node->symbolMap = new std::unordered_map<std::string, Symbol*>;
+
+        appendChild(parent, node);
+
+        depth++;
+        return node;
     }
 
     std::unordered_map<std::string, Node*>* parseTokens(std::vector<Token>* _tokens) {

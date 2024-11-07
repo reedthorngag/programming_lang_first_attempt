@@ -14,7 +14,7 @@ namespace Parser {
 
     enum class NodeType {
         FUNCTION,
-        BLOCK,
+        SCOPE,
         SYMBOL,
         LITERAL,
         OPERATION,

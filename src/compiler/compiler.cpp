@@ -474,21 +474,77 @@ namespace Compiler {
 
         if (context->locals->size()) {
             out("add", "rsp",std::to_string(context->spaceReq));
-            out("    mov rsp, rbp");
-            out("    pop rbp");
+            //out("    mov rsp, rbp");
+            //out("    pop rbp");
+            out("    leave");
         }
         out("    ret\n");
 
         return true;
     }
 
-    // TODO: rename to something that makes more sense
+    bool createScope(Node* node, Context* context) {
+
+        Context scopeContext = Context{node,new std::unordered_map<std::string, Local*>,0};
+
+        int spaceReq = 0;
+
+        for (auto& pair : *node->symbolMap) {
+            if (pair.second->refCount) {
+                spaceReq += SizeByteMap[TypeSizeMap[pair.second->t]];
+                Local* l = new Local{pair.second,spaceReq,TypeSizeMap[pair.second->t]};
+                scopeContext.locals->insert(std::make_pair(pair.first,l));
+            }
+        }
+
+        if (spaceReq) {
+
+            scopeContext.spaceReq = spaceReq;
+
+            out("    push rbp");
+            out("    mov rbp, rsp");
+            out("sub","rsp",std::to_string(spaceReq));
+
+            int offset = 0;
+            for (auto& pair : *node->symbolMap) {
+                if (pair.second->refCount) {
+                    offset += SizeByteMap[TypeSizeMap[pair.second->t]];
+                    std::stringstream ss;
+                    ss << "\tmov " << SizeString[TypeSizeMap[pair.second->t]] << " [rbp-" << offset << "], 0";
+                    out(ss.str());
+                }
+            }
+
+        }
+
+        if (!buildScope(&scopeContext)) return false;
+
+
+        if (scopeContext.locals->size()) {
+            out("add", "rsp",std::to_string(context->spaceReq));
+            //out("    mov rsp, rbp");
+            //out("    pop rbp");
+            out("    leave");
+        }
+
+        return true;
+    }
+
+    bool buildIf(Node* node, Context* context) {
+
+        return false;
+    }
+
     bool buildScope(Context* context) {
 
         Node* child = context->node->firstChild;
         while (child) {
             switch (child->type) {
-                case NodeType::BLOCK:
+                case NodeType::IF:
+                    buildIf(child, context);
+                    break;
+                case NodeType::SCOPE:
+                    createScope(child, context);
                     break;
                 case NodeType::INVOCATION:
                     callFunction(child, context);
@@ -497,6 +553,7 @@ namespace Compiler {
                     evaluate(child, context);
                     break;
                 default:
+                    // TODO: think of a better word than node
                     printf("ERROR: %s:%d:%d: unexpected node: %s!\n",child->token.file,child->token.line,child->token.column,NodeTypeMap[(int)child->type]);
                     return false;
             }
