@@ -10,6 +10,7 @@ namespace Parser {
 
         Node* node = new Node{};
         node->type = NodeType::FUNCTION;
+        node->token = tokens->at(index);
 
         node->symbolMap = new std::unordered_map<std::string, Symbol*>;
 
@@ -110,6 +111,8 @@ namespace Parser {
 
         Node* node = new Node{};
         node->type = NodeType::IF;
+        node->token = tokens->at(index);
+        node->parent = parent;
 
         Token token = tokens->at(index++);
         if (token.type != TokenType::GROUPING_START) {
@@ -200,14 +203,28 @@ namespace Parser {
             token = tokens->at(index++);
         }
 
-        return node;
+        appendChild(parent, node);
+
+        return parent;
     }
 
     Node* buildElseNode() {
+        Node* node = new Node{};
+        node->type = NodeType::ELSE;
+        node->token = tokens->at(index);
+        node->parent = parent;
 
-        
+        Token token = tokens->at(index++);
+        if (token.type != TokenType::SCOPE_START) {
+            printf("ERROR: %s:%d:%d: expecting '{', found '%s'!\n",token.file,token.line,token.column, token.value);
+            return nullptr;
+        }
 
-        return nullptr;
+        node->symbolMap = new std::unordered_map<std::string, Symbol*>;
+
+        appendChild(parent, node);
+
+        return node;
     }
 
     Node* buildWhileNode() {

@@ -275,7 +275,7 @@ int main(int argc, char** argv) {
         printf("Failed to open %s\n",outFileName);
         exit(1);
     }
-
+    
     if (!Compiler::compile(tree, &outFile)) {
         printf("Compile failed!\n");
         return 1;

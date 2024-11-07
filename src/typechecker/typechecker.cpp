@@ -115,8 +115,14 @@ namespace TypeChecker {
         Node* child = node->firstChild;
         while (child) {
             switch (child->type) {
+                case NodeType::IF:
+                    // TODO: check it doesnt call a function that returns nothing
+                    // or other such edge cases
+                    break;
+
                 case NodeType::FUNCTION:
                 case NodeType::SCOPE:
+                case NodeType::ELSE:
                     if (!processScope(child)) return false;
                     break;
 
@@ -129,7 +135,7 @@ namespace TypeChecker {
                     break;
 
                 default:
-                    printf("ERROR: %s:%d:%d: '%s' unexpected node!\n",node->token.file,node->token.line,node->token.column,NodeTypeMap[(int)node->type]);
+                    printf("ERROR: %s:%d:%d: '%s' unexpected node!\n",child->token.file,child->token.line,child->token.column,NodeTypeMap[(int)child->type]);
                     return false;
             }
 

@@ -57,7 +57,6 @@ namespace Parser {
         Token token = tokens->at(index++);
 
         while (token.type != TokenType::GROUPING_END) {
-
             Node* param = new Node{};
             switch (token.type) {
                 case TokenType::COMMA:
@@ -80,7 +79,6 @@ namespace Parser {
                 case TokenType::SYMBOL: {
                     param->type = NodeType::SYMBOL;
                     Symbol* symbol;
-
                     if (!(!global && symbolDeclaredInScope(token.value,parent,&symbol)) && !(global && symbolDeclaredGlobal(token.value,&symbol))) {
                         printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
                         return nullptr;

@@ -33,7 +33,6 @@ namespace Compiler {
     std::vector<FuncCall> undefinedFunctions;
 
     struct dataString {
-        char* parentName;
         char* name;
         struct {
             char* str;
@@ -45,6 +44,7 @@ namespace Compiler {
     std::vector<Symbol*> globalSymbols;
 
     unsigned int position = 0;
+    unsigned int labelNum = 0;
 
     inline bool symbolDeclaredGlobal(char* name, Symbol** symbol) {
         if (symbolBuiltin(name, symbol)) return true;
@@ -214,6 +214,7 @@ namespace Compiler {
                 Symbol* symbol;
 
                 if (symbolDeclaredInScope(node->symbol->name,context->node,&symbol)) {
+                    printf("hello..? %d\n",(int)(context->locals->find(node->symbol->name) != context->locals->end()));
                     Local* local = context->locals->find(node->symbol->name)->second;
 
                     if (SizeByteMap[local->size] >= 4) { // 32 bit loads clear top 32 bits (e.g mov eax, eax clears top 32 bits)
@@ -262,12 +263,12 @@ namespace Compiler {
                 switch (node->literal.type) {
                     case Type::string: {
                         std::stringstream ss;
-                        ss << context->node->symbol->name << '_' << node->token.file << '_' << std::to_string(node->token.line) << '_' << std::to_string(node->token.column);
+                        ss << '_' << node->token.file << '_' << std::to_string(node->token.line) << '_' << std::to_string(node->token.column);
                         std::string* s = new std::string(ss.str().c_str());
                         for (int i = 0; i < (int)s->length(); i++) {
                             if ((*s)[i] == '.') (*s)[i] = '_';
                         }
-                        strings.push_back(dataString{context->node->symbol->name,(char*)s->c_str(),node->literal.str.str,node->literal.str.len});
+                        strings.push_back(dataString{(char*)s->c_str(),node->literal.str.str,node->literal.str.len});
 
                         out("mov", registers[reg].subRegs[Size::QWORD], *s);
 
@@ -499,8 +500,6 @@ namespace Compiler {
 
         if (spaceReq) {
 
-            scopeContext.spaceReq = spaceReq;
-
             out("    push rbp");
             out("    mov rbp, rsp");
             out("sub","rsp",std::to_string(spaceReq));
@@ -518,10 +517,10 @@ namespace Compiler {
         }
 
         if (!buildScope(&scopeContext)) return false;
+        printf("here2");
 
-
-        if (scopeContext.locals->size()) {
-            out("add", "rsp",std::to_string(context->spaceReq));
+        if (spaceReq) {
+            out("add", "rsp",std::to_string(spaceReq));
             //out("    mov rsp, rbp");
             //out("    pop rbp");
             out("    leave");
@@ -532,13 +531,62 @@ namespace Compiler {
 
     bool buildIf(Node* node, Context* context) {
 
-        return false;
+        Reg reg = evaluate(node->firstChild, context);
+
+        if (reg == Reg::NUL) exit(1);
+
+        unsigned int ifEndLabel = labelNum++;
+        out("cmp",registers[reg].subRegs[Size::QWORD],"0");
+        std::stringstream ss;
+        ss << ".label_" << std::to_string(ifEndLabel);
+        out("jmpe", ss.str());
+
+        Node* ifNode = node->nextSibling;
+
+        if (!ifNode) {
+            printf("ERROR: %s:%d:%d: missing if statement body!\n",node->token.file,node->token.line,node->token.column);
+            return false;
+        }
+
+        if (ifNode->type != NodeType::SCOPE) {
+            printf("ERROR: %s:%d:%d: expected '{', found '%s'!\n",ifNode->token.file,ifNode->token.line,ifNode->token.column,NodeTypeMap[(int)ifNode->type]);
+            return false;
+        }
+
+        if (!createScope(ifNode, context)) return false;
+        printf("hi?\n");
+
+        Node* elseNode = node->nextSibling->nextSibling;
+
+        unsigned int elseEndLabel;
+        if (elseNode && elseNode->type == NodeType::ELSE) {
+            elseEndLabel = labelNum++;
+            std::stringstream ss2;
+            ss2 << ".label_" << std::to_string(elseEndLabel);
+            out("jmp", ss2.str());
+        };
+
+        std::stringstream ss2;
+        ss2 << ".label_" << std::to_string(ifEndLabel) << ':';
+        out(ss2.str());
+
+        if (elseNode && elseNode->type == NodeType::ELSE) {
+
+            if (!createScope(elseNode, context)) return false;
+
+            std::stringstream ss2;
+            ss2 << ".label_" << std::to_string(elseEndLabel) << ':';
+            out(ss2.str());
+        }
+
+        return true;
     }
 
     bool buildScope(Context* context) {
 
         Node* child = context->node->firstChild;
         while (child) {
+            printf("here: %s\n", NodeTypeMap[(int)child->type]);
             switch (child->type) {
                 case NodeType::IF:
                     buildIf(child, context);

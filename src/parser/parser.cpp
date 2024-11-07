@@ -226,6 +226,7 @@ namespace Parser {
     }
 
     Node* processKeyword(Token token) {
+        printf("here\n");
 
         switch (token.keyword) {
             case Keyword::FUNC:
@@ -238,7 +239,8 @@ namespace Parser {
                     depth++;
                     return nullptr;
                 }
-                depth++;
+                // no depth++ is on purpose, the body of the if statement is the
+                // next scope
                 return buildIfNode();
             
             case Keyword::ELSE:
@@ -329,8 +331,23 @@ namespace Parser {
 
         tokens = _tokens;
 
+        const char* SymbolTypeMap[]{
+            "FUNC",
+            "VAR",
+            "CONST",
+            "IF",
+            "ELSE",
+            "WHILE",
+            "GLOBAL"
+        };
         while (index < tokens->size()) {
             Token token = tokens->at(index++);
+            printf("here2 %s %d ",TokenTypeMap[token.type], depth);
+            if (token.type == TokenType::SYMBOL) {
+                printf("%s\n",token.value);
+            } else if (token.type == TokenType::KEYWORD) {
+                printf("%s\n",SymbolTypeMap[token.keyword]);
+            } else printf("\n");
 
             switch (token.type) {
                 case TokenType::ENDLINE:
