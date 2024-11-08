@@ -70,7 +70,7 @@ namespace Parser {
         0b100000000000,
 
         0,
-        0,
+        0b1000000000000,
         0,
         0,
     };
@@ -78,18 +78,18 @@ namespace Parser {
     const long long TypeCompatibility[] {
         0,
         TypeMask[i8],
-        TypeMask[i16] | TypeMask[i8],
-        TypeMask[i32] | TypeMask[i16] | TypeMask[i8],
-        TypeMask[i64] | TypeMask[i32] | TypeMask[i16] | TypeMask[i8],
+        TypeMask[i16] | TypeMask[i8] | TypeMask[u8],
+        TypeMask[i32] | TypeMask[i16] | TypeMask[i8] | TypeMask[u8] | TypeMask[u16],
+        TypeMask[i64] | TypeMask[i32] | TypeMask[i16] | TypeMask[i8] | TypeMask[u8] | TypeMask[u16] | TypeMask[u32],
         TypeMask[u8],
         TypeMask[u16] | TypeMask[u8],
         TypeMask[u32] | TypeMask[u16] | TypeMask[u8],
-        TypeMask[u64] | TypeMask[u32] | TypeMask[u16] | TypeMask[u8],
+        TypeMask[u64] | TypeMask[u32] | TypeMask[u16] | TypeMask[u8] | TypeMask[string],
         TypeMask[f16],
         TypeMask[f32] | TypeMask[f16],
         TypeMask[f64] | TypeMask[f32] | TypeMask[f16],
         TypeMask[chr],
-        TypeMask[string],
+        TypeMask[string] | TypeMask[u64],
         TypeMask[boolean],
         TypeMask[null],
     };

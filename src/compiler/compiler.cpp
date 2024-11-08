@@ -56,15 +56,18 @@ namespace Compiler {
         return false;
     }
 
-    const char* toLocalLabel(const char* label) {
-        int len = 0;
-        while (label[len++]);
-        char* str = new char[len+1];
-        str[0] = '.';
-        str++;
-        while (len--) str[len] = label[len];
-        str--;
-        return str;
+    Local* getLocal(char* name, Context* startContext) {
+        Context* context = startContext;
+        do {
+            if (auto local = context->locals->find(name); local != context->locals->end()) {
+                return local->second;
+            }
+            context = context->parent;
+        } while (context);
+
+        // this shouldn't happen as this should be called after
+        // getting the symbol with symbolDeclaredInScope()
+        return nullptr;
     }
 
     bool freeReg(Reg reg, bool dontEmpty) {
@@ -208,14 +211,13 @@ namespace Compiler {
                 Reg reg = findFreeReg();
                 if (reg == Reg::NUL) { 
                     printf("ERROR: %s:%d:%d: no registers available!\n",node->token.file,node->token.line,node->token.column);
-                    exit(1);
+                    return Reg::RSI;
                 }
 
                 Symbol* symbol;
 
                 if (symbolDeclaredInScope(node->symbol->name,context->node,&symbol)) {
-                    printf("hello..? %d\n",(int)(context->locals->find(node->symbol->name) != context->locals->end()));
-                    Local* local = context->locals->find(node->symbol->name)->second;
+                    Local* local = getLocal(node->symbol->name, context);
 
                     if (SizeByteMap[local->size] >= 4) { // 32 bit loads clear top 32 bits (e.g mov eax, eax clears top 32 bits)
                         out("mov", registers[reg].subRegs[local->size],refLocalVar(local));
@@ -335,7 +337,7 @@ namespace Compiler {
             if (!freeReg(reg, true)) {
                 if (reg == Reg::RAX && funcCall->symbol->func->returnType != Type::null) {
                     printf("ERROR: %s:%d:%d: no registers available!\nCompile failed!",funcCall->token.file,funcCall->token.line,funcCall->token.column);
-                    exit(1);
+                    return Reg::RSI;
                 }
                 printf("saving %s\n",registers[reg].subRegs[Size::QWORD]);
                 pushedRegs.push(RegData{reg,registers[reg].value,registers[reg].position});
@@ -361,7 +363,7 @@ namespace Compiler {
 
             Reg reg = evaluate(paramNode,context);
 
-            if (reg == Reg::NUL) exit(1);
+            if (reg == Reg::NUL) return Reg::RSI;
 
             // TODO: optimize this to only push reg if necessary
 
@@ -414,7 +416,7 @@ namespace Compiler {
 
         int spaceReq = 0;
 
-        Context* context = new Context{node,new std::unordered_map<std::string, Local*>,0};
+        Context* context = new Context{node,nullptr,new std::unordered_map<std::string, Local*>,0};
 
         for (auto& pair : *node->symbolMap) {
             if (pair.second->refCount) {
@@ -486,7 +488,7 @@ namespace Compiler {
 
     bool createScope(Node* node, Context* context) {
 
-        Context scopeContext = Context{node,new std::unordered_map<std::string, Local*>,0};
+        Context scopeContext = Context{node,context,new std::unordered_map<std::string, Local*>,0};
 
         int spaceReq = 0;
 
@@ -517,7 +519,6 @@ namespace Compiler {
         }
 
         if (!buildScope(&scopeContext)) return false;
-        printf("here2");
 
         if (spaceReq) {
             out("add", "rsp",std::to_string(spaceReq));
@@ -529,32 +530,31 @@ namespace Compiler {
         return true;
     }
 
-    bool buildIf(Node* node, Context* context) {
+    Node* buildIf(Node* node, Context* context) {
 
         Reg reg = evaluate(node->firstChild, context);
 
-        if (reg == Reg::NUL) exit(1);
+        if (reg == Reg::NUL) return (Node*)-1;
 
         unsigned int ifEndLabel = labelNum++;
         out("cmp",registers[reg].subRegs[Size::QWORD],"0");
         std::stringstream ss;
         ss << ".label_" << std::to_string(ifEndLabel);
-        out("jmpe", ss.str());
+        out("je", ss.str());
 
         Node* ifNode = node->nextSibling;
 
         if (!ifNode) {
             printf("ERROR: %s:%d:%d: missing if statement body!\n",node->token.file,node->token.line,node->token.column);
-            return false;
+            return (Node*)-1;
         }
 
         if (ifNode->type != NodeType::SCOPE) {
             printf("ERROR: %s:%d:%d: expected '{', found '%s'!\n",ifNode->token.file,ifNode->token.line,ifNode->token.column,NodeTypeMap[(int)ifNode->type]);
-            return false;
+            return (Node*)-1;
         }
 
-        if (!createScope(ifNode, context)) return false;
-        printf("hi?\n");
+        if (!createScope(ifNode, context)) return (Node*)-1;
 
         Node* elseNode = node->nextSibling->nextSibling;
 
@@ -572,33 +572,35 @@ namespace Compiler {
 
         if (elseNode && elseNode->type == NodeType::ELSE) {
 
-            if (!createScope(elseNode, context)) return false;
+            if (!createScope(elseNode, context)) return (Node*)-1;
 
             std::stringstream ss2;
             ss2 << ".label_" << std::to_string(elseEndLabel) << ':';
             out(ss2.str());
+
+            return elseNode;
         }
 
-        return true;
+        return ifNode;
     }
 
     bool buildScope(Context* context) {
 
         Node* child = context->node->firstChild;
         while (child) {
-            printf("here: %s\n", NodeTypeMap[(int)child->type]);
             switch (child->type) {
                 case NodeType::IF:
-                    buildIf(child, context);
+                    child = buildIf(child, context);
+                    if (child == (Node*)-1) return false;
                     break;
                 case NodeType::SCOPE:
-                    createScope(child, context);
+                    if (!createScope(child, context)) return false;
                     break;
                 case NodeType::INVOCATION:
-                    callFunction(child, context);
+                    if (callFunction(child, context) == Reg::RSI) return false;
                     break;
                 case NodeType::OPERATION:
-                    evaluate(child, context);
+                    if (evaluate(child, context) == Reg::RSI) return false;
                     break;
                 default:
                     // TODO: think of a better word than node

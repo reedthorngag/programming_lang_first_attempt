@@ -13,7 +13,7 @@ namespace TypeChecker {
         if (parent == Type::error) {
             if (!num) return Type::u8;
             if (num > 0) {
-                for (int i = Type::u8; i < Type::i8; i++)
+                for (int i = Type::i8; i <= Type::u64; i++)
                     if (num <= TypeConstraints[i].max) return TypeConstraints[i].type;
                 
             } else {
@@ -22,6 +22,7 @@ namespace TypeChecker {
         }
 
         if (parent >= Type::f16 && parent <= Type::f64) return parent; // TODO: handle floats properly
+        if (parent == Type::string) return Type::u64;
         if (parent > Type::f64) return Type::error;
 
         if (num > TypeConstraints[parent].max || (int64_t)num < TypeConstraints[parent].min) {

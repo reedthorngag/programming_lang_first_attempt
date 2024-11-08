@@ -113,6 +113,7 @@ namespace Compiler {
 
     struct Context {
         Parser::Node* node;
+        Context* parent;
         std::unordered_map<std::string, Local*>* locals;
         int spaceReq;
     };

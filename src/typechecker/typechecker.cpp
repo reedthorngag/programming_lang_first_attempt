@@ -116,8 +116,7 @@ namespace TypeChecker {
         while (child) {
             switch (child->type) {
                 case NodeType::IF:
-                    // TODO: check it doesnt call a function that returns nothing
-                    // or other such edge cases
+                    if (getType(child->firstChild, Type::error) == Type::error) return false;
                     break;
 
                 case NodeType::FUNCTION:
