@@ -33,9 +33,11 @@ func main(): null {
     test2 <<= 5;
     printNum(1600);
     const test4: i64 = 5 > 5;
-    if (test3 != 5) {
+    if (test3 >= 5) {
         printNum(test4);
         printLine("it worked!");
+    } else {
+        printLine("hiiii!!!");
     }
 
     {
