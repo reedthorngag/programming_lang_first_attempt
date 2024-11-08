@@ -100,6 +100,7 @@ namespace TypeChecker {
         for (Param p : *node->symbol->func->params) {
 
             Type type = getType(child,p.type);
+            if (type == Type::error) return Type::error;
             if (!typesImplicitlyCompatible(p.type,type)) {
                 printf("ERROR: %s:%d:%d: incompatible type! (requires '%s', found '%s')\n",child->token.file,child->token.line,child->token.column,TypeMap[p.type],TypeMap[type]);
                 return Type::error;

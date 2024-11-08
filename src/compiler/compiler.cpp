@@ -460,18 +460,18 @@ namespace Compiler {
         out(ss.str());
 
         for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
-            bool isParam = false;
-            for (Param p : *node->symbol->func->params) {
-                if (p.reg == (Parser::Reg)reg) {
-                    isParam = true;
-                    break;
-                }
+            if (!freeReg(reg)) {
+                printf("ERROR: %s:%d:%d: register locked when it shouldn't be! can't free %s!\n",node->token.file,node->token.line,node->token.column,registers[reg].subRegs[Size::QWORD]);
+                return false;
             }
-            if (isParam) continue;
-            if (!freeReg(reg)) printf("ERROR: %s:%d:%d: register locked when it shouldn't be! can't free %s!\n",node->token.file,node->token.line,node->token.column,registers[reg].subRegs[Size::QWORD]);
         }
 
         Context* context = functionSetup(node);
+
+        for (Param p : *node->symbol->func->params) {
+            registers[p.reg].value = Value{ValueType::LOCAL,{.local = context->locals->find(p.name)->second},true,true,false};
+            registers[p.reg].position = position++;
+        }
 
         if (!buildScope(context)) return false;
 
