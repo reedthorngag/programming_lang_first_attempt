@@ -226,7 +226,6 @@ namespace Parser {
     }
 
     Node* processKeyword(Token token) {
-        printf("here\n");
 
         switch (token.keyword) {
             case Keyword::FUNC:
@@ -342,12 +341,6 @@ namespace Parser {
         };
         while (index < tokens->size()) {
             Token token = tokens->at(index++);
-            printf("here2 %s %d ",TokenTypeMap[token.type], depth);
-            if (token.type == TokenType::SYMBOL) {
-                printf("%s\n",token.value);
-            } else if (token.type == TokenType::KEYWORD) {
-                printf("%s\n",SymbolTypeMap[token.keyword]);
-            } else printf("\n");
 
             switch (token.type) {
                 case TokenType::ENDLINE:
