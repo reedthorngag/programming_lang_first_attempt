@@ -250,6 +250,7 @@ namespace Parser {
     Node* buildIfNode();
     Node* buildElseNode();
     Node* buildWhileNode();
+    bool processReturn();
     bool buildDeclarationNode(Keyword type);
 
     Node* assignment(Token token);

@@ -22,7 +22,8 @@ namespace Lexer {
         GLOBAL,
         IF,
         ELSE,
-        WHILE
+        WHILE,
+        RETURN
     };
 
     enum TokenType {

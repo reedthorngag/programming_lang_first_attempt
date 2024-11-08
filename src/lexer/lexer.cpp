@@ -14,6 +14,9 @@ namespace Lexer {
             "const",Keyword::CONST
         },
         {
+            "global", Keyword::GLOBAL
+        },
+        {
             "if",Keyword::IF
         },
         {
@@ -21,6 +24,9 @@ namespace Lexer {
         },
         {
             "while",Keyword::WHILE
+        },
+        {
+            "return", Keyword::RETURN
         }
         
     };

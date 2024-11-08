@@ -281,6 +281,10 @@ namespace Parser {
                 return parent;
             }
 
+            case Keyword::RETURN:
+                if (!processReturn()) return nullptr;
+                return parent;
+
             case Keyword::VAR:
             case Keyword::CONST:
                 if (buildDeclarationNode(token.keyword)) return parent;
@@ -334,10 +338,11 @@ namespace Parser {
             "FUNC",
             "VAR",
             "CONST",
+            "GLOBAL",
             "IF",
             "ELSE",
             "WHILE",
-            "GLOBAL"
+            "RETURN"
         };
         while (index < tokens->size()) {
             Token token = tokens->at(index++);

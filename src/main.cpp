@@ -106,10 +106,11 @@ int main(int argc, char** argv) {
         "FUNC",
         "VAR",
         "CONST",
+        "GLOBAL",
         "IF",
         "ELSE",
         "WHILE",
-        "GLOBAL"
+        "RETURN"
     };
 
     printf("Input file: %s\n%s\n",inputFile,buf);

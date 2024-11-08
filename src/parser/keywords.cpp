@@ -79,17 +79,22 @@ namespace Parser {
 
 
         token = tokens->at(index++);
-        if (token.type != TokenType::TYPE) {
-            printf("ERROR: %s:%d:%d: expecting return type, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
-            return nullptr;
-        }
-        if (auto type = typeMap.find(token.value); type == typeMap.end()) {
-            printf("ERROR: %s:%d:%d: unknown type '%s'!\n",token.file,token.line,token.column,token.value);
-            return nullptr;
-        } else
-            node->symbol->func->returnType = type->second;
+        if (token.type == TokenType::TYPE) {
+            // printf("ERROR: %s:%d:%d: expecting return type, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+            // return nullptr;
+        
+            if (auto type = typeMap.find(token.value); type == typeMap.end()) {
+                printf("ERROR: %s:%d:%d: unknown type '%s'!\n",token.file,token.line,token.column,token.value);
+                return nullptr;
+            } else
+                node->symbol->func->returnType = type->second;
 
-        token = tokens->at(index++);
+            token = tokens->at(index++);
+            
+        } else {
+            node->symbol->func->returnType = Type::null;
+        }
+
         if (token.type != TokenType::SCOPE_START) {
             printf("ERROR: %s:%d:%d: expecting '{', found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
             return nullptr;
@@ -230,6 +235,11 @@ namespace Parser {
     Node* buildWhileNode() {
 
         return nullptr;
+    }
+
+    bool processReturn() {
+
+        token = tokens->at(index++);
     }
 
     bool buildDeclarationNode(Keyword type) {
