@@ -29,7 +29,8 @@ namespace Parser {
         "OPERATION",
         "INVOCATION",
         "IF",
-        "ELSE"
+        "ELSE",
+        "RETURN"
     };
 
     const char* TypeMap[] {
@@ -223,6 +224,37 @@ namespace Parser {
             return true;
         }
         return false;
+    }
+
+    Node* evaluateValue() {
+
+        Node* node = new Node{};
+
+        int grouping = 0;
+
+        Token token;
+
+        do {
+            token  = tokens->at(index++);
+
+            switch (token.type) {
+                case TokenType::COMMA:
+                case TokenType::ENDLINE:
+                    return node;
+
+                case TokenType::GROUPING_END:
+                    if (!grouping--) return node;
+
+                case TokenType::LITERAL:
+                    node->type = NodeType::LITERAL;
+                    node->literal = Literal{Type::null,{.value = {token.value}}};
+                    node->token = token;
+                    break;
+
+                case TokenType::SYMBOL:
+
+            }
+        } while (true);
     }
 
     Node* processKeyword(Token token) {

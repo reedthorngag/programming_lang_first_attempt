@@ -239,7 +239,21 @@ namespace Parser {
 
     bool processReturn() {
 
-        token = tokens->at(index++);
+        Node* node = new Node{NodeType::RETURN,parent,nullptr,nullptr,{.symbol = nullptr},tokens->at(index),nullptr};
+
+        bool inGrouping = false;
+        bool global = false;
+
+        Node* param = evaluateValue();
+
+        if (tokens->at(index-1).type != TokenType::ENDLINE) {
+            Token token = tokens->at(index-1);
+            printf("ERROR: %s:%d:%d: expecting ';', found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+            return nullptr;
+        }
+
+        appendChild(node, param);
+        return node;
     }
 
     bool buildDeclarationNode(Keyword type) {

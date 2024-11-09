@@ -20,7 +20,8 @@ namespace Parser {
         OPERATION,
         INVOCATION,
         IF,
-        ELSE
+        ELSE,
+        RETURN
     };
 
     extern const char* NodeTypeMap[];
@@ -245,6 +246,8 @@ namespace Parser {
     bool symbolDeclaredGlobal(char* name, Symbol** symbol);
 
     void generateParamMapping(Node* node);
+
+    Node* evaluateValue();
 
     Node* buildFunctionNode();
     Node* buildIfNode();
