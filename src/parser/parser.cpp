@@ -230,31 +230,64 @@ namespace Parser {
 
         Node* node = new Node{};
 
-        int grouping = 0;
+        Token token = tokens->at(index++);
 
-        Token token;
+        bool global = false;
+        switch (token.type) {
 
-        do {
-            token  = tokens->at(index++);
+            case TokenType::KEYWORD:
+                if (token.keyword != Keyword::GLOBAL) {
+                    printf("ERROR: %s:%d:%d: unexpected keyword!\n",token.file,token.line,token.column);
+                    return nullptr;
+                }
+                global = true;
 
-            switch (token.type) {
-                case TokenType::COMMA:
-                case TokenType::ENDLINE:
-                    return node;
+                token = tokens->at(index++);
+                if (token.type != TokenType::SYMBOL) {
+                    printf("ERROR: %s:%d:%d: expecting name, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                    return nullptr;
+                }
 
-                case TokenType::GROUPING_END:
-                    if (!grouping--) return node;
+                [[fallthrough]];
+            case TokenType::SYMBOL: {
+                node->type = NodeType::SYMBOL;
+                Symbol* symbol;
 
-                case TokenType::LITERAL:
-                    node->type = NodeType::LITERAL;
-                    node->literal = Literal{Type::null,{.value = {token.value}}};
-                    node->token = token;
+                if (!(!global && symbolDeclaredInScope(token.value,parent,&symbol)) && !(global && symbolDeclaredGlobal(token.value,&symbol))) {
+                    printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
+                    return nullptr;
+                }
+                symbol->refCount++;
+
+                if (tokens->at(index).type == TokenType::GROUPING_START) {
+                    delete node;
+                    node = functionCall(symbol);
                     break;
+                }
 
-                case TokenType::SYMBOL:
-
+                node->symbol = symbol;
+                node->token = token;
+                break;
             }
-        } while (true);
+
+            case TokenType::LITERAL:
+                node->type = NodeType::LITERAL;
+                node->literal = Literal{Type::null,{.value = {token.value}}};
+                node->token = token;
+                break;
+
+            default:
+                printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                return nullptr;
+        }
+
+        token = tokens->at(index++);
+
+        if (token.type == TokenType::OPERATOR) {
+            node = operation(node, token);
+        }
+
+        return node;
     }
 
     Node* processKeyword(Token token) {

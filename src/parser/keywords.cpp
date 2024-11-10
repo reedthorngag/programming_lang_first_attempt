@@ -244,16 +244,21 @@ namespace Parser {
         bool inGrouping = false;
         bool global = false;
 
+        if (tokens->at(index).type == TokenType::ENDLINE) {
+            appendChild(parent, node);
+            return true;
+        }
+
         Node* param = evaluateValue();
 
         if (tokens->at(index-1).type != TokenType::ENDLINE) {
             Token token = tokens->at(index-1);
             printf("ERROR: %s:%d:%d: expecting ';', found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
-            return nullptr;
+            return false;
         }
 
         appendChild(node, param);
-        return node;
+        return true;
     }
 
     bool buildDeclarationNode(Keyword type) {

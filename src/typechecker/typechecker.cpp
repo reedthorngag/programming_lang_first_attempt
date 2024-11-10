@@ -41,7 +41,7 @@ namespace TypeChecker {
                 Type type = processInvocation(node);
                 if (type == Type::error) return Type::error;
                 if (!typesImplicitlyCompatible(parentType,type)) {
-                    printf("ERROR: %s:%d:%d: incompatible types! ('%s' and '%s')\n",node->token.file,node->token.line,node->token.column,TypeMap[parentType],TypeMap[type]);
+                    printf("ERROR: %s:%d:%d: incompatible types1! ('%s' and '%s')\n",node->token.file,node->token.line,node->token.column,TypeMap[parentType],TypeMap[type]);
                     return Type::error;
                 }
                 return type;
@@ -112,6 +112,21 @@ namespace TypeChecker {
         return node->symbol->func->returnType;
     }
 
+    bool processReturn(Node* node) {
+        Node* func = node->parent;
+        while (func->type != NodeType::FUNCTION) func = func->parent;
+
+        if (node->firstChild) {
+            return getType(node->firstChild,func->symbol->func->returnType) != Type::error;
+        }
+
+        if (func->symbol->func->returnType != Type::null) {
+            printf("ERROR: %s:%d:%d: Return value missing but required!\n",node->firstChild->token.file,node->firstChild->token.line,node->firstChild->token.column);
+            return false;
+        }
+        return true;
+    }
+
     bool processScope(Node* node) {
         Node* child = node->firstChild;
         while (child) {
@@ -124,6 +139,10 @@ namespace TypeChecker {
                 case NodeType::SCOPE:
                 case NodeType::ELSE:
                     if (!processScope(child)) return false;
+                    break;
+
+                case NodeType::RETURN:
+                    if (!processReturn(child)) return false;
                     break;
 
                 case NodeType::OPERATION:

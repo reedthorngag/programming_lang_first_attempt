@@ -8,7 +8,7 @@ _start:
     syscall
 
 main:
-    mov rax,20
+    mov rax,5
     push rax
     mov rax,1
     push rax
@@ -36,11 +36,16 @@ fibonacci_i64_i64_i64:
     call printNum_i64
     mov rax,[rbp-8]
     mov rbx,0
-    cmp rax,rbx
+    xor rax,rbx
     mov rax,0
-    setnz al
+    setz al
     cmp rax,0
     je .label_0
+    add rsp,24
+    leave
+    ret
+
+.label_0:
     mov rax,[rbp-8]
     mov rbx,1
     sub rax,rbx
@@ -54,7 +59,6 @@ fibonacci_i64_i64_i64:
     pop rbx
     pop rcx
     call fibonacci_i64_i64_i64
-.label_0:
     add rsp,24
     leave
     ret

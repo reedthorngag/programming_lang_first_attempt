@@ -323,6 +323,32 @@ namespace Compiler {
         return Reg::NUL;
     }
 
+    bool createReturn(Node* node, Context* context) {
+
+        if (!context) {
+            printf("ERROR: %s:%d:%d: return only allowed in functions!",node->token.file,node->token.line,node->token.column);
+            return false;
+        }
+
+        if (node->firstChild) {
+            Reg reg = evaluate(node->firstChild, context);
+
+            if (!reg) return false;
+            out("mov",registers[Reg::RAX].subRegs[Size::QWORD],registers[reg].subRegs[Size::QWORD]);
+        }
+
+        do {
+            if (context->locals->size()) {
+                out("add", "rsp",std::to_string(context->spaceReq));
+                out("    leave");
+            }
+            context = context->parent;
+        } while (context);
+
+        out("    ret\n");
+        return true;
+    }
+
     Reg callFunction(Node* funcCall, Context* context) {
 
         //printf("saving registers before %s func call, line %d\n",funcCall->symbol->name,funcCall->token.line);
@@ -475,10 +501,13 @@ namespace Compiler {
 
         if (!buildScope(context)) return false;
 
+        Node* ret = context->node->firstChild;
+        while (ret->nextSibling) ret = ret->nextSibling;
+
+        if (ret->type == NodeType::RETURN) return true;
+
         if (context->locals->size()) {
             out("add", "rsp",std::to_string(context->spaceReq));
-            //out("    mov rsp, rbp");
-            //out("    pop rbp");
             out("    leave");
         }
         out("    ret\n");
@@ -601,6 +630,9 @@ namespace Compiler {
                     break;
                 case NodeType::OPERATION:
                     if (evaluate(child, context) == Reg::RSI) return false;
+                    break;
+                case NodeType::RETURN:
+                    if (!createReturn(child, context)) return false;
                     break;
                 default:
                     // TODO: think of a better word than node

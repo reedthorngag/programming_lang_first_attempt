@@ -248,6 +248,7 @@ namespace Parser {
     void generateParamMapping(Node* node);
 
     Node* evaluateValue();
+    Node* functionCall(Symbol* symbol);
 
     Node* buildFunctionNode();
     Node* buildIfNode();
