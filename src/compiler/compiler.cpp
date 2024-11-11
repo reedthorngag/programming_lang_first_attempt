@@ -474,7 +474,6 @@ namespace Compiler {
     }
 
     bool createFunction(Node* node) {
-        printf("hia?\n");
 
         std::stringstream ss;
         ss << node->symbol->name;
