@@ -235,6 +235,9 @@ namespace Parser {
         bool global = false;
         switch (token.type) {
 
+            case TokenType::GROUPING_START:
+                
+
             case TokenType::KEYWORD:
                 if (token.keyword != Keyword::GLOBAL) {
                     printf("ERROR: %s:%d:%d: unexpected keyword!\n",token.file,token.line,token.column);

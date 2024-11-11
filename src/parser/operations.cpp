@@ -335,81 +335,29 @@ namespace Parser {
         
         Precedence lOp = getPrecedence(op);
 
+        Node* rvalue = evaluateValue();
+
         Token token = tokens->at(index++);
 
-        Node* rvalue = new Node{};
-
-        bool global = false;
-        switch (token.type) {
-            case TokenType::GROUPING_START: {
-                delete rvalue;
-                rvalue = processGrouping();
-                goto processNext;
-            }
-            
-            case TokenType::KEYWORD:
-                if (token.keyword != Keyword::GLOBAL) {
-                    printf("ERROR: %s:%d:%d: unexpected keyword!\n",token.file,token.line,token.column);
-                    return nullptr;
-                }
-                global = true;
-                token = tokens->at(index++);
-                if (token.type != TokenType::SYMBOL) {
-                    printf("ERROR: %s:%d:%d: expecting symbol, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
-                    return nullptr;
-                }
-                [[fallthrough]];
-            case TokenType::SYMBOL: {
-                rvalue->type = NodeType::SYMBOL;
-                Symbol* symbol{};
-
-                if (!(!global && symbolDeclaredInScope(token.value,parent,&symbol)) && !(global && symbolDeclaredGlobal(token.value,&symbol))) {
-                    printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
-                    return nullptr;
-                }
-                symbol->refCount++;
-                global = false;
-                rvalue->symbol = symbol;
-                rvalue->token = token;
-            }
-                [[fallthrough]];
-            case TokenType::LITERAL: {
-                
-                if (!(int)rvalue->type) {
-                    rvalue->type = NodeType::LITERAL;
-                    rvalue->literal = Literal{Type::null,{.value = {token.value}}};
-                    rvalue->token = token;
-                }
-                processNext: // couldnt think of a better name
-
-                token = tokens->at(index++);
-
-                if (token.type == TokenType::ENDLINE || token.type == TokenType::COMMA || token.type == TokenType::GROUPING_END) {
-                    appendChild(node,rvalue);
-                    return node;
-                }
-
-                Precedence rOp = getPrecedence(token);
-                if (!rOp.precedence) return nullptr;
-
-                if (lOp.precedence == rOp.precedence && lOp.evalOrder == RtoL) rOp.precedence++;
-                if (lOp.precedence >= rOp.precedence) {
-                    appendChild(node,rvalue);
-                    return operation(node,token);
-                } else {
-                    Node* child = operation(rvalue,token);
-                    if (!child) return nullptr;
-                    appendChild(node,child);
-                    return node;
-                }
-            }
-            case TokenType::OPERATOR:
-                printf("not yet implemeted\n");
-                break;
-            default:
-                printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
-                return nullptr;
+        if (token.type == TokenType::ENDLINE || token.type == TokenType::COMMA || token.type == TokenType::GROUPING_END) {
+            appendChild(node,rvalue);
+            return node;
         }
+
+        Precedence rOp = getPrecedence(token);
+        if (!rOp.precedence) return nullptr;
+
+        if (lOp.precedence == rOp.precedence && lOp.evalOrder == RtoL) rOp.precedence++;
+        if (lOp.precedence >= rOp.precedence) {
+            appendChild(node,rvalue);
+            return operation(node,token);
+        } else {
+            Node* child = operation(rvalue,token);
+            if (!child) return nullptr;
+            appendChild(node,child);
+            return node;
+        }
+
         return nullptr;
     }
 }
