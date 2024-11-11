@@ -253,7 +253,10 @@ namespace Parser {
                 node->type = NodeType::SYMBOL;
                 Symbol* symbol;
 
-                if (!(!global && symbolDeclaredInScope(token.value,parent,&symbol)) && !(global && symbolDeclaredGlobal(token.value,&symbol))) {
+                if (!(!global && (symbolDeclaredInScope(token.value,parent,&symbol)
+                            || symbolDeclaredGlobal(token.value,&symbol)
+                            || symbolBuiltin(token.value,&symbol)))
+                        && !(global && (symbolDeclaredGlobal(token.value,&symbol) || symbolBuiltin(token.value, &symbol)))) {
                     printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
                     return nullptr;
                 }
