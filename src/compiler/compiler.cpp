@@ -445,11 +445,11 @@ namespace Compiler {
         Context* context = new Context{node,nullptr,new std::unordered_map<std::string, Local*>,0};
 
         for (auto& pair : *node->symbolMap) {
-            if (pair.second->refCount) {
+            //if (pair.second->refCount) { // causes segfault when func param isnt used, need to fix at some point
                 spaceReq += SizeByteMap[TypeSizeMap[pair.second->t]];
                 Local* l = new Local{pair.second,spaceReq,TypeSizeMap[pair.second->t]};
                 context->locals->insert(std::make_pair(pair.first,l));
-            }
+            //}
         }
 
         if (spaceReq == 0) return context;
@@ -474,6 +474,7 @@ namespace Compiler {
     }
 
     bool createFunction(Node* node) {
+        printf("hia?\n");
 
         std::stringstream ss;
         ss << node->symbol->name;
@@ -493,7 +494,7 @@ namespace Compiler {
         }
 
         Context* context = functionSetup(node);
-
+        
         for (Param p : *node->symbol->func->params) {
             registers[p.reg].value = Value{ValueType::LOCAL,{.local = context->locals->find(p.name)->second},true,true,false};
             registers[p.reg].position = position++;
@@ -501,10 +502,11 @@ namespace Compiler {
 
         if (!buildScope(context)) return false;
 
-        Node* ret = context->node->firstChild;
-        while (ret->nextSibling) ret = ret->nextSibling;
-
-        if (ret->type == NodeType::RETURN) return true;
+        Node* ret = node->firstChild;
+        if (ret) {
+            while (ret->nextSibling) ret = ret->nextSibling;
+            if (ret->type == NodeType::RETURN) return true; // return would already be added in buildScope func
+        }
 
         if (context->locals->size()) {
             out("add", "rsp",std::to_string(context->spaceReq));
