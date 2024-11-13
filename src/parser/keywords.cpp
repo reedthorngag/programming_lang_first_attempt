@@ -241,15 +241,47 @@ namespace Parser {
 
         Node* node = new Node{NodeType::RETURN,parent,nullptr,nullptr,{.symbol = nullptr},tokens->at(index),nullptr};
 
-        bool inGrouping = false;
-        bool global = false;
+        appendChild(parent, node);
 
         if (tokens->at(index).type == TokenType::ENDLINE) {
-            appendChild(parent, node);
             return true;
         }
 
-        Node* param = evaluateValue();
+        Node* param;
+
+        Token token = tokens->at(index++);
+
+        switch (token.type) {
+            case TokenType::GROUPING_START: {
+                param = processGrouping();
+                goto processNext;
+            }
+            
+            case TokenType::KEYWORD:
+            case TokenType::SYMBOL:
+            case TokenType::LITERAL: {
+                param = evaluateValue(token);
+
+processNext:
+                token = tokens->at(index++);
+
+                if (token.type == TokenType::ENDLINE) {
+                    appendChild(node, param);
+                    return true;
+                }
+
+                if (token.type != TokenType::OPERATOR) {
+                    printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                    return false;
+                }
+
+                appendChild(node, operation(param, token));
+                break;
+            }
+            default:
+                printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                return false;
+        }
 
         if (tokens->at(index-1).type != TokenType::ENDLINE) {
             Token token = tokens->at(index-1);

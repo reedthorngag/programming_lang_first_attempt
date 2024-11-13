@@ -226,17 +226,12 @@ namespace Parser {
         return false;
     }
 
-    Node* evaluateValue() {
+    Node* evaluateValue(Token token) {
 
         Node* node = new Node{};
 
-        Token token = tokens->at(index++);
-
         bool global = false;
         switch (token.type) {
-
-            case TokenType::GROUPING_START:
-                
 
             case TokenType::KEYWORD:
                 if (token.keyword != Keyword::GLOBAL) {
@@ -267,7 +262,11 @@ namespace Parser {
 
                 if (tokens->at(index).type == TokenType::GROUPING_START) {
                     delete node;
+                    printf("func call!\n");
+                    index++; // functionCall func expects index to be pointing at token after (
                     node = functionCall(symbol);
+                    if (!node) return nullptr;
+                    printf("hi!");
                     break;
                 }
 
@@ -283,14 +282,8 @@ namespace Parser {
                 break;
 
             default:
-                printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                printf("ERROR: %s:%d:%d: unexpected1 %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
                 return nullptr;
-        }
-
-        token = tokens->at(index++);
-
-        if (token.type == TokenType::OPERATOR) {
-            node = operation(node, token);
         }
 
         return node;

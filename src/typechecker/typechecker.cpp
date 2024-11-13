@@ -38,10 +38,11 @@ namespace TypeChecker {
                 return literalType(node,parentType);
             
             case NodeType::INVOCATION: {
+                printf("here!\n");
                 Type type = processInvocation(node);
                 if (type == Type::error) return Type::error;
                 if (!typesImplicitlyCompatible(parentType,type)) {
-                    printf("ERROR: %s:%d:%d: incompatible types1! ('%s' and '%s')\n",node->token.file,node->token.line,node->token.column,TypeMap[parentType],TypeMap[type]);
+                    printf("ERROR: %s:%d:%d: incompatible types! ('%s' and '%s')\n",node->token.file,node->token.line,node->token.column,TypeMap[parentType],TypeMap[type]);
                     return Type::error;
                 }
                 return type;
@@ -84,6 +85,11 @@ namespace TypeChecker {
 
     Type processInvocation(Node* node) {
 
+        if (node->symbol->type != SymbolType::FUNC) {
+            printf("ERROR: %s:%d:%d: %s is not a function!\n",node->token.file,node->token.line,node->token.column,node->symbol->name);
+            return Type::error;
+        }
+
         int paramNum = 0;
         Node* child = node->firstChild;
         while (child) {
@@ -113,6 +119,7 @@ namespace TypeChecker {
     }
 
     bool processReturn(Node* node) {
+        printf("processing return\n");
         Node* func = node->parent;
         while (func->type != NodeType::FUNCTION) func = func->parent;
 
@@ -128,6 +135,7 @@ namespace TypeChecker {
     }
 
     bool processScope(Node* node) {
+        printf("node: %s\n",NodeTypeMap[(int)node->type]);
         Node* child = node->firstChild;
         while (child) {
             switch (child->type) {

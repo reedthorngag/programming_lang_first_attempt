@@ -46,6 +46,7 @@ namespace Parser {
         {"--",17},
     };
 
+    // index should be pointing at first token after '('
     Node* functionCall(Symbol* symbol) {
         Node* node = new Node{};
         node->type = NodeType::INVOCATION;
@@ -57,7 +58,7 @@ namespace Parser {
         Token token = tokens->at(index++);
 
         while (token.type != TokenType::GROUPING_END) {
-            Node* param = new Node{};
+            Node* param;
             switch (token.type) {
                 case TokenType::COMMA:
                     break;
@@ -65,37 +66,10 @@ namespace Parser {
                     inGrouping = true;
                     break;
                 case TokenType::KEYWORD:
-                    if (token.keyword != Keyword::GLOBAL) {
-                        printf("ERROR: %s:%d:%d: unexpected keyword!\n",token.file,token.line,token.column);
-                        return nullptr;
-                    }
-                    global = true;
-                    token = tokens->at(index++);
-                    if (token.type != TokenType::SYMBOL) {
-                        printf("ERROR: %s:%d:%d: expecting name, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
-                        return nullptr;
-                    }
-                    [[fallthrough]];
-                case TokenType::SYMBOL: {
-                    param->type = NodeType::SYMBOL;
-                    Symbol* symbol;
-                    if (!(!global && symbolDeclaredInScope(token.value,parent,&symbol)) && !(global && symbolDeclaredGlobal(token.value,&symbol))) {
-                        printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
-                        return nullptr;
-                    }
-                    symbol->refCount++;
-                    global = false;
-                    param->symbol = symbol;
-                    param->token = token;
-                }
-                    [[fallthrough]];
+                case TokenType::SYMBOL:
                 case TokenType::LITERAL: {
-                    
-                    if (!(int)param->type) {
-                        param->type = NodeType::LITERAL;
-                        param->literal = Literal{Type::null,{.value = {token.value}}};
-                        param->token = token;
-                    }
+                    printf("hello\n");
+                    param = evaluateValue(token);
 
                     token = tokens->at(index++);
 
@@ -213,16 +187,6 @@ namespace Parser {
         return OpType::MATH; // keep the compiler happy
     }
 
-    enum Order {
-        LtoR,
-        RtoL
-    };
-
-    struct Precedence {
-        Order evalOrder;
-        int precedence;
-    };
-
     Precedence getPrecedence(Token token) {
 
         if (token.type != TokenType::OPERATOR) {
@@ -247,50 +211,16 @@ namespace Parser {
         switch (token.type) {
             case TokenType::GROUPING_START: {
                 node = processGrouping();
-                if (tokens->at(index).type == TokenType::OPERATOR) {
+                if (tokens->at(++index).type == TokenType::OPERATOR) {
                     token = tokens->at(index++);
                     return operation(node,token);
                 }
                 return node;
             }
             case TokenType::KEYWORD:
-                if (token.keyword != Keyword::GLOBAL) {
-                    printf("ERROR: %s:%d:%d: unexpected keyword!\n",token.file,token.line,token.column);
-                    return nullptr;
-                }
-                global = true;
-                token = tokens->at(index++);
-                if (token.type != TokenType::SYMBOL) {
-                    printf("ERROR: %s:%d:%d: expecting symbol, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
-                    return nullptr;
-                }
-                [[fallthrough]];
-            case TokenType::SYMBOL: {
-                Symbol* symbol{};
-
-                if (!(!global && symbolDeclaredInScope(token.value,parent,&symbol)) && !(global && symbolDeclaredGlobal(token.value,&symbol))) {
-                    printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
-                    return nullptr;
-                }
-                symbol->refCount++;
-
-                if (tokens->at(index).type == TokenType::GROUPING_START) {
-                    index++;
-                    return functionCall(symbol);
-                }
-                node = new Node{};
-                node->type = NodeType::SYMBOL;
-                node->symbol = symbol;
-                node->token = token;
-            }
-                [[fallthrough]];
+            case TokenType::SYMBOL:
             case TokenType::LITERAL: {
-                if (!node) {
-                    node = new Node{};
-                    node->type = NodeType::LITERAL;
-                    node->literal = Literal{Type::null,{.value = {token.value}}};
-                    node->token = token;
-                }
+                node = evaluateValue(token);
 
                 token = tokens->at(index++);
 
@@ -335,29 +265,51 @@ namespace Parser {
         
         Precedence lOp = getPrecedence(op);
 
-        Node* rvalue = evaluateValue();
-
         Token token = tokens->at(index++);
 
-        if (token.type == TokenType::ENDLINE || token.type == TokenType::COMMA || token.type == TokenType::GROUPING_END) {
-            appendChild(node,rvalue);
-            return node;
+        Node* rvalue;
+
+        bool global = false;
+        switch (token.type) {
+            case TokenType::GROUPING_START: {
+                rvalue = processGrouping();
+                goto processNext;
+            }
+            
+            case TokenType::KEYWORD:
+            case TokenType::SYMBOL:
+            case TokenType::LITERAL: {
+                rvalue = evaluateValue(token);
+
+processNext:
+                token = tokens->at(index++);
+
+                if (token.type == TokenType::ENDLINE || token.type == TokenType::COMMA || token.type == TokenType::GROUPING_END) {
+                    appendChild(node,rvalue);
+                    return node;
+                }
+
+                Precedence rOp = getPrecedence(token);
+                if (!rOp.precedence) return nullptr;
+
+                if (lOp.precedence == rOp.precedence && lOp.evalOrder == RtoL) rOp.precedence++;
+                if (lOp.precedence >= rOp.precedence) {
+                    appendChild(node,rvalue);
+                    return operation(node,token);
+                } else {
+                    Node* child = operation(rvalue,token);
+                    if (!child) return nullptr;
+                    appendChild(node,child);
+                    return node;
+                }
+            }
+            case TokenType::OPERATOR:
+                printf("not yet implemented\n");
+                break;
+            default:
+                printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                return nullptr;
         }
-
-        Precedence rOp = getPrecedence(token);
-        if (!rOp.precedence) return nullptr;
-
-        if (lOp.precedence == rOp.precedence && lOp.evalOrder == RtoL) rOp.precedence++;
-        if (lOp.precedence >= rOp.precedence) {
-            appendChild(node,rvalue);
-            return operation(node,token);
-        } else {
-            Node* child = operation(rvalue,token);
-            if (!child) return nullptr;
-            appendChild(node,child);
-            return node;
-        }
-
         return nullptr;
     }
 }

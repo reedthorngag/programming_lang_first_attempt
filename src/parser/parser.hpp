@@ -234,6 +234,15 @@ namespace Parser {
     extern std::vector<Token>* tokens;
     extern long long unsigned int index;
 
+    enum Order {
+        LtoR,
+        RtoL
+    };
+
+    struct Precedence {
+        Order evalOrder;
+        int precedence;
+    };
 
     std::unordered_map<std::string, Node*>* parseTokens(std::vector<Token>* tokens);
 
@@ -247,7 +256,7 @@ namespace Parser {
 
     void generateParamMapping(Node* node);
 
-    Node* evaluateValue();
+    Node* evaluateValue(Token token);
     Node* functionCall(Symbol* symbol);
 
     Node* buildFunctionNode();
@@ -258,6 +267,8 @@ namespace Parser {
     bool buildDeclarationNode(Keyword type);
 
     Node* assignment(Token token);
+    Node* processGrouping();
+    Precedence getPrecedence(Token token);
     Node* operation(Node* lvalue, Token op);
 
 };
