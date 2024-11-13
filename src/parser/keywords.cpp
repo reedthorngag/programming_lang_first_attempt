@@ -142,39 +142,11 @@ namespace Parser {
                 case TokenType::GROUPING_START:
                     inGrouping = true;
                     break;
-                case TokenType::KEYWORD:
-                    if (token.keyword != Keyword::GLOBAL) {
-                        printf("ERROR: %s:%d:%d: unexpected keyword!\n",token.file,token.line,token.column);
-                        return nullptr;
-                    }
-                    global = true;
-                    token = tokens->at(index++);
-                    if (token.type != TokenType::SYMBOL) {
-                        printf("ERROR: %s:%d:%d: expecting name, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
-                        return nullptr;
-                    }
-                    [[fallthrough]];
-                case TokenType::SYMBOL: {
-                    param->type = NodeType::SYMBOL;
-                    Symbol* symbol;
 
-                    if (!(!global && symbolDeclaredInScope(token.value,parent,&symbol)) && !(global && symbolDeclaredGlobal(token.value,&symbol))) {
-                        printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file,token.line,token.column,token.value);
-                        return nullptr;
-                    }
-                    symbol->refCount++;
-                    global = false;
-                    param->symbol = symbol;
-                    param->token = token;
-                }
-                    [[fallthrough]];
+                case TokenType::KEYWORD:
+                case TokenType::SYMBOL:
                 case TokenType::LITERAL: {
-                    
-                    if (!(int)param->type) {
-                        param->type = NodeType::LITERAL;
-                        param->literal = Literal{Type::null,{.value = {token.value}}};
-                        param->token = token;
-                    }
+                    param = evaluateValue(token);
 
                     token = tokens->at(index++);
 
@@ -234,7 +206,94 @@ namespace Parser {
 
     Node* buildWhileNode() {
 
-        return nullptr;
+        Node* node = new Node{};
+        node->type = NodeType::WHILE;
+        node->token = tokens->at(index);
+        node->parent = parent;
+
+        Token token = tokens->at(index++);
+        if (token.type != TokenType::GROUPING_START) {
+            printf("ERROR: %s:%d:%d: expecting '(' found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+            return nullptr;
+        }
+
+        bool inGrouping = false;
+        bool global = false;
+
+        token = tokens->at(index++);
+
+        while (token.type != TokenType::GROUPING_END) {
+
+            Node* param = new Node{};
+
+            // TODO: test this code properly to check its working with parentheses properly
+            switch (token.type) {
+                case TokenType::COMMA:
+                    printf("ERROR: %s:%d:%d: unexpected comma!\n",token.file,token.line,token.column);
+                    return nullptr;
+                case TokenType::GROUPING_START:
+                    param = processGrouping();
+                    if (!param) return nullptr;
+                    goto processNext;
+                    
+                case TokenType::KEYWORD:
+                case TokenType::SYMBOL:
+                case TokenType::LITERAL: {
+                    param = evaluateValue(token);
+
+processNext:
+                    token = tokens->at(index++);
+
+                    if (token.type == TokenType::COMMA || token.type == TokenType::GROUPING_END) {
+                        inGrouping = inGrouping && token.type != TokenType::GROUPING_END;
+                        if (inGrouping) {
+                            printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                            return nullptr;
+                        }
+                        appendChild(node,param);
+                        index--;
+                        break;
+                    }
+
+                    if (token.type != TokenType::OPERATOR) {
+                        printf("ERROR: %s:%d:%d: expecting operator or close bracket, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                        return nullptr;
+                    }
+
+                    appendChild(node,operation(param,token));
+                    break;
+                }
+                default:
+                    if (tokens->at(index-2).type == TokenType::GROUPING_END) {
+                        index -= 2;
+                        break;
+                    }
+                    printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                    return nullptr;
+            }
+            token = tokens->at(index++);
+        }
+
+        appendChild(parent, node);
+
+        token = tokens->at(index++);
+
+        if (token.type != TokenType::SCOPE_START) {
+            printf("ERROR: %s:%d:%d: unexpected %s, expecting '{'!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+            return nullptr;
+        }
+
+        Node* body = new Node{};
+        body->type = NodeType::SCOPE;
+
+        body->symbolMap = new std::unordered_map<std::string, Symbol*>;
+
+        appendChild(node, body);
+
+        // appendChild sets parent to the first arg, so need to change it after
+        body->parent = parent;
+        
+        return body;
     }
 
     bool processReturn() {

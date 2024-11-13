@@ -38,7 +38,6 @@ namespace TypeChecker {
                 return literalType(node,parentType);
             
             case NodeType::INVOCATION: {
-                printf("here!\n");
                 Type type = processInvocation(node);
                 if (type == Type::error) return Type::error;
                 if (!typesImplicitlyCompatible(parentType,type)) {
@@ -119,7 +118,6 @@ namespace TypeChecker {
     }
 
     bool processReturn(Node* node) {
-        printf("processing return\n");
         Node* func = node->parent;
         while (func->type != NodeType::FUNCTION) func = func->parent;
 
@@ -135,10 +133,13 @@ namespace TypeChecker {
     }
 
     bool processScope(Node* node) {
-        printf("node: %s\n",NodeTypeMap[(int)node->type]);
+        //printf("node: %s\n",NodeTypeMap[(int)node->type]);
         Node* child = node->firstChild;
         while (child) {
             switch (child->type) {
+                case NodeType::WHILE:
+                    if (!processScope(child->firstChild->nextSibling)) return false;
+                    [[fallthrough]];
                 case NodeType::IF:
                     if (getType(child->firstChild, Type::error) == Type::error) return false;
                     break;

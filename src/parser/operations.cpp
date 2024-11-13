@@ -52,6 +52,7 @@ namespace Parser {
         node->type = NodeType::INVOCATION;
         node->symbol = symbol;
         node->token = tokens->at(index-1);
+        node->parent = parent;
 
         bool inGrouping = false;
         bool global = false;
@@ -68,7 +69,6 @@ namespace Parser {
                 case TokenType::KEYWORD:
                 case TokenType::SYMBOL:
                 case TokenType::LITERAL: {
-                    printf("hello\n");
                     param = evaluateValue(token);
 
                     token = tokens->at(index++);

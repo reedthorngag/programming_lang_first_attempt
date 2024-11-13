@@ -27,6 +27,12 @@ namespace Lexer {
         },
         {
             "return", Keyword::RETURN
+        },
+        {
+            "break", Keyword::RETURN
+        },
+        {
+            "continue", Keyword::RETURN
         }
         
     };

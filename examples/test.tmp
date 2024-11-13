@@ -16,7 +16,7 @@ func main(): null {
     var test2: i32 = default += 5 - 2 + (8 >> 1 + 2); // this is a single line comment test
     printNum(test2);
     test2 += (5+1) - 3; // hello
-    printNum(test2)
+    printNum(test2);
     test(default,(5+2),100);
     test2 = 5 + (3 - 4 + 1);
     test(test2+8,0,0);
@@ -47,6 +47,12 @@ func main(): null {
     {
         var hello: i32 = 6;
         printNum(hello);
+        {
+            var hello2:i8 = 8;
+            printNum(hello2);
+            printNum(hello);
+            printLine("testing contexts");
+        }
     }
 
     var hello: i64 = 8;
@@ -54,5 +60,14 @@ func main(): null {
 
     // expected output 0x14 (aka 20)
     printNum(global test(5,5,5));
+
+    hello = 0;
+    while (true) {
+        if (hello == 5) break;
+        const testStr: string = "this is so cool!";
+        printNum(hello);
+        printLine(testStr);
+        continue;
+    }
 }
 

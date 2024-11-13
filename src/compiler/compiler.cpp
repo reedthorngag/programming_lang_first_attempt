@@ -117,9 +117,6 @@ namespace Compiler {
                 break;
 
             case ValueType::INTERMEDIATE:
-                //if (dontEmpty) return true; // should this be false or true? I think true will break nested function calls?
-                // I *think* this should just be cleared either way? But what if someone does func(5+func2())? 5 will be an intermediate.
-                // TODO: solve that problem
                 registers[reg].value = Value{};
                 break;
 
@@ -136,8 +133,13 @@ namespace Compiler {
 
     Reg findFreeReg() {
 
+        // return first empty or no longer used intermediate reg
         for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
             if (registers[reg].value.type == ValueType::EMPTY) return reg;
+            if (registers[reg].value.type == ValueType::INTERMEDIATE && !registers[reg].value.locked) {
+                registers[reg].value = Value{};
+                return reg;
+            }
         }
 
         unsigned int minRegPosition = UINT_MAX;
@@ -261,7 +263,9 @@ namespace Compiler {
                     printf("ERROR: %s:%d:%d: no registers available!\n",node->token.file,node->token.line,node->token.column);
                     exit(0);
                 }
-
+                if (node->literal.value > (char*)10000000) {
+                    printf("%s %s\n",node->literal.value,TypeMap[node->literal.type]);
+                }
                 switch (node->literal.type) {
                     case Type::string: {
                         std::stringstream ss;
@@ -269,6 +273,7 @@ namespace Compiler {
                         std::string* s = new std::string(ss.str().c_str());
                         for (int i = 0; i < (int)s->length(); i++) {
                             if ((*s)[i] == '.') (*s)[i] = '_';
+                            if ((*s)[i] == '/') (*s)[i] = '_';
                         }
                         strings.push_back(dataString{(char*)s->c_str(),node->literal.str.str,node->literal.str.len});
 
@@ -519,21 +524,28 @@ namespace Compiler {
     bool createScope(Node* node, Context* context) {
 
         Context scopeContext = Context{node,context,new std::unordered_map<std::string, Local*>,0};
+        
+        int parentOffset = 0;
+        Context* tmpContext = context;
+        while (tmpContext) {
+            parentOffset += tmpContext->spaceReq;
+            tmpContext = tmpContext->parent;
+        }
 
         int spaceReq = 0;
 
         for (auto& pair : *node->symbolMap) {
             if (pair.second->refCount) {
                 spaceReq += SizeByteMap[TypeSizeMap[pair.second->t]];
-                Local* l = new Local{pair.second,spaceReq,TypeSizeMap[pair.second->t]};
+                Local* l = new Local{pair.second,spaceReq+parentOffset,TypeSizeMap[pair.second->t]};
                 scopeContext.locals->insert(std::make_pair(pair.first,l));
             }
         }
 
         if (spaceReq) {
 
-            out("    push rbp");
-            out("    mov rbp, rsp");
+            scopeContext.spaceReq = spaceReq;
+
             out("sub","rsp",std::to_string(spaceReq));
 
             int offset = 0;
@@ -541,7 +553,7 @@ namespace Compiler {
                 if (pair.second->refCount) {
                     offset += SizeByteMap[TypeSizeMap[pair.second->t]];
                     std::stringstream ss;
-                    ss << "\tmov " << SizeString[TypeSizeMap[pair.second->t]] << " [rbp-" << offset << "], 0";
+                    ss << "\tmov " << SizeString[TypeSizeMap[pair.second->t]] << " [rbp-" << offset + parentOffset << "], 0";
                     out(ss.str());
                 }
             }
@@ -552,9 +564,6 @@ namespace Compiler {
 
         if (spaceReq) {
             out("add", "rsp",std::to_string(spaceReq));
-            //out("    mov rsp, rbp");
-            //out("    pop rbp");
-            out("    leave");
         }
 
         return true;
@@ -614,6 +623,118 @@ namespace Compiler {
         return ifNode;
     }
 
+    bool createWhile(Node* node, Context* context) {
+        
+        struct RegData {
+            Reg reg;
+            Value value;
+            unsigned int position;
+        };
+        std::stack<RegData> pushedRegs;
+        for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
+            if (!freeReg(reg, false)) {
+                printf("saving %s\n",registers[reg].subRegs[Size::QWORD]);
+                pushedRegs.push(RegData{reg,registers[reg].value,registers[reg].position});
+                out("push", registers[reg].subRegs[Size::QWORD]);
+                registers[reg].value = Value{};
+            }
+        }
+
+        Node* whileBody = node->firstChild->nextSibling;
+
+        if (!whileBody) {
+            printf("ERROR: %s:%d:%d: missing while body!\n",node->token.file,node->token.line,node->token.column);
+            return false;
+        }
+
+        if (whileBody->type != NodeType::SCOPE) {
+            printf("ERROR: %s:%d:%d: expected '{', found '%s'!\n",whileBody->token.file,whileBody->token.line,whileBody->token.column,NodeTypeMap[(int)whileBody->type]);
+            return false;
+        }
+
+        Context scopeContext = Context{whileBody,context,new std::unordered_map<std::string, Local*>,0};
+        
+        int parentOffset = 0;
+        Context* tmpContext = context;
+        while (tmpContext) {
+            parentOffset += tmpContext->spaceReq;
+            tmpContext = tmpContext->parent;
+        }
+
+        int spaceReq = 0;
+
+        for (auto& pair : *whileBody->symbolMap) {
+            if (pair.second->refCount) {
+                spaceReq += SizeByteMap[TypeSizeMap[pair.second->t]];
+                Local* l = new Local{pair.second,spaceReq+parentOffset,TypeSizeMap[pair.second->t]};
+                scopeContext.locals->insert(std::make_pair(pair.first,l));
+            }
+        }
+
+        if (spaceReq)
+            out("sub","rsp",std::to_string(spaceReq));
+
+        // label at the top of the while, jump here to continue
+        unsigned int whileStartLabel = labelNum++;
+        std::stringstream ss;
+        ss << ".label_" << std::to_string(whileStartLabel) << ':';
+        out(ss.str());
+
+        Reg reg = evaluate(node->firstChild, context);
+
+        if (reg == Reg::NUL) return false;
+
+        // jump if false to the end of the while body to exit
+        unsigned int whileEndLabel = labelNum++;
+        out("cmp",registers[reg].subRegs[Size::QWORD],"0");
+        ss.str("");
+        ss.clear();
+        ss << ".label_" << std::to_string(whileEndLabel);
+        out("je", ss.str());
+
+
+        // set any local variables to zero before the next iteration
+        int offset = 0;
+        for (auto& pair : *whileBody->symbolMap) {
+            if (pair.second->refCount) {
+                offset += SizeByteMap[TypeSizeMap[pair.second->t]];
+                std::stringstream ss;
+                ss << "\tmov " << SizeString[TypeSizeMap[pair.second->t]] << " [rbp-" << offset + parentOffset << "], 0";
+                out(ss.str());
+            }
+        }
+
+        if (!buildScope(&scopeContext)) return false;
+
+        ss.str("");
+        ss.clear();
+        ss << ".label_" << std::to_string(whileStartLabel);
+        out("jmp",ss.str());
+
+        ss.str("");
+        ss.clear();
+        ss << ".label_" << std::to_string(whileEndLabel) << ':';
+        out(ss.str());
+
+        if (spaceReq) {
+            out("add", "rsp",std::to_string(spaceReq));
+        }
+
+        // this must be after adding to rsp as they where pushed before
+        // space for locals was allocated
+        while (!pushedRegs.empty()) {
+            RegData r = pushedRegs.top();
+            pushedRegs.pop();
+            out("pop",registers[r.reg].subRegs[Size::QWORD]);
+            registers[r.reg].position = r.position;
+            registers[r.reg].value = r.value;
+            printf("retrieving %s\n",registers[r.reg].subRegs[Size::QWORD]);
+        }
+        
+
+        return true;
+    }
+
     bool buildScope(Context* context) {
 
         Node* child = context->node->firstChild;
@@ -623,18 +744,27 @@ namespace Compiler {
                     child = buildIf(child, context);
                     if (child == (Node*)-1) return false;
                     break;
+
+                case NodeType::WHILE:
+                    if (!createWhile(child, context)) return false;
+                    break;
+                
                 case NodeType::SCOPE:
                     if (!createScope(child, context)) return false;
                     break;
+
                 case NodeType::INVOCATION:
                     if (callFunction(child, context) == Reg::RSI) return false;
                     break;
+
                 case NodeType::OPERATION:
                     if (evaluate(child, context) == Reg::RSI) return false;
                     break;
+
                 case NodeType::RETURN:
                     if (!createReturn(child, context)) return false;
                     break;
+
                 default:
                     // TODO: think of a better word than node
                     printf("ERROR: %s:%d:%d: unexpected node: %s!\n",child->token.file,child->token.line,child->token.column,NodeTypeMap[(int)child->type]);

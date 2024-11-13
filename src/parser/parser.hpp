@@ -21,7 +21,8 @@ namespace Parser {
         INVOCATION,
         IF,
         ELSE,
-        RETURN
+        RETURN,
+        WHILE
     };
 
     extern const char* NodeTypeMap[];
