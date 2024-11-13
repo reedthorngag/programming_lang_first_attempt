@@ -229,6 +229,8 @@ int main(int argc, char** argv) {
         printf("\n");
     }
 
+    printf("Parser completed successfully!\n");
+
     if (!TypeChecker::process(tree)) {
         printf("Type check failed!\n");
         return 1;

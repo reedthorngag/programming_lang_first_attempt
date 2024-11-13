@@ -63,7 +63,7 @@ func main(): null {
 
     hello = 0;
     while (!false) {
-        if (hello <= 5) {
+        if (hello >= 5) {
             break;
         }
         const testStr: string = "this is so cool!";

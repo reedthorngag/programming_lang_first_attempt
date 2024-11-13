@@ -263,9 +263,7 @@ namespace Compiler {
                     printf("ERROR: %s:%d:%d: no registers available!\n",node->token.file,node->token.line,node->token.column);
                     exit(0);
                 }
-                if (node->literal.value > (char*)10000000) {
-                    printf("%s %s\n",node->literal.value,TypeMap[node->literal.type]);
-                }
+                
                 switch (node->literal.type) {
                     case Type::string: {
                         std::stringstream ss;

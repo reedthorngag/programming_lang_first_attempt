@@ -235,6 +235,11 @@ namespace Parser {
                     param = processGrouping();
                     if (!param) return nullptr;
                     goto processNext;
+
+                case TokenType::OPERATOR:
+                    param = processPrefixOperator(token);
+                    index--;
+                    goto processNext;
                     
                 case TokenType::KEYWORD:
                 case TokenType::SYMBOL:
@@ -353,7 +358,7 @@ processNext:
     }
 
     bool buildDeclarationNode(Keyword type) {
-
+        
         const char* typeStr = type==Keyword::VAR?"variable":"constant";
 
         Token token = tokens->at(index++);

@@ -353,6 +353,7 @@ namespace Parser {
 
             case Keyword::VAR:
             case Keyword::CONST:
+                if (parent) printf("wtf???\n");
                 if (buildDeclarationNode(token.keyword)) return parent;
                 else {
                     depth++;
@@ -425,14 +426,10 @@ namespace Parser {
             case TokenType::COMMA:
             case TokenType::ENDLINE:
             case TokenType::GROUPING_END:
-                appendChild(parent, node);
-                return parent;
+                return node;
 
             case TokenType::OPERATOR:
-                node = operation(node, token);
-                if (!node) return nullptr;
-                appendChild(parent, node);
-                return parent;
+                return operation(node, token);
 
             default:
                 printf("ERROR: %s:%d:%d: unexpected token %s!\n",token.file,token.line,token.column, TokenTypeMap[token.type]);
@@ -475,7 +472,10 @@ namespace Parser {
         };
         while (index < tokens->size()) {
             Token token = tokens->at(index++);
-
+            printf("token: %s",TokenTypeMap[token.type]);
+            if (token.type == TokenType::KEYWORD) printf(" %d\n",token.keyword);
+            else printf("\n");
+            
             switch (token.type) {
                 case TokenType::ENDLINE:
                     break;
@@ -485,9 +485,15 @@ namespace Parser {
                 case TokenType::SYMBOL:
                     parent = processSymbol(token);
                     break;
-                case TokenType::OPERATOR:
-                    parent = processPrefixOperator(token);
+                case TokenType::OPERATOR: {
+                    Node* node = processPrefixOperator(token);
+                    if (!node) {
+                        parent = nullptr;
+                        break;
+                    }
+                    appendChild(parent, node);
                     break;
+                }
                 case TokenType::SCOPE_START:
                     parent = newScope(token);
                     break;
@@ -497,7 +503,7 @@ namespace Parser {
                         return nullptr;
                     }
                     parent = parent->parent;
-                    //printf("%llu %d\n",(unsigned long long int)parent, depth);
+                    printf("%llu %d\n",(unsigned long long int)parent, depth);
                     break;
                 case TokenType::FILE_END:
                     break;
