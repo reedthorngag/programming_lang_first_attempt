@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <cstring>
 
 #include "parser.hpp"
 
@@ -388,17 +389,57 @@ namespace Parser {
         return parent;
     }
 
-    Node* processOperator(Token token) {
+    Node* processPrefixOperator(Token token) {
         
         Node* node = new Node{};
         node->type = NodeType::OPERATION;
         node->token = token;
 
-        node->op = Operator{token.value, getOpType(token.value)};        
+        node->op = Operator{token.value, getOpType(token.value)}; 
 
-        appendChild(parent, node);
+        if (node->op.type != OpType::SINGLE_OP_PREFIX) {
+            printf("ERROR: %s:%d:%d: invalid operation! Missing lvalue!\n",token.file,token.line,token.column);
+            return nullptr;
+        }
 
-        return parent;
+        token = tokens->at(index++);
+
+        if (token.type == TokenType::ENDLINE) {
+            printf("ERROR: %s:%d:%d: expecting value, found ';'!\n",token.file,token.line,token.column);
+            return nullptr;
+        }
+
+        Node* value = evaluateValue(token);
+        if (!value) return nullptr;
+
+        if (strlen(node->op.value) == 2 && value->type != NodeType::SYMBOL) {
+            printf("ERROR: %s:%d:%d: operand must be a modifiable value! (aka a variable)\n",token.file,token.line,token.column);
+            return nullptr;
+        }
+
+        appendChild(node, value);
+
+        token = tokens->at(index++);
+
+        switch (token.type) {
+            case TokenType::COMMA:
+            case TokenType::ENDLINE:
+            case TokenType::GROUPING_END:
+                appendChild(parent, node);
+                return parent;
+
+            case TokenType::OPERATOR:
+                node = operation(node, token);
+                if (!node) return nullptr;
+                appendChild(parent, node);
+                return parent;
+
+            default:
+                printf("ERROR: %s:%d:%d: unexpected token %s!\n",token.file,token.line,token.column, TokenTypeMap[token.type]);
+                return nullptr;
+        }
+
+        return nullptr;
     }
 
     Node* newScope(Token token) {
@@ -445,7 +486,7 @@ namespace Parser {
                     parent = processSymbol(token);
                     break;
                 case TokenType::OPERATOR:
-                    parent = processOperator(token);
+                    parent = processPrefixOperator(token);
                     break;
                 case TokenType::SCOPE_START:
                     parent = newScope(token);

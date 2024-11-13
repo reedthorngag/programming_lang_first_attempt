@@ -121,6 +121,7 @@ namespace Compiler {
     };
 
     bool freeReg(Reg reg);
+    Reg findFreeReg();
 
     bool compile(std::unordered_map<std::string, Parser::Node*>* tree, std::ofstream* out);
 };

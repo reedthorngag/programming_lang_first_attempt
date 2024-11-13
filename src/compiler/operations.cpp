@@ -50,6 +50,22 @@ namespace Compiler {
         if (b != Reg::RCX) swap(b, Reg::RCX);
     }
 
+    void sal(Reg a, Reg b) {
+
+        if (b != Reg::RCX) swap(b, Reg::RCX);
+
+        out("sal", registers[a].subRegs[Size::QWORD], registers[Reg::RCX].subRegs[0]);
+
+        if (b != Reg::RCX) swap(b, Reg::RCX);
+    }
+
+    void sar(Reg a, Reg b) {
+
+        if (b != Reg::RCX) swap(b, Reg::RCX);
+        out("sar", registers[a].subRegs[Size::QWORD], registers[Reg::RCX].subRegs[0]);
+        if (b != Reg::RCX) swap(b, Reg::RCX);
+    }
+
     void _xor(Reg a, Reg b) {
         out("xor", registers[a].subRegs[Size::QWORD], registers[b].subRegs[Size::QWORD]);
     }
@@ -64,6 +80,12 @@ namespace Compiler {
 
     void _not(Reg a) {
         out("not", registers[a].subRegs[Size::QWORD]);
+    }
+
+    void lnot(Reg a) {
+        out("cmp",registers[a].subRegs[Size::QWORD],"0");
+        out("mov",registers[a].subRegs[Size::QWORD],"0");
+        out("setz",registers[a].subRegs[Size::BYTE]);
     }
 
     void dec(Reg a) {
@@ -163,9 +185,10 @@ namespace Compiler {
         {"|",_or},
         {"^",_xor},
         {"&",_and},
-        {"<<",shl},
-        {">>",shr},
-        //{">>>",13},
+        {"<<",sal},
+        {"<<<",shl},
+        {">>",sar},
+        {">>>",shr},
         {"+",add},
         {"-",sub},
         //{"*",mul},
@@ -174,7 +197,7 @@ namespace Compiler {
     };
 
     std::unordered_map<std::string, void (*)(Reg a)> singleOperandOps = {
-        {"!",_not},
+        {"!",lnot},
         {"~",_not},
         {"++",inc},
         {"--",dec},
@@ -238,8 +261,17 @@ namespace Compiler {
             case OpType::MATH:
                 return mathmaticalOp(op, a, b);
             case OpType::SINGLE_OP_POSTFIX:
-            case OpType::SINGLE_OP_PREFIX:
-                return singleOperandOp(op, a);
+            case OpType::SINGLE_OP_PREFIX: {
+                Reg reg = singleOperandOp(op, a);
+                if (OpType::SINGLE_OP_PREFIX) return reg;
+
+                Reg reg2 = findFreeReg();
+                registers[reg].value = Value{ValueType::INTERMEDIATE,{.symbol={nullptr}},false,false,false};
+                registers[reg].position = position++;
+
+                assign(reg2, reg);
+                return reg2;
+            }
         }
 
         return Reg::NUL;

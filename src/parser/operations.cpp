@@ -1,3 +1,4 @@
+#include <cstring>
 
 #include "parser.hpp"
 
@@ -154,6 +155,46 @@ namespace Parser {
             return nullptr;
         }
 
+        OpType opType = getOpType(token.value);
+
+        if (opType == OpType::SINGLE_OP_PREFIX) {
+            Node* node = new Node{};
+            node->type = NodeType::OPERATION;
+            node->token = token;
+            node->op = Operator{token.value, OpType::SINGLE_OP_POSTFIX};
+
+            if (strlen(node->op.value) != 2) {
+                printf("ERROR: %s:%d:%d: unexpected operator '%s'!\n",lvalue->token.file,lvalue->token.line,lvalue->token.column,token.value);
+                return nullptr;
+            }
+
+            if (lvalue->type != NodeType::SYMBOL) {
+                printf("ERROR: %s:%d:%d: operand must be a modifiable value! (aka a variable)\n",lvalue->token.file,lvalue->token.line,lvalue->token.column);
+                return nullptr;
+            }
+
+            appendChild(node, lvalue);
+
+            Token token = tokens->at(index++);
+
+            switch (token.type) {
+                case TokenType::COMMA:
+                case TokenType::ENDLINE:
+                case TokenType::GROUPING_END:
+                    return node;
+
+                case TokenType::OPERATOR:
+                    node = operation(node, token);
+                    if (!node) return nullptr;
+                    return node;
+
+                default:
+                    printf("ERROR: %s:%d:%d: unexpected token %s!\n",token.file,token.line,token.column, TokenTypeMap[token.type]);
+                    return nullptr;
+            }
+            return nullptr;
+        }
+
         if (auto key = assignmentOps.find(token.value); key == assignmentOps.end()) {
             printf("ERROR: %s:%d:%d: expecting assignment operator (=, +=, *=, etc), found '%s'!\n",token.file,token.line,token.column,token.value);
             return nullptr;
@@ -244,7 +285,7 @@ namespace Parser {
                 return node;
             }
             case TokenType::OPERATOR:
-                printf("not yet implemeted\n");
+                processPrefixOperator(token);
                 break;
             default:
                 printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
@@ -262,6 +303,39 @@ namespace Parser {
         node->token = op;
 
         if (lvalue) appendChild(node, lvalue);
+
+        if (node->op.type == OpType::SINGLE_OP_PREFIX) {
+            node->op.type = OpType::SINGLE_OP_POSTFIX;
+
+            if (strlen(node->op.value) != 2) {
+                printf("ERROR: %s:%d:%d: unexpected operator '%s'!\n",lvalue->token.file,lvalue->token.line,lvalue->token.column,op.value);
+                return nullptr;
+            }
+
+            if (lvalue->type != NodeType::SYMBOL) {
+                printf("ERROR: %s:%d:%d: operand must be a modifiable value! (aka a variable)\n",lvalue->token.file,lvalue->token.line,lvalue->token.column);
+                return nullptr;
+            }
+
+            Token token = tokens->at(index++);
+
+            switch (token.type) {
+                case TokenType::COMMA:
+                case TokenType::ENDLINE:
+                case TokenType::GROUPING_END:
+                    return node;
+
+                case TokenType::OPERATOR:
+                    node = operation(node, token);
+                    if (!node) return nullptr;
+                    return node;
+
+                default:
+                    printf("ERROR: %s:%d:%d: unexpected token %s!\n",token.file,token.line,token.column, TokenTypeMap[token.type]);
+                    return nullptr;
+            }
+            return nullptr;
+        }
         
         Precedence lOp = getPrecedence(op);
 
@@ -304,7 +378,8 @@ processNext:
                 }
             }
             case TokenType::OPERATOR:
-                printf("not yet implemented\n");
+                processPrefixOperator(token);
+
                 break;
             default:
                 printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);

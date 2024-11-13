@@ -64,7 +64,6 @@ namespace TypeChecker {
 
         Node* rvalue = lvalue->nextSibling;
         if (!rvalue) {
-            printf("you missed an edge case idiot\n");
             return ltype;
         }
         Type rtype = getType(rvalue, ltype);

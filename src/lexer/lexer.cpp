@@ -72,6 +72,7 @@ namespace Lexer {
         {"++",true},
         {"--",true},
         {"<<",true},
+        {"<<<",true},
         {">>",true},
         {">>>",true},
     };

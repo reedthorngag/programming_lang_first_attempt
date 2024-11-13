@@ -62,14 +62,14 @@ func main(): null {
     printNum(global test(5,5,5));
 
     hello = 0;
-    while (true) {
-        if (hello == 5) {
+    while (!false) {
+        if (hello <= 5) {
             break;
         }
         const testStr: string = "this is so cool!";
         printNum(hello);
         printLine(testStr);
-        hello += 1;
+        ++hello;
         continue;
     }
 }

@@ -271,6 +271,8 @@ namespace Parser {
 
     Node* assignment(Token token);
     Node* processGrouping();
+    Node* processPrefixOperator(Token token);
+
     extern OpType getOpType(char* op);
     Precedence getPrecedence(Token token);
     Node* operation(Node* lvalue, Token op);
