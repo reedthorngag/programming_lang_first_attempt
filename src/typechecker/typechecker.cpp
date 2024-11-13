@@ -162,6 +162,10 @@ namespace TypeChecker {
                     if (processInvocation(child) == Type::error) return false;
                     break;
 
+                case NodeType::BREAK:
+                case NodeType::CONTINUE:
+                    break;
+
                 default:
                     printf("ERROR: %s:%d:%d: '%s' unexpected node!\n",child->token.file,child->token.line,child->token.column,NodeTypeMap[(int)child->type]);
                     return false;

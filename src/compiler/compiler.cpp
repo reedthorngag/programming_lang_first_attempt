@@ -354,6 +354,40 @@ namespace Compiler {
         return true;
     }
 
+    bool insertBreak(Node* node, Context* context) {
+
+        while (context) {
+            if (context->breakLabel) {
+                out("jmp",*context->breakLabel);
+                return true;
+            }
+            context = context->parent;
+        }
+
+        printf("ERROR: %s:%d:%d: Break not allowed here! Must be in while, for or switch!",node->token.file,node->token.line,node->token.column);
+        return false;
+    }
+
+    bool insertContinue(Node* node, Context* context) {
+
+        for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
+            if (registers[reg].value.modified && registers[reg].value.preserveModified) {
+                freeReg(reg, true);
+            }
+        }
+
+        while (context) {
+            if (context->continueLabel) {
+                out("jmp",*context->continueLabel);
+                return true;
+            }
+            context = context->parent;
+        }
+
+        printf("ERROR: %s:%d:%d: Continue not allowed here! Must be in while, for or switch!",node->token.file,node->token.line,node->token.column);
+        return false;
+    }
+
     Reg callFunction(Node* funcCall, Context* context) {
 
         //printf("saving registers before %s func call, line %d\n",funcCall->symbol->name,funcCall->token.line);
@@ -652,7 +686,7 @@ namespace Compiler {
             return false;
         }
 
-        Context scopeContext = Context{whileBody,context,new std::unordered_map<std::string, Local*>,0};
+        Context scopeContext = Context{whileBody,context,new std::unordered_map<std::string, Local*>,0,nullptr,nullptr};
         
         int parentOffset = 0;
         Context* tmpContext = context;
@@ -677,8 +711,12 @@ namespace Compiler {
         // label at the top of the while, jump here to continue
         unsigned int whileStartLabel = labelNum++;
         std::stringstream ss;
-        ss << ".label_" << std::to_string(whileStartLabel) << ':';
+        ss << ".label_" << std::to_string(whileStartLabel);
+        std::string startLabel = ss.str();
+        ss << ':';
         out(ss.str());
+
+        scopeContext.continueLabel = &startLabel;
 
         Reg reg = evaluate(node->firstChild, context);
 
@@ -692,6 +730,9 @@ namespace Compiler {
         ss << ".label_" << std::to_string(whileEndLabel);
         out("je", ss.str());
 
+        std::string endLabel = ss.str();
+
+        scopeContext.breakLabel = &endLabel;
 
         // set any local variables to zero before the next iteration
         int offset = 0;
@@ -706,14 +747,17 @@ namespace Compiler {
 
         if (!buildScope(&scopeContext)) return false;
 
-        ss.str("");
-        ss.clear();
-        ss << ".label_" << std::to_string(whileStartLabel);
-        out("jmp",ss.str());
+        for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
+            if (registers[reg].value.modified && registers[reg].value.preserveModified) {
+                freeReg(reg, true);
+            }
+        }
+
+        out("jmp",startLabel);
 
         ss.str("");
         ss.clear();
-        ss << ".label_" << std::to_string(whileEndLabel) << ':';
+        ss << endLabel << ':';
         out(ss.str());
 
         if (spaceReq) {
@@ -763,6 +807,14 @@ namespace Compiler {
 
                 case NodeType::RETURN:
                     if (!createReturn(child, context)) return false;
+                    break;
+
+                case NodeType::BREAK:
+                    if (!insertBreak(child, context)) return false;
+                    break;
+
+                case NodeType::CONTINUE:
+                    if (!insertContinue(child, context)) return false;
                     break;
 
                 default:

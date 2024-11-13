@@ -116,6 +116,8 @@ namespace Compiler {
         Context* parent;
         std::unordered_map<std::string, Local*>* locals;
         int spaceReq;
+        std::string* breakLabel;
+        std::string* continueLabel;
     };
 
     bool freeReg(Reg reg);

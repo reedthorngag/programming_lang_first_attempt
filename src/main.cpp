@@ -110,7 +110,9 @@ int main(int argc, char** argv) {
         "IF",
         "ELSE",
         "WHILE",
-        "RETURN"
+        "RETURN",
+        "BREAK",
+        "CONTINUE"
     };
 
     printf("Input file: %s\n%s\n",inputFile,buf);

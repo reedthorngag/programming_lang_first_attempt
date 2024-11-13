@@ -31,7 +31,9 @@ namespace Parser {
         "IF",
         "ELSE",
         "RETURN",
-        "WHILE"
+        "WHILE",
+        "BREAK",
+        "CONTINUE"
     };
 
     const char* TypeMap[] {
@@ -356,6 +358,19 @@ namespace Parser {
                     return nullptr;
                 }
 
+            case Keyword::BREAK:
+            case Keyword::CONTINUE: {
+                Node* node = new Node{token.keyword == Keyword::BREAK ? NodeType::BREAK : NodeType::CONTINUE,nullptr,nullptr,nullptr,{.symbol={nullptr}},token,nullptr};
+                appendChild(parent,node);
+
+                token = tokens->at(index++);
+                if (token.type != TokenType::ENDLINE) {
+                    printf("ERROR: %s:%d:%d: unexpected %s, expecting ';'!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                    return nullptr;
+                }
+                return parent;
+            }
+
             default:
                 printf("ERROR: %s:%d:%d: keyword not yet implemented!\n",token.file,token.line,token.column);
                 return nullptr;
@@ -374,8 +389,16 @@ namespace Parser {
     }
 
     Node* processOperator(Token token) {
-        printf("not implemented\n");
-        return nullptr;
+        
+        Node* node = new Node{};
+        node->type = NodeType::OPERATION;
+        node->token = token;
+
+        node->op = Operator{token.value, getOpType(token.value)};        
+
+        appendChild(parent, node);
+
+        return parent;
     }
 
     Node* newScope(Token token) {
@@ -405,6 +428,8 @@ namespace Parser {
             "IF",
             "ELSE",
             "WHILE",
+            "RETURN",
+            "BREAK",
             "RETURN"
         };
         while (index < tokens->size()) {

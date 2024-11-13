@@ -180,7 +180,7 @@ namespace Parser {
         return opNode;
     }
 
-    inline OpType getOpType(char* op) {
+    OpType getOpType(char* op) {
         if (auto key = assignmentOps.find(op); key != assignmentOps.end()) return OpType::ASSIGNMENT;
         if (auto key = mathmaticalOps.find(op); key != mathmaticalOps.end()) return OpType::MATH;
         if (auto key = singleOperandOps.find(op); key != singleOperandOps.end()) return OpType::SINGLE_OP_PREFIX;

@@ -1,3 +1,4 @@
+#include <cstring>
 
 #include "lexer.hpp"
 
@@ -29,10 +30,10 @@ namespace Lexer {
             "return", Keyword::RETURN
         },
         {
-            "break", Keyword::RETURN
+            "break", Keyword::BREAK
         },
         {
-            "continue", Keyword::RETURN
+            "continue", Keyword::CONTINUE
         }
         
     };
@@ -110,6 +111,11 @@ namespace Lexer {
     std::unordered_map<std::string, int> literalTypesMap = {
         {"MIN",0},
         {"MAX",1}
+    };
+
+    std::unordered_map<std::string, std::string> builtinTypes = {
+        {"true","1"},
+        {"false","0"}
     };
 
     std::vector<Token>* lexerParse(char* file, char* input) {
@@ -350,7 +356,13 @@ namespace Lexer {
         else if (validLiteral(str,len)) {
             *context->isLiteral = 0;
             tokens->push_back(Token{TokenType::LITERAL,{.value={str}},context->file,*context->line,*context->column-len});
-        } 
+        }
+        else if (auto key = builtinTypes.find(str); key != builtinTypes.end()) {
+            *context->isLiteral = 0;
+            char* str = new char[key->second.size()+1];
+            strcpy(str,key->second.c_str());
+            tokens->push_back(Token{TokenType::LITERAL,{.value={str}},context->file,*context->line,*context->column-len});
+        }
         else if (auto key = keywordMap.find(str); key != keywordMap.end()) {
             *context->isSymbol = 0;
             tokens->push_back(Token{TokenType::KEYWORD,{.keyword={key->second}},context->file,*context->line,*context->column-len});

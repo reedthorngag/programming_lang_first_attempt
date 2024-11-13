@@ -51,10 +51,10 @@ fibonacci_i64_i64_i64:
     sub rax,rbx
     push rax
     mov rax,[rbp-24]
-    mov rcx,[rbp-16]
-    add rax,rcx
+    mov rbx,[rbp-16]
+    add rax,rbx
     push rax
-    push rcx
+    push rbx
     pop rax
     pop rbx
     pop rcx

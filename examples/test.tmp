@@ -63,10 +63,13 @@ func main(): null {
 
     hello = 0;
     while (true) {
-        if (hello == 5) break;
+        if (hello == 5) {
+            break;
+        }
         const testStr: string = "this is so cool!";
         printNum(hello);
         printLine(testStr);
+        hello += 1;
         continue;
     }
 }

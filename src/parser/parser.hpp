@@ -22,7 +22,9 @@ namespace Parser {
         IF,
         ELSE,
         RETURN,
-        WHILE
+        WHILE,
+        BREAK,
+        CONTINUE
     };
 
     extern const char* NodeTypeMap[];
@@ -269,6 +271,7 @@ namespace Parser {
 
     Node* assignment(Token token);
     Node* processGrouping();
+    extern OpType getOpType(char* op);
     Precedence getPrecedence(Token token);
     Node* operation(Node* lvalue, Token op);
 

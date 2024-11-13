@@ -23,7 +23,9 @@ namespace Lexer {
         IF,
         ELSE,
         WHILE,
-        RETURN
+        RETURN,
+        BREAK,
+        CONTINUE
     };
 
     enum TokenType {
