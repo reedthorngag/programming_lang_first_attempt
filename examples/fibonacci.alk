@@ -2,9 +2,8 @@
 func fibonacci(a: i64, b: i64, n: i64): null {
     printNum(a+b);
     if (--n) {
-        return;
+        fibonacci(b, a+b, n);
     }
-    fibonacci(b, a+b, n);
 }
 
 func main(): null {

@@ -263,7 +263,7 @@ namespace Compiler {
                     printf("ERROR: %s:%d:%d: no registers available!\n",node->token.file,node->token.line,node->token.column);
                     exit(0);
                 }
-                
+
                 switch (node->literal.type) {
                     case Type::string: {
                         std::stringstream ss;
@@ -502,7 +502,19 @@ namespace Compiler {
             if (pair.second->refCount) {
                 offset += SizeByteMap[TypeSizeMap[pair.second->t]];
                 std::stringstream ss;
-                ss << "\tmov " << SizeString[TypeSizeMap[pair.second->t]] << " [rbp-" << offset << "], 0";
+
+                // if the symbol is a function param, put that instead of zero
+                Param param = {};
+                for (Param p : *node->symbol->func->params) {
+                    if (p.name == pair.second->name) {
+                        param = p;
+                        break;
+                    }
+                }
+
+                ss << "\tmov " << SizeString[TypeSizeMap[pair.second->t]] << " [rbp-" << offset << "], ";
+                if (param.reg) ss << registers[param.reg].subRegs[TypeSizeMap[pair.second->t]];
+                else ss << '0';
                 out(ss.str());
             }
         }
@@ -532,7 +544,7 @@ namespace Compiler {
         Context* context = functionSetup(node);
         
         for (Param p : *node->symbol->func->params) {
-            registers[p.reg].value = Value{ValueType::LOCAL,{.local = context->locals->find(p.name)->second},true,true,false};
+            registers[p.reg].value = Value{ValueType::LOCAL,{.local = context->locals->find(p.name)->second},false,true,false};
             registers[p.reg].position = position++;
         }
 

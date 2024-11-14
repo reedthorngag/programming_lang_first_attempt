@@ -471,7 +471,7 @@ namespace Parser {
         };
         while (index < tokens->size()) {
             Token token = tokens->at(index++);
-            printf("token: %s",TokenTypeMap[token.type]);
+            //printf("token: %s",TokenTypeMap[token.type]);
             if (token.type == TokenType::KEYWORD) printf(" %d\n",token.keyword);
             else printf("\n");
             
