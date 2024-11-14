@@ -1,7 +1,7 @@
 
 
 test
-test.*
+examples/*.asm
 !*.alk
 builtins.o
 bin/
