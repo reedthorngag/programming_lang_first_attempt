@@ -30,9 +30,10 @@ namespace Compiler {
 
         out("xor",registers[Reg::RDX].subRegs[Size::QWORD],registers[Reg::RDX].subRegs[Size::QWORD]);
 
-        if (b == Reg::RAX) 
+        if (b == Reg::RAX) {
             if (a == Reg::RCX) swap(a,b);
             else assign(Reg::RCX, b);
+        }
 
         assign(Reg::RAX, a);
 
@@ -59,9 +60,10 @@ namespace Compiler {
 
         out("xor",registers[Reg::RDX].subRegs[Size::QWORD],registers[Reg::RDX].subRegs[Size::QWORD]);
 
-        if (b == Reg::RAX) 
+        if (b == Reg::RAX) {
             if (a == Reg::RCX) swap(a,b);
             else assign(Reg::RCX, b);
+        }
 
         assign(Reg::RAX, a);
 
