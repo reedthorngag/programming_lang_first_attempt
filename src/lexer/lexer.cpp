@@ -439,7 +439,7 @@ namespace Lexer {
     }
 
     inline bool symbolChar(char c, int pos) {
-        if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c == 96) return true;
+        if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c == 95) return true;
         if (isNumber(c) && pos) return true;
         return false;
     }

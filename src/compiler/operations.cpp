@@ -54,7 +54,7 @@ namespace Compiler {
 
     void mod(Reg a, Reg b) {
 
-        out("push",registers[Reg::RAX].subRegs[Size::QWORD]);
+        if (a != Reg::RAX) out("push",registers[Reg::RAX].subRegs[Size::QWORD]);
         if (a != Reg::RDX) out("push",registers[Reg::RDX].subRegs[Size::QWORD]);
         out("push",registers[Reg::RCX].subRegs[Size::QWORD]);
 
@@ -77,7 +77,7 @@ namespace Compiler {
             out("pop",registers[Reg::RDX].subRegs[Size::QWORD]);
         }
         
-        out("pop",registers[Reg::RAX].subRegs[Size::QWORD]);
+        if (a != Reg::RAX) out("pop",registers[Reg::RAX].subRegs[Size::QWORD]);
     }
 
     void shl(Reg a, Reg b) {

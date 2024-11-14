@@ -28,6 +28,7 @@ namespace Compiler {
     }
 
     void swapRegs(Reg a, Reg b);
+    void assign(Reg a, Reg b);
     
     Reg doOp(Node* op, Reg a, Reg b);
 };

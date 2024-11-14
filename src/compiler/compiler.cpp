@@ -175,6 +175,8 @@ namespace Compiler {
         }
 
         registers[firstArg].value.locked = false;
+
+        printf("op: %s\n",node->token.value);
         
         //printf("operation: %d: %s %d  %s  %s %d\n",node->token.line,registers[firstArg].subRegs[Size::QWORD],registers[firstArg].value.type,node->op.value,registers[secondArg].subRegs[Size::QWORD],registers[secondArg].value.type);
         return doOp(node, firstArg, secondArg);
@@ -205,6 +207,19 @@ namespace Compiler {
                         // passes around pointers. be aware of this when modifying stuff tho.
                         if (name && name == node->symbol->name) {
                             if (v.modified && !v.preserveModified) break;
+
+                            if (v.locked) {
+                                Reg reg = findFreeReg();
+                                if (reg == Reg::NUL) { 
+                                    printf("ERROR: %s:%d:%d: no registers available!\n",node->token.file,node->token.line,node->token.column);
+                                    return Reg::RSI;
+                                }
+
+                                assign(reg,r);
+                                registers[reg].value = Value{ValueType::INTERMEDIATE,{.symbol={nullptr}},false,false,false};
+                                return reg;
+                            }
+
                             return r;
                         }
                     }
@@ -619,6 +634,10 @@ namespace Compiler {
 
         if (reg == Reg::NUL) return (Node*)-1;
 
+        for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
+            freeReg(reg, false);
+        }
+
         unsigned int ifEndLabel = labelNum++;
         out("cmp",registers[reg].subRegs[Size::QWORD],"0");
         std::stringstream ss;
@@ -636,8 +655,15 @@ namespace Compiler {
             printf("ERROR: %s:%d:%d: expected '{', found '%s'!\n",ifNode->token.file,ifNode->token.line,ifNode->token.column,NodeTypeMap[(int)ifNode->type]);
             return (Node*)-1;
         }
-
+        printf("label: %d\n",ifEndLabel);
         if (!createScope(ifNode, context)) return (Node*)-1;
+
+        // preserve modified registers
+        for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
+            if (registers[reg].value.modified && registers[reg].value.preserveModified) {
+                freeReg(reg, false);
+            }
+        }
 
         Node* elseNode = node->nextSibling->nextSibling;
 
@@ -655,7 +681,18 @@ namespace Compiler {
 
         if (elseNode && elseNode->type == NodeType::ELSE) {
 
+            for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
+                freeReg(reg, false);
+            }
+
             if (!createScope(elseNode, context)) return (Node*)-1;
+
+            // preserve modified registers
+            for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
+                if (registers[reg].value.modified && registers[reg].value.preserveModified) {
+                    freeReg(reg, true);
+                }
+            }
 
             std::stringstream ss2;
             ss2 << ".label_" << std::to_string(elseEndLabel) << ':';
@@ -757,6 +794,7 @@ namespace Compiler {
 
         if (!buildScope(&scopeContext)) return false;
 
+        // preserve modified registers
         for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
             if (registers[reg].value.modified && registers[reg].value.preserveModified) {
                 freeReg(reg, true);
@@ -812,6 +850,7 @@ namespace Compiler {
                     break;
 
                 case NodeType::OPERATION:
+                    printf("operation: %s\n",child->token.value);
                     if (evaluate(child, context) == Reg::RSI) return false;
                     break;
 

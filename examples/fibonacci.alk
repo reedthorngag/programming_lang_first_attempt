@@ -1,12 +1,33 @@
 
-func fibonacci(a: i64, b: i64, n: i64): null {
+func recursive_fibonacci(a: i64, b: i64, n: i64): null {
     printNum(a+b);
-    if (--n) {
-        fibonacci(b, a+b, n);
+    if (n--) {
+        recursive_fibonacci(b, a+b, n);
+    }
+}
+
+func iterative_fibonacci(n: i64) {
+    var a: i64 = 0;
+    var b: i64 = 1;
+    var i: i64 = 0;
+
+    while (i++ <= n) {
+        printNum(a+b);
+
+        // alternate between which is assigned to
+        if (i % 2) {
+            a = a + b;
+        } else {
+            b = a + b;
+        }
     }
 }
 
 func main(): null {
-    fibonacci(0, 1, 5);
+    printLine("running recursive fibonacci...");
+    recursive_fibonacci(0, 1, 5);
+    printLine("running iterative fibonacci...");
+    iterative_fibonacci(5);
+    printLine("\\nFinished!");
 }
 
