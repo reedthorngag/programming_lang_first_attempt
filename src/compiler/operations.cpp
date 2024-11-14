@@ -23,7 +23,28 @@ namespace Compiler {
     }
 
     void div(Reg a, Reg b) {
-        out("   unsupported OP! (div)");
+
+        if (a != Reg::RAX) out("push",registers[Reg::RAX].subRegs[Size::QWORD]);
+        out("push",registers[Reg::RDX].subRegs[Size::QWORD]);
+        out("push",registers[Reg::RCX].subRegs[Size::QWORD]);
+
+        out("xor",registers[Reg::RDX].subRegs[Size::QWORD],registers[Reg::RDX].subRegs[Size::QWORD]);
+
+        if (b == Reg::RAX) 
+            if (a == Reg::RCX) swap(a,b);
+            else assign(Reg::RCX, b);
+
+        assign(Reg::RAX, a);
+
+        out("div",registers[b].subRegs[Size::QWORD]);
+
+        out("pop",registers[Reg::RCX].subRegs[Size::QWORD]);
+        out("pop",registers[Reg::RDX].subRegs[Size::QWORD]);
+
+        if (a != Reg::RAX) {
+            assign(a,Reg::RAX);
+            out("pop",registers[Reg::RAX].subRegs[Size::QWORD]);
+        }
     }
 
     void mul(Reg a, Reg b) {
@@ -31,7 +52,30 @@ namespace Compiler {
     }
 
     void mod(Reg a, Reg b) {
-        out("   unsupported OP! (mod)");
+
+        out("push",registers[Reg::RAX].subRegs[Size::QWORD]);
+        if (a != Reg::RDX) out("push",registers[Reg::RDX].subRegs[Size::QWORD]);
+        out("push",registers[Reg::RCX].subRegs[Size::QWORD]);
+
+        out("xor",registers[Reg::RDX].subRegs[Size::QWORD],registers[Reg::RDX].subRegs[Size::QWORD]);
+
+        if (b == Reg::RAX) 
+            if (a == Reg::RCX) swap(a,b);
+            else assign(Reg::RCX, b);
+
+        assign(Reg::RAX, a);
+
+        out("div",registers[b].subRegs[Size::QWORD]);
+
+
+        out("pop",registers[Reg::RCX].subRegs[Size::QWORD]);
+
+        if (a != Reg::RDX) {
+            assign(a,Reg::RDX);
+            out("pop",registers[Reg::RDX].subRegs[Size::QWORD]);
+        }
+        
+        out("pop",registers[Reg::RAX].subRegs[Size::QWORD]);
     }
 
     void shl(Reg a, Reg b) {
@@ -163,9 +207,9 @@ namespace Compiler {
         {"=",assign},
         {"+=",add},
         {"-=",sub},
-        //{"/=",div},
+        {"/=",div},
         //{"*=",mul},
-        //{"%=",mod},
+        {"%=",mod},
         {"<<=",shl},
         {">>=",shr},
         {"^=",_xor},
@@ -192,8 +236,8 @@ namespace Compiler {
         {"+",add},
         {"-",sub},
         //{"*",mul},
-        //{"/",div},
-        //{"%",mod},
+        {"/",div},
+        {"%",mod},
     };
 
     std::unordered_map<std::string, void (*)(Reg a)> singleOperandOps = {

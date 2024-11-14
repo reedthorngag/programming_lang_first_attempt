@@ -2,6 +2,6 @@
 
 test
 test.*
-!test.tmp
+!*.alk
 builtins.o
 bin/
