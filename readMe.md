@@ -1,4 +1,8 @@
 
+# Alk programming language
+
+This is currently in development and nowhere near being practical for use
+
 language goals:
   * have my own language that I can adjust to how I like
   * fast compilation times
@@ -10,10 +14,6 @@ language goals:
 current language vision:
   * typescript crossed with c++
 
-
-features:
-  * default initialize to zero like any sane person would make a sane language do (maybe keyword to explicitly exclude variables, or just make the compiler optimize it out when possible/detectable)
-  * good bitwise support such as bool arrays (and possibly bool vars in the same scope) using 1 bit per value and good bitmask support
 
 
 ```
