@@ -1,20 +1,11 @@
 
-
 func fibonacci(a: i64, b: i64, n: i64): null {
     printNum(a+b);
-    if (n == 0) {
+    if (--n) {
         return;
     }
-    fibonacci(b, a+b, n-1);
+    fibonacci(b, a+b, n);
 }
-
-/*
-func fibonacci2(a: i64, b: i64, n: i64): null {
-    printNum(a+b);
-    if (n != 0) {
-        fibonacci(b, a+b, n-1);
-    }
-}*/
 
 func main(): null {
     fibonacci(0, 1, 5);

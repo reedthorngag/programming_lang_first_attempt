@@ -143,11 +143,19 @@ namespace Parser {
                     inGrouping = true;
                     break;
 
+                case TokenType::OPERATOR:
+                    param = processPrefixOperator(token);
+                    index--;
+                    if (!param) return nullptr;
+                    goto processNext;
+
                 case TokenType::KEYWORD:
                 case TokenType::SYMBOL:
                 case TokenType::LITERAL: {
                     param = evaluateValue(token);
+                    if (!param) return nullptr;
 
+processNext:
                     token = tokens->at(index++);
 
                     if (token.type == TokenType::COMMA || token.type == TokenType::GROUPING_END) {
@@ -238,6 +246,7 @@ namespace Parser {
 
                 case TokenType::OPERATOR:
                     param = processPrefixOperator(token);
+                    if (!param) return nullptr;
                     index--;
                     goto processNext;
                     
@@ -245,6 +254,7 @@ namespace Parser {
                 case TokenType::SYMBOL:
                 case TokenType::LITERAL: {
                     param = evaluateValue(token);
+                    if (!param) return nullptr;
 
 processNext:
                     token = tokens->at(index++);
@@ -325,6 +335,7 @@ processNext:
             case TokenType::SYMBOL:
             case TokenType::LITERAL: {
                 param = evaluateValue(token);
+                if (!param) return false;
 
 processNext:
                 token = tokens->at(index++);

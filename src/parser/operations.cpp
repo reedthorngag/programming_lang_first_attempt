@@ -67,11 +67,20 @@ namespace Parser {
                 case TokenType::GROUPING_START:
                     inGrouping = true;
                     break;
+
+                case TokenType::OPERATOR:
+                    param = processPrefixOperator(token);
+                    index--;
+                    if (!param) return nullptr;
+                    goto processNext;
+
                 case TokenType::KEYWORD:
                 case TokenType::SYMBOL:
                 case TokenType::LITERAL: {
                     param = evaluateValue(token);
+                    if (!param) return nullptr;
 
+processNext:
                     token = tokens->at(index++);
 
                     if (token.type == TokenType::COMMA || token.type == TokenType::GROUPING_END) {
@@ -258,11 +267,20 @@ namespace Parser {
                 }
                 return node;
             }
+
+            case TokenType::OPERATOR:
+                node = processPrefixOperator(token);
+                index--;
+                if (!node) return nullptr;
+                goto processNext;
+
             case TokenType::KEYWORD:
             case TokenType::SYMBOL:
             case TokenType::LITERAL: {
                 node = evaluateValue(token);
+                if (!node) return nullptr;
 
+processNext:
                 token = tokens->at(index++);
 
                 if (token.type == TokenType::GROUPING_END)
@@ -284,9 +302,7 @@ namespace Parser {
 
                 return node;
             }
-            case TokenType::OPERATOR:
-                processPrefixOperator(token);
-                break;
+            
             default:
                 printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
                 return nullptr;

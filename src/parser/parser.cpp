@@ -353,7 +353,6 @@ namespace Parser {
 
             case Keyword::VAR:
             case Keyword::CONST:
-                if (parent) printf("wtf???\n");
                 if (buildDeclarationNode(token.keyword)) return parent;
                 else {
                     depth++;
@@ -503,7 +502,6 @@ namespace Parser {
                         return nullptr;
                     }
                     parent = parent->parent;
-                    printf("%llu %d\n",(unsigned long long int)parent, depth);
                     break;
                 case TokenType::FILE_END:
                     break;
