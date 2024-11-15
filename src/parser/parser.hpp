@@ -270,6 +270,8 @@ namespace Parser {
     bool buildDeclarationNode(Keyword type);
 
     Node* assignment(Token token);
+    Node* processKeyword(Token token);
+    Node* processSymbol(Token token);
     Node* processGrouping();
     Node* processPrefixOperator(Token token);
 

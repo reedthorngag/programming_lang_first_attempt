@@ -190,7 +190,58 @@ processNext:
 
         appendChild(parent, node);
 
-        return parent;
+        Node* body = new Node{};
+        body->type = NodeType::SCOPE;
+        body->symbolMap = new std::unordered_map<std::string, Symbol*>;
+
+        appendChild(node, body);
+
+        // appendChild sets parent to the first arg, so need to change it after
+        body->parent = parent;
+
+        Node* oldParent = parent;
+        parent = body;
+
+        token = tokens->at(index++);
+printf("hi? %s\n",TokenTypeMap[token.type]);
+        if (token.type != TokenType::SCOPE_START) {
+            printf("here!\n");
+            switch (token.type) {
+                case TokenType::ENDLINE:
+                    break;
+                case TokenType::KEYWORD:
+                    parent = processKeyword(token);
+                    break;
+                case TokenType::SYMBOL:
+                    parent = processSymbol(token);
+                    break;
+                case TokenType::OPERATOR: {
+                    Node* node = processPrefixOperator(token);
+                    if (!node) {
+                        parent = nullptr;
+                        break;
+                    }
+                    appendChild(parent, node);
+                    break;
+                }
+                case TokenType::FILE_END:
+                    printf("ERROR: %s:%d:%d: unexpected EOF!\n",token.file,token.line,token.column);
+                    return nullptr;
+                default:
+                    printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                    return nullptr;
+            }
+
+            if (tokens->at(index).type != TokenType::ENDLINE) {
+                printf("ERROR: %s:%d:%d: expected ';', found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                return nullptr;
+            }
+
+            if (!parent) return nullptr;
+            return oldParent;
+        }
+
+        return body;
     }
 
     Node* buildElseNode() {
@@ -291,23 +342,49 @@ processNext:
 
         appendChild(parent, node);
 
-        token = tokens->at(index++);
-
-        if (token.type != TokenType::SCOPE_START) {
-            printf("ERROR: %s:%d:%d: unexpected %s, expecting '{'!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
-            return nullptr;
-        }
-
         Node* body = new Node{};
         body->type = NodeType::SCOPE;
-
         body->symbolMap = new std::unordered_map<std::string, Symbol*>;
 
         appendChild(node, body);
 
         // appendChild sets parent to the first arg, so need to change it after
         body->parent = parent;
-        
+
+        parent = body;
+
+        token = tokens->at(index++);
+
+        if (token.type != TokenType::SCOPE_START) {
+            printf("hello!!\n");
+
+            switch (token.type) {
+                case TokenType::ENDLINE:
+                    break;
+                case TokenType::KEYWORD:
+                    parent = processKeyword(token);
+                    break;
+                case TokenType::SYMBOL:
+                    parent = processSymbol(token);
+                    break;
+                case TokenType::OPERATOR: {
+                    Node* node = processPrefixOperator(token);
+                    if (!node) {
+                        parent = nullptr;
+                        break;
+                    }
+                    appendChild(parent, node);
+                    break;
+                }
+                case TokenType::FILE_END:
+                    printf("ERROR: %s:%d:%d: unexpected EOF!\n",token.file,token.line,token.column);
+                    return nullptr;
+                default:
+                    printf("ERROR: %s:%d:%d: unexpected %s\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                    return nullptr;
+            }
+        }
+
         return body;
     }
 
