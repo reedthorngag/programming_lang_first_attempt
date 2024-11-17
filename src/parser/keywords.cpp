@@ -129,6 +129,7 @@ namespace Parser {
         bool global = false;
 
         token = tokens->at(index++);
+        printf("hi?\n");
 
         while (token.type != TokenType::GROUPING_END) {
 
@@ -161,7 +162,7 @@ processNext:
                     if (token.type == TokenType::COMMA || token.type == TokenType::GROUPING_END) {
                         inGrouping = inGrouping && token.type != TokenType::GROUPING_END;
                         if (inGrouping) {
-                            printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                            printf("ERROR: %s:%d:%d: unexpected2 %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
                             return nullptr;
                         }
                         appendChild(node,param);
@@ -175,6 +176,7 @@ processNext:
                     }
 
                     appendChild(node,operation(param,token));
+                    index--;
                     break;
                 }
                 default:
@@ -182,7 +184,7 @@ processNext:
                         index -= 2;
                         break;
                     }
-                    printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                    printf("ERROR: %s:%d:%d: unexpected1 %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
                     return nullptr;
             }
             token = tokens->at(index++);
@@ -203,9 +205,7 @@ processNext:
         parent = body;
 
         token = tokens->at(index++);
-printf("hi? %s\n",TokenTypeMap[token.type]);
         if (token.type != TokenType::SCOPE_START) {
-            printf("here!\n");
             switch (token.type) {
                 case TokenType::ENDLINE:
                     break;
