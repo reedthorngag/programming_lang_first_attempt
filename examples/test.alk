@@ -65,6 +65,7 @@ func main(): null {
     while (!false) {
         if (hello >= 5)
             break;
+        else printNum(0x696969);
         
         const testStr: string = "this is so cool!";
         printNum(hello);

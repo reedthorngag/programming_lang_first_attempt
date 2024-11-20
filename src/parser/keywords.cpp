@@ -129,7 +129,6 @@ namespace Parser {
         bool global = false;
 
         token = tokens->at(index++);
-        printf("hi?\n");
 
         while (token.type != TokenType::GROUPING_END) {
 
@@ -196,10 +195,7 @@ processNext:
         body->type = NodeType::SCOPE;
         body->symbolMap = new std::unordered_map<std::string, Symbol*>;
 
-        appendChild(node, body);
-
-        // appendChild sets parent to the first arg, so need to change it after
-        body->parent = parent;
+        appendChild(parent, body);
 
         Node* oldParent = parent;
         parent = body;
@@ -232,12 +228,14 @@ processNext:
                     return nullptr;
             }
 
-            if (tokens->at(index).type != TokenType::ENDLINE) {
+            token = tokens->at(index-1);
+            if (token.type != TokenType::ENDLINE) {
                 printf("ERROR: %s:%d:%d: expected ';', found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
                 return nullptr;
             }
 
             if (!parent) return nullptr;
+            depth++;
             return oldParent;
         }
 
@@ -245,22 +243,58 @@ processNext:
     }
 
     Node* buildElseNode() {
-        Node* node = new Node{};
-        node->type = NodeType::ELSE;
-        node->token = tokens->at(index);
-        node->parent = parent;
+        Node* body = new Node{};
+        body->type = NodeType::ELSE;
+        body->token = tokens->at(index);
+        body->symbolMap = new std::unordered_map<std::string, Symbol*>;
+
+        appendChild(parent, body);
+
+        Node* oldParent = parent;
+        parent = body;
 
         Token token = tokens->at(index++);
         if (token.type != TokenType::SCOPE_START) {
-            printf("ERROR: %s:%d:%d: expecting '{', found '%s'!\n",token.file,token.line,token.column, token.value);
-            return nullptr;
+            switch (token.type) {
+                case TokenType::ENDLINE:
+                    break;
+                case TokenType::KEYWORD:
+                    parent = processKeyword(token);
+                    break;
+                case TokenType::SYMBOL:
+                    parent = processSymbol(token);
+                    index++;
+                    break;
+                case TokenType::OPERATOR: {
+                    Node* node = processPrefixOperator(token);
+                    if (!node) {
+                        parent = nullptr;
+                        break;
+                    }
+                    appendChild(parent, node);
+                    break;
+                }
+                case TokenType::FILE_END:
+                    printf("ERROR: %s:%d:%d: unexpected EOF!\n",token.file,token.line,token.column);
+                    return nullptr;
+                default:
+                    printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                    return nullptr;
+            }
+
+            token = tokens->at(index-1);
+            printf("%s\n",TokenTypeMap[token.type]);
+            if (token.type != TokenType::ENDLINE) {
+                printf("ERROR: %s:%d:%d: expected ';', found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                return nullptr;
+            }
+
+            if (!parent) return nullptr;
+            depth++;
+            return oldParent;
         }
 
-        node->symbolMap = new std::unordered_map<std::string, Symbol*>;
-
-        appendChild(parent, node);
-
-        return node;
+        return body;
     }
 
     Node* buildWhileNode() {

@@ -498,7 +498,7 @@ namespace Parser {
                     break;
                 case TokenType::SCOPE_END:
                     if (!depth-- || !parent) {
-                        printf("ERROR: %s:%d:%d: unexpected '}'\n",token.file,token.line,token.column);
+                        printf("ERROR: %s:%d:%d: unexpected '}' %d %d\n",token.file,token.line,token.column,depth,!parent);
                         return nullptr;
                     }
                     parent = parent->parent;

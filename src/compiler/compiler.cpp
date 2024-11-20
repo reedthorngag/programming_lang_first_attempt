@@ -175,8 +175,6 @@ namespace Compiler {
         }
 
         registers[firstArg].value.locked = false;
-
-        printf("op: %s\n",node->token.value);
         
         //printf("operation: %d: %s %d  %s  %s %d\n",node->token.line,registers[firstArg].subRegs[Size::QWORD],registers[firstArg].value.type,node->op.value,registers[secondArg].subRegs[Size::QWORD],registers[secondArg].value.type);
         return doOp(node, firstArg, secondArg);
@@ -655,7 +653,7 @@ namespace Compiler {
             printf("ERROR: %s:%d:%d: expected '{', found '%s'!\n",ifNode->token.file,ifNode->token.line,ifNode->token.column,NodeTypeMap[(int)ifNode->type]);
             return (Node*)-1;
         }
-        printf("label: %d\n",ifEndLabel);
+        
         if (!createScope(ifNode, context)) return (Node*)-1;
 
         // preserve modified registers
@@ -851,7 +849,6 @@ namespace Compiler {
                     break;
 
                 case NodeType::OPERATION:
-                    printf("operation: %s\n",child->token.value);
                     if (evaluate(child, context) == Reg::RSI) return false;
                     break;
 
