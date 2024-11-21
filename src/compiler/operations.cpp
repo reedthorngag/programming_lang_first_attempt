@@ -306,18 +306,20 @@ namespace Compiler {
                 return assignmentOp(op, a, b);
             case OpType::MATH:
                 return mathmaticalOp(op, a, b);
-            case OpType::SINGLE_OP_POSTFIX:
-            case OpType::SINGLE_OP_PREFIX: {
-                Reg reg = singleOperandOp(op, a);
-                if (OpType::SINGLE_OP_PREFIX) return reg;
-
-                Reg reg2 = findFreeReg();
+            case OpType::SINGLE_OP_POSTFIX: {
+                
+                Reg reg = findFreeReg();
                 registers[reg].value = Value{ValueType::INTERMEDIATE,{.symbol={nullptr}},false,false,false};
                 registers[reg].position = position++;
 
-                assign(reg2, reg);
-                return reg2;
+                assign(reg, a);
+                singleOperandOp(op, a);
+
+                return reg;
             }
+
+            case OpType::SINGLE_OP_PREFIX:
+                return singleOperandOp(op, a);
         }
 
         return Reg::NUL;
