@@ -304,8 +304,7 @@ namespace Parser {
                     depth++;
                     return nullptr;
                 }
-                // no depth++ is on purpose, the body of the if statement is the
-                // next scope
+                depth++;
                 return buildIfNode();
             
             case Keyword::ELSE:

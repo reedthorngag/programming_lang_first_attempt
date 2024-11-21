@@ -375,7 +375,7 @@ namespace Compiler {
             context = context->parent;
         }
 
-        printf("ERROR: %s:%d:%d: Break not allowed here! Must be in while, for or switch!",node->token.file,node->token.line,node->token.column);
+        printf("ERROR: %s:%d:%d: Break not allowed here! Must be in while, for or switch!\n",node->token.file,node->token.line,node->token.column);
         return false;
     }
 
@@ -653,7 +653,7 @@ namespace Compiler {
             printf("ERROR: %s:%d:%d: expected '{', found '%s'!\n",ifNode->token.file,ifNode->token.line,ifNode->token.column,NodeTypeMap[(int)ifNode->type]);
             return (Node*)-1;
         }
-        
+
         if (!createScope(ifNode, context)) return (Node*)-1;
 
         // preserve modified registers
@@ -809,6 +809,10 @@ namespace Compiler {
 
         if (spaceReq) {
             out("add", "rsp",std::to_string(spaceReq));
+        }
+
+        for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
+            freeReg(reg, false);
         }
 
         // this must be after adding to rsp as they where pushed before

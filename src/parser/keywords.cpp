@@ -206,7 +206,9 @@ processNext:
                 case TokenType::ENDLINE:
                     break;
                 case TokenType::KEYWORD:
+                    printf("%d\n",depth);
                     parent = processKeyword(token);
+                    printf("%d\n",depth);
                     break;
                 case TokenType::SYMBOL:
                     parent = processSymbol(token);
@@ -235,7 +237,7 @@ processNext:
             }
 
             if (!parent) return nullptr;
-            depth++;
+            depth--;
             return oldParent;
         }
 
@@ -390,7 +392,6 @@ processNext:
         token = tokens->at(index++);
 
         if (token.type != TokenType::SCOPE_START) {
-            printf("hello!!\n");
 
             switch (token.type) {
                 case TokenType::ENDLINE:

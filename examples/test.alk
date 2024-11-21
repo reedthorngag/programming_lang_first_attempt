@@ -30,8 +30,9 @@ func main(): null {
     var a: char = 'h';
     printNum(1500);
     var b: i64 = 0x80085;
-    b += 0b111_000_111;
     printNum(b);
+    b = 0b111_000_111;
+    printNum(b); // 0x1c7
     const test3: string = "he\"llo world";
     printLine(test3);
     test2 <<= 5;
@@ -63,7 +64,7 @@ func main(): null {
 
     hello = 0;
     while (!false) {
-        if (hello >= 5)
+        if (hello>=5)
             break;
         else printNum(0x696969);
         
@@ -76,6 +77,13 @@ func main(): null {
 
     printLine("I'm amazing");
     while (hello--) printNum(hello);
+
+    while (hello<5) hello++;
+    if (hello<5) hello++;
+    if (hello<5) ++hello;
+    printNum(hello);
+    while (hello) --hello;
+    printNum(hello);
 
     printLine("hi?");
     printNum(15%3);
