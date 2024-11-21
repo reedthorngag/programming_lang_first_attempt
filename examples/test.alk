@@ -74,6 +74,10 @@ func main(): null {
         continue;
     }
 
+    printLine("I'm amazing");
+    while (hello--) printNum(hello);
+
+    printLine("hi?");
     printNum(15%3);
     printNum(10/2);
 }

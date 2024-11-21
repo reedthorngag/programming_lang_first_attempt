@@ -360,6 +360,7 @@ processNext:
                     }
 
                     appendChild(node,operation(param,token));
+                    index--;
                     break;
                 }
                 default:
@@ -416,6 +417,10 @@ processNext:
                     printf("ERROR: %s:%d:%d: unexpected %s\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
                     return nullptr;
             }
+
+            if (!parent) return nullptr;
+            depth--;
+            return parent->parent;
         }
 
         return body;
