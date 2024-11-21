@@ -283,14 +283,13 @@ processNext:
             }
 
             token = tokens->at(index-1);
-            printf("%s\n",TokenTypeMap[token.type]);
             if (token.type != TokenType::ENDLINE) {
                 printf("ERROR: %s:%d:%d: expected ';', found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
                 return nullptr;
             }
 
             if (!parent) return nullptr;
-            depth++;
+            depth--;
             return oldParent;
         }
 
