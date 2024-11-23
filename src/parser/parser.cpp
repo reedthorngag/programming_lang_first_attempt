@@ -2,6 +2,7 @@
 #include <cstring>
 
 #include "parser.hpp"
+#include "../util/debugging.hpp"
 
 using namespace Lexer;
 
@@ -470,6 +471,7 @@ namespace Parser {
         };
         while (index < tokens->size()) {
             Token token = tokens->at(index++);
+            state(token);
             //printf("token: %s",TokenTypeMap[token.type]);
             // if (token.type == TokenType::KEYWORD) printf(" %d\n",token.keyword);
             // else printf("\n");
