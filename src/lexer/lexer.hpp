@@ -52,6 +52,7 @@ namespace Lexer {
         char* file;
         int line;
         int column;
+        bool negative;
     };
 
     struct Context {

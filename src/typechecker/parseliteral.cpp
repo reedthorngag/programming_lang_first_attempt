@@ -82,25 +82,25 @@ namespace TypeChecker {
         if (value[0] == '0') {
             switch (value[1]) {
                 case 'x':
-                    node->literal.i = parseNum(node->literal.value+2,16, node);
+                    node->literal._int = parseNum(node->literal.value+2,16, node);
                     break;
 
                 case 'b':
-                    node->literal.i = parseNum(node->literal.value+2,2, node);
+                    node->literal._int = parseNum(node->literal.value+2,2, node);
                     break;
 
                 case 'o':
-                    node->literal.i = parseNum(node->literal.value+2,8, node);
+                    node->literal._int = parseNum(node->literal.value+2,8, node);
                     break;
 
                 default:
-                    node->literal.i = parseNum(node->literal.value,10, node);
+                    node->literal._int = parseNum(node->literal.value,10, node);
                     break;
             }
         } else {
-            node->literal.i = parseNum(node->literal.value,10, node);
+            node->literal._int = parseNum(node->literal.value,10, node);
         }
-        node->literal.type = smallestNumType(node->literal.i,parent);
+        node->literal.type = smallestNumType(node->literal._int,parent);
         if (node->literal.type == Type::error) {
             printf("ERROR: %s:%d:%d: literal '%s' doesn't fit in required type! ('%s')\n",node->token.file,node->token.line,node->token.column,value,TypeMap[parent]);
             return false;

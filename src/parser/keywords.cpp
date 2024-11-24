@@ -140,8 +140,9 @@ namespace Parser {
                     printf("ERROR: %s:%d:%d: unexpected comma!\n",token.file,token.line,token.column);
                     return nullptr;
                 case TokenType::GROUPING_START:
-                    inGrouping = true;
-                    break;
+                    param = processGrouping();
+                    if (!param) return nullptr;
+                    goto processNext;
 
                 case TokenType::OPERATOR:
                     param = processPrefixOperator(token);
@@ -444,6 +445,7 @@ processNext:
         switch (token.type) {
             case TokenType::GROUPING_START: {
                 param = processGrouping();
+                if (!param) return nullptr;
                 goto processNext;
             }
             

@@ -253,7 +253,12 @@ processNext:
     }
 
     Node* processGrouping() {
-        Node* node = nullptr;
+
+        Node* node = processCast();
+        if (!node) return nullptr;
+        if (node != parent) {
+            return node;
+        }
 
         Token token = tokens->at(index++);
 

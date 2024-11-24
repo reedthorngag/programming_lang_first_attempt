@@ -312,7 +312,7 @@ namespace Compiler {
                     }
 
                     default:
-                        out("mov", registers[reg].subRegs[TypeSizeMap[node->literal.type]],std::to_string(node->literal.u));
+                        out("mov", registers[reg].subRegs[TypeSizeMap[node->literal.type]],std::to_string(node->literal.uint));
                         
                         registers[reg].value = Value{};
                         registers[reg].value.type = ValueType::INTERMEDIATE;

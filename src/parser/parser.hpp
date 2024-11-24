@@ -185,15 +185,16 @@ namespace Parser {
 
     struct Literal {
         Type type;
+        char* value;
+        bool negative;
         union {
-            char* value;
             struct {
                 char* str;
                 int len;
             } str;
             char chr;
-            uint64_t u;
-            int64_t i;
+            uint64_t uint;
+            int64_t _int;
         };
     };
 
@@ -201,12 +202,13 @@ namespace Parser {
         ASSIGNMENT,
         SINGLE_OP_PREFIX,
         SINGLE_OP_POSTFIX,
-        MATH
+        MATH,
+        CAST
     };
 
     struct Operator {
-        char* value;
         OpType type;
+        char* value;
     };
 
     struct Node {
@@ -261,6 +263,7 @@ namespace Parser {
 
     Node* evaluateValue(Token token);
     Node* functionCall(Symbol* symbol);
+    Node* processCast();
 
     Node* buildFunctionNode();
     Node* buildIfNode();

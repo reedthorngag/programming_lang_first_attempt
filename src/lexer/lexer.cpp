@@ -201,7 +201,7 @@ namespace Lexer {
                     symbolLen++;
 
                 } else if (*ptr == '"') {
-                    tokens->push_back(Token{TokenType::LITERAL,{.value={newString(ptr-symbolLen,symbolLen+1)}},file,stringLine,stringCol});
+                    tokens->push_back(Token{TokenType::LITERAL,{.value={newString(ptr-symbolLen,symbolLen+1)}},file,stringLine,stringCol,false});
                     symbolLen = 0;
                     isInString = false;
                 } else if (*ptr == '\n') {
@@ -352,24 +352,24 @@ namespace Lexer {
 
         if (validOperation(str,len)) {
             *context->isOperator = 0;
-            tokens->push_back(Token{TokenType::OPERATOR,{.value={str}},context->file,*context->line,*context->column-len});
+            tokens->push_back(Token{TokenType::OPERATOR,{.value={str}},context->file,*context->line,*context->column-len,false});
         }
         else if (validLiteral(str,len)) {
             *context->isLiteral = 0;
-            tokens->push_back(Token{TokenType::LITERAL,{.value={str}},context->file,*context->line,*context->column-len});
+            tokens->push_back(Token{TokenType::LITERAL,{.value={str}},context->file,*context->line,*context->column-len,false});
         }
         else if (auto key = builtinTypes.find(str); key != builtinTypes.end()) {
             *context->isLiteral = 0;
             char* str = new char[key->second.size()+1];
             strcpy(str,key->second.c_str());
-            tokens->push_back(Token{TokenType::LITERAL,{.value={str}},context->file,*context->line,*context->column-len});
+            tokens->push_back(Token{TokenType::LITERAL,{.value={str}},context->file,*context->line,*context->column-len,false});
         }
         else if (auto key = keywordMap.find(str); key != keywordMap.end()) {
             *context->isSymbol = 0;
-            tokens->push_back(Token{TokenType::KEYWORD,{.keyword={key->second}},context->file,*context->line,*context->column-len});
+            tokens->push_back(Token{TokenType::KEYWORD,{.keyword={key->second}},context->file,*context->line,*context->column-len,false});
         } else if (validSymbol(str,len)) {
             *context->isSymbol = 0;
-            tokens->push_back(Token{TokenType::SYMBOL,{.value={str}},context->file,*context->line,*context->column-len});
+            tokens->push_back(Token{TokenType::SYMBOL,{.value={str}},context->file,*context->line,*context->column-len,false});
         } else {
             printf("ERROR: %s:%d:%d: invalid symbol: '%s'\n",context->file,*context->line,*context->column-len,str);
             return false;
@@ -410,7 +410,7 @@ namespace Lexer {
                     str[typeLen] = 0;
                     int len = typeLen;
                     while (typeLen--) str[typeLen] = context->symbolBuf[typeLen];
-                    tokens->push_back(Token{TokenType::TYPE,{.value={str}},context->file,*context->line,*context->column-len});
+                    tokens->push_back(Token{TokenType::TYPE,{.value={str}},context->file,*context->line,*context->column-len,false});
                     *context->ptr = ptr;
                     return true;
                 }
@@ -486,19 +486,34 @@ namespace Lexer {
 
     inline bool validNumberLiteral(char c) {
         if (isNumber(c)) return true;
-        return c == 'x' || c == 'b' || c == 'o' || c == '_';
+        return c == 'x' || c == 'b' || c == 'o' || c == '_' || c ==  '.';
     }
 
     inline bool numberLiteral(char* c, int len) {
 
+        bool decimalPoint = false;
+
         if (!isNumber(c[0])) return false;
+
+        if (c[0] == '.')
+            decimalPoint = true;
+
+        if (len > 1 && c[1] == '.') {
+            if (decimalPoint) return false; 
+            else decimalPoint = true;
+        }
 
         if (len > 2) {
 
             if (isNumber(c[1]) || c[1] == 'x' || c[1] == 'b' || c[1] == 'o') {
 
-                for (int i = 2; i < len; i++)
+                for (int i = 2; i < len; i++) {
+                    if (c[i] == '.') {
+                        if (decimalPoint) return false; 
+                        else decimalPoint = true;
+                    }
                     if (!isNumber(c[i]) && c[i] != '_') return false;
+                }
 
                 return c[len-1] != '_';
 

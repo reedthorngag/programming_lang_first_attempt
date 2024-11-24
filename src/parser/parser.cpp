@@ -61,7 +61,8 @@ namespace Parser {
         "ASSIGNMENT",
         "SINGLE_OP_PREFIX",
         "SINGLE_OP_POSTFIX",
-        "MATH"
+        "MATH",
+        "CAST"
     };
 
     const char* SizeTypeMap[]{
@@ -280,7 +281,7 @@ namespace Parser {
 
             case TokenType::LITERAL:
                 node->type = NodeType::LITERAL;
-                node->literal = Literal{Type::null,{.value = {token.value}}};
+                node->literal = Literal{Type::null,token.value,token.negative,{._int = 0}};
                 node->token = token;
                 break;
 
@@ -290,6 +291,66 @@ namespace Parser {
         }
 
         return node;
+    }
+
+    Node* processCast() {
+
+        Token token = tokens->at(index);
+        if (token.type == TokenType::TYPE) {
+
+            Node* node = new Node{NodeType::OPERATION,nullptr,nullptr,nullptr,{.op = Operator{OpType::CAST,token.value}},token,nullptr};
+
+            if (tokens->at(++index).type != TokenType::GROUPING_END) {
+                printf("ERROR: %s:%d:%d: expecting ')' to end type cast!\n",token.file,token.line,token.column);
+                return nullptr;
+            }
+
+            index++;
+
+            token = tokens->at(index++);
+
+            Node* param;
+            switch (token.type) {
+                case TokenType::OPERATOR:
+                    param = processPrefixOperator(token);
+                    if (!param) return nullptr;
+                    appendChild(node,param);
+                    goto processNext;
+
+                case TokenType::GROUPING_START:
+                    param = processGrouping();
+                    if (!param) return nullptr;
+                    appendChild(node,param);
+                    goto processNext;
+
+                case TokenType::LITERAL:
+                case TokenType::SYMBOL:
+                case TokenType::KEYWORD:
+                    param = evaluateValue(token);
+                    if (!param) return nullptr;
+                    appendChild(node,param);
+
+processNext:
+                    token = tokens->at(index++);
+
+                    if (token.type == TokenType::COMMA || token.type == TokenType::GROUPING_END || token.type == TokenType::ENDLINE || token.type == TokenType::GROUPING_END) {
+                        return node;
+                        index--;
+                        break;
+                    }
+
+                    if (token.type != TokenType::OPERATOR) {
+                        printf("ERROR: %s:%d:%d: expecting operator, comma or close bracket, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                        return nullptr;
+                    }
+
+                    return operation(node,token);
+            }
+
+            return node;
+        }
+
+        return parent;
     }
 
     Node* processKeyword(Token token) {
@@ -395,7 +456,17 @@ namespace Parser {
         node->type = NodeType::OPERATION;
         node->token = token;
 
-        node->op = Operator{token.value, getOpType(token.value)}; 
+        node->op = Operator{token.value, getOpType(token.value)};
+
+        if (token.value[0] == '-' && strlen(token.value) == 1) {
+            if (tokens->at(index).type == TokenType::LITERAL) {
+                token = tokens->at(index++);
+                node->type = NodeType::LITERAL;
+                node->literal = Literal{Type::null,token.value,true,{._int = 0}};
+                node->token = token;
+                goto nodeNegativeLiteral;
+            }
+        }
 
         if (node->op.type != OpType::SINGLE_OP_PREFIX) {
             printf("ERROR: %s:%d:%d: invalid operation! Missing lvalue!\n",token.file,token.line,token.column);
@@ -419,6 +490,7 @@ namespace Parser {
 
         appendChild(node, value);
 
+nodeNegativeLiteral:
         token = tokens->at(index++);
 
         switch (token.type) {
