@@ -170,7 +170,7 @@ processNext:
             Node* node = new Node{};
             node->type = NodeType::OPERATION;
             node->token = token;
-            node->op = Operator{token.value, OpType::SINGLE_OP_POSTFIX};
+            node->op = Operator{OpType::SINGLE_OP_POSTFIX, token.value};
 
             if (strlen(node->op.value) != 2) {
                 printf("ERROR: %s:%d:%d: unexpected operator '%s'!\n",lvalue->token.file,lvalue->token.line,lvalue->token.column,token.value);
@@ -320,7 +320,7 @@ processNext:
 
         Node* node = new Node{};
         node->type = NodeType::OPERATION;
-        node->op = Operator{op.value,getOpType(op.value)};
+        node->op = Operator{getOpType(op.value),op.value};
         node->token = op;
 
         if (lvalue) appendChild(node, lvalue);

@@ -13,11 +13,14 @@ void print(Node* node, const char* id) {
         case NodeType::SYMBOL:
         case NodeType::INVOCATION:
             printf(" %s",node->symbol->name);
+            break;
         case NodeType::OPERATION:
             printf(" %s %s",node->op.value,OpTypeMap[node->op.type]);
+            break;
         case NodeType::LITERAL:
             printf(" %s",node->literal.value);
             if (node->literal.type) printf(" %s",TypeMap[node->literal.type]);
+            break;
         default: 
             break;
     }

@@ -307,7 +307,7 @@ namespace Compiler {
             case OpType::MATH:
                 return mathmaticalOp(op, a, b);
             case OpType::SINGLE_OP_POSTFIX: {
-                
+
                 Reg reg = findFreeReg();
                 registers[reg].value = Value{ValueType::INTERMEDIATE,{.symbol={nullptr}},false,false,false};
                 registers[reg].position = position++;
@@ -320,6 +320,9 @@ namespace Compiler {
 
             case OpType::SINGLE_OP_PREFIX:
                 return singleOperandOp(op, a);
+            
+            case OpType::CAST:
+                printf("need to implement cast support in compiler operations\n");
         }
 
         return Reg::NUL;

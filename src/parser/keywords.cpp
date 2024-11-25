@@ -445,7 +445,7 @@ processNext:
         switch (token.type) {
             case TokenType::GROUPING_START: {
                 param = processGrouping();
-                if (!param) return nullptr;
+                if (!param) return false;
                 goto processNext;
             }
             

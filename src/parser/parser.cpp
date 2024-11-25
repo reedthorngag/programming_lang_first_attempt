@@ -345,6 +345,10 @@ processNext:
                     }
 
                     return operation(node,token);
+
+                default:
+                    printf("ERROR: %s:%d:%d: unexpected token %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                    return nullptr;
             }
 
             return node;
@@ -456,7 +460,9 @@ processNext:
         node->type = NodeType::OPERATION;
         node->token = token;
 
-        node->op = Operator{token.value, getOpType(token.value)};
+        node->op = Operator{getOpType(token.value),token.value};
+
+        Node* value;
 
         if (token.value[0] == '-' && strlen(token.value) == 1) {
             if (tokens->at(index).type == TokenType::LITERAL) {
@@ -480,7 +486,7 @@ processNext:
             return nullptr;
         }
 
-        Node* value = evaluateValue(token);
+        value = evaluateValue(token);
         if (!value) return nullptr;
 
         if (strlen(node->op.value) == 2 && value->type != NodeType::SYMBOL) {
@@ -543,7 +549,7 @@ nodeNegativeLiteral:
         };
         while (index < tokens->size()) {
             Token token = tokens->at(index++);
-            state(token);
+            print(token);
             //printf("token: %s",TokenTypeMap[token.type]);
             // if (token.type == TokenType::KEYWORD) printf(" %d\n",token.keyword);
             // else printf("\n");

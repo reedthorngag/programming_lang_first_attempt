@@ -435,11 +435,15 @@ namespace Lexer {
     }
 
     inline bool isNumber(char c) {
-        return c >= 48 && c <= 57;
+        return c >= '0' && c <= '9';
+    }
+
+    inline bool isHexNumber(char c) {
+        return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
     }
 
     inline bool symbolChar(char c, int pos) {
-        if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c == 95) return true;
+        if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_') return true;
         if (isNumber(c) && pos) return true;
         return false;
     }
@@ -505,14 +509,14 @@ namespace Lexer {
 
         if (len > 2) {
 
-            if (isNumber(c[1]) || c[1] == 'x' || c[1] == 'b' || c[1] == 'o') {
+            if (isNumber(c[1]) || c[1] == 'x' || c[1] == 'b' || c[1] == 'o' || c[1] == '.') {
 
                 for (int i = 2; i < len; i++) {
                     if (c[i] == '.') {
-                        if (decimalPoint) return false; 
+                        if (decimalPoint) return false;
                         else decimalPoint = true;
                     }
-                    if (!isNumber(c[i]) && c[i] != '_') return false;
+                    else if (!isHexNumber(c[i]) && c[i] != '_') return false;
                 }
 
                 return c[len-1] != '_';
