@@ -7,6 +7,8 @@
 
 namespace Lexer {
 
+    extern bool log;
+
     const int MAX_SYMBOL_LEN = 64;
 
     enum NumberType {

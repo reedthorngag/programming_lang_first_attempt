@@ -4,6 +4,8 @@
 
 namespace Lexer {
 
+    bool log = true;
+
     std::unordered_map<std::string,Keyword> keywordMap = {
         {
             "func",Keyword::FUNC
@@ -305,12 +307,14 @@ namespace Lexer {
                                 isOperator = 0;
                                 if (!endSymbol(tokens,&context)) return nullptr;
                             }
+                            
                             if (symbolChar(*ptr,isSymbol)) {
                                 isSymbol++;
                             } else if (isSymbol == symbolLen) {
                                 isSymbol = 0;
                                 if (!endSymbol(tokens,&context)) return nullptr;
                             }
+
                             if (validNumberLiteral(*ptr)) {
                                 isLiteral++;
                             } else if (isLiteral == symbolLen) {
@@ -355,6 +359,7 @@ namespace Lexer {
             tokens->push_back(Token{TokenType::OPERATOR,{.value={str}},context->file,*context->line,*context->column-len,false});
         }
         else if (validLiteral(str,len)) {
+            printf("here! %s\n",str);
             *context->isLiteral = 0;
             tokens->push_back(Token{TokenType::LITERAL,{.value={str}},context->file,*context->line,*context->column-len,false});
         }
