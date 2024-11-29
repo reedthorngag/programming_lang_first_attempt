@@ -7,12 +7,12 @@
 #include "compiler/compiler.hpp"
 
 void pad(Lexer::Token token, int* line, int* col) {
-    while (*line < token.line) {
+    while (*line < token.file.line) {
         printf("\n");
         (*line)++;
         *col = 1;
     }
-    while (*col < token.column) {
+    while (*col < token.file.column) {
         printf(" ");
         (*col)++;
     }

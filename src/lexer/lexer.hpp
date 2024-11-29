@@ -45,15 +45,19 @@ namespace Lexer {
         FILE_END
     };
 
+    struct File {
+        char* name;
+        int line;
+        int column;
+    };
+
     struct Token {
         TokenType type;
         union {
             char* value;
             Keyword keyword;
         };
-        char* file;
-        int line;
-        int column;
+        File file;
         bool negative;
     };
 
@@ -70,12 +74,6 @@ namespace Lexer {
         int* isOperator;
         int* isLiteral;
         int* isSymbol;
-    };
-
-    struct File {
-        char* name;
-        int line;
-        int column;
     };
 
     extern File file;

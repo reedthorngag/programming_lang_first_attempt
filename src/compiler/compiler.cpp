@@ -163,7 +163,7 @@ namespace Compiler {
 
     Reg operation(Node* node, Context* context) {
         
-        //printf("operation: %d: %s\n",node->token.line,node->op.value);
+        //printf("operation: %d: %s\n",node->token.file.line,node->op.value);
 
         Reg firstArg = evaluate(node->firstChild, context);
         registers[firstArg].value.locked = true;
@@ -176,7 +176,7 @@ namespace Compiler {
 
         registers[firstArg].value.locked = false;
         
-        //printf("operation: %d: %s %d  %s  %s %d\n",node->token.line,registers[firstArg].subRegs[Size::QWORD],registers[firstArg].value.type,node->op.value,registers[secondArg].subRegs[Size::QWORD],registers[secondArg].value.type);
+        //printf("operation: %d: %s %d  %s  %s %d\n",node->token.file.line,registers[firstArg].subRegs[Size::QWORD],registers[firstArg].value.type,node->op.value,registers[secondArg].subRegs[Size::QWORD],registers[secondArg].value.type);
         return doOp(node, firstArg, secondArg);
     }
 
@@ -209,7 +209,7 @@ namespace Compiler {
                             if (v.locked) {
                                 Reg reg = findFreeReg();
                                 if (reg == Reg::NUL) { 
-                                    printf("ERROR: %s:%d:%d: no registers available!\n",node->token.file,node->token.line,node->token.column);
+                                    printf("ERROR: %s:%d:%d: no registers available!\n",node->token.file.name,node->token.file.line,node->token.file.column);
                                     return Reg::RSI;
                                 }
 
@@ -225,7 +225,7 @@ namespace Compiler {
 
                 Reg reg = findFreeReg();
                 if (reg == Reg::NUL) { 
-                    printf("ERROR: %s:%d:%d: no registers available!\n",node->token.file,node->token.line,node->token.column);
+                    printf("ERROR: %s:%d:%d: no registers available!\n",node->token.file.name,node->token.file.line,node->token.file.column);
                     return Reg::RSI;
                 }
 
@@ -273,14 +273,14 @@ namespace Compiler {
 
                 Reg reg = findFreeReg();
                 if (reg == Reg::NUL) { 
-                    printf("ERROR: %s:%d:%d: no registers available!\n",node->token.file,node->token.line,node->token.column);
+                    printf("ERROR: %s:%d:%d: no registers available!\n",node->token.file.name,node->token.file.line,node->token.file.column);
                     exit(0);
                 }
 
                 switch (node->literal.type) {
                     case Type::string: {
                         std::stringstream ss;
-                        ss << '_' << node->token.file << '_' << std::to_string(node->token.line) << '_' << std::to_string(node->token.column);
+                        ss << '_' << node->token.file.name << '_' << std::to_string(node->token.file.line) << '_' << std::to_string(node->token.file.column);
                         std::string* s = new std::string(ss.str().c_str());
                         for (int i = 0; i < (int)s->length(); i++) {
                             if ((*s)[i] == '.') (*s)[i] = '_';
@@ -342,7 +342,7 @@ namespace Compiler {
     bool createReturn(Node* node, Context* context) {
 
         if (!context) {
-            printf("ERROR: %s:%d:%d: return only allowed in functions!",node->token.file,node->token.line,node->token.column);
+            printf("ERROR: %s:%d:%d: return only allowed in functions!",node->token.file.name,node->token.file.line,node->token.file.column);
             return false;
         }
 
@@ -375,7 +375,7 @@ namespace Compiler {
             context = context->parent;
         }
 
-        printf("ERROR: %s:%d:%d: Break not allowed here! Must be in while, for or switch!\n",node->token.file,node->token.line,node->token.column);
+        printf("ERROR: %s:%d:%d: Break not allowed here! Must be in while, for or switch!\n",node->token.file.name,node->token.file.line,node->token.file.column);
         return false;
     }
 
@@ -395,13 +395,13 @@ namespace Compiler {
             context = context->parent;
         }
 
-        printf("ERROR: %s:%d:%d: Continue not allowed here! Must be in while, for or switch!",node->token.file,node->token.line,node->token.column);
+        printf("ERROR: %s:%d:%d: Continue not allowed here! Must be in while, for or switch!",node->token.file.name,node->token.file.line,node->token.file.column);
         return false;
     }
 
     Reg callFunction(Node* funcCall, Context* context) {
 
-        //printf("saving registers before %s func call, line %d\n",funcCall->symbol->name,funcCall->token.line);
+        //printf("saving registers before %s func call, line %d\n",funcCall->symbol->name,funcCall->token.file.line);
         // save registers, as the function call will batter them
         struct RegData {
             Reg reg;
@@ -412,7 +412,7 @@ namespace Compiler {
         for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
             if (!freeReg(reg, true)) {
                 if (reg == Reg::RAX && funcCall->symbol->func->returnType != Type::null) {
-                    printf("ERROR: %s:%d:%d: no registers available!\nCompile failed!",funcCall->token.file,funcCall->token.line,funcCall->token.column);
+                    printf("ERROR: %s:%d:%d: no registers available!\nCompile failed!",funcCall->token.file.name,funcCall->token.file.line,funcCall->token.file.column);
                     return Reg::RSI;
                 }
                 printf("saving %s\n",registers[reg].subRegs[Size::QWORD]);
@@ -549,7 +549,7 @@ namespace Compiler {
 
         for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
             if (!freeReg(reg)) {
-                printf("ERROR: %s:%d:%d: register locked when it shouldn't be! can't free %s!\n",node->token.file,node->token.line,node->token.column,registers[reg].subRegs[Size::QWORD]);
+                printf("ERROR: %s:%d:%d: register locked when it shouldn't be! can't free %s!\n",node->token.file.name,node->token.file.line,node->token.file.column,registers[reg].subRegs[Size::QWORD]);
                 return false;
             }
         }
@@ -645,12 +645,12 @@ namespace Compiler {
         Node* ifNode = node->nextSibling;
 
         if (!ifNode) {
-            printf("ERROR: %s:%d:%d: missing if statement body!\n",node->token.file,node->token.line,node->token.column);
+            printf("ERROR: %s:%d:%d: missing if statement body!\n",node->token.file.name,node->token.file.line,node->token.file.column);
             return (Node*)-1;
         }
 
         if (ifNode->type != NodeType::SCOPE) {
-            printf("ERROR: %s:%d:%d: expected '{', found '%s'!\n",ifNode->token.file,ifNode->token.line,ifNode->token.column,NodeTypeMap[(int)ifNode->type]);
+            printf("ERROR: %s:%d:%d: expected '{', found '%s'!\n",ifNode->token.file.name,ifNode->token.file.line,ifNode->token.file.column,NodeTypeMap[(int)ifNode->type]);
             return (Node*)-1;
         }
 
@@ -723,12 +723,12 @@ namespace Compiler {
         Node* whileBody = node->firstChild->nextSibling;
 
         if (!whileBody) {
-            printf("ERROR: %s:%d:%d: missing while body!\n",node->token.file,node->token.line,node->token.column);
+            printf("ERROR: %s:%d:%d: missing while body!\n",node->token.file.name,node->token.file.line,node->token.file.column);
             return false;
         }
 
         if (whileBody->type != NodeType::SCOPE) {
-            printf("ERROR: %s:%d:%d: expected '{', found '%s'!\n",whileBody->token.file,whileBody->token.line,whileBody->token.column,NodeTypeMap[(int)whileBody->type]);
+            printf("ERROR: %s:%d:%d: expected '{', found '%s'!\n",whileBody->token.file.name,whileBody->token.file.line,whileBody->token.file.column,NodeTypeMap[(int)whileBody->type]);
             return false;
         }
 
@@ -870,7 +870,7 @@ namespace Compiler {
 
                 default:
                     // TODO: think of a better word than node
-                    printf("ERROR: %s:%d:%d: unexpected node: %s!\n",child->token.file,child->token.line,child->token.column,NodeTypeMap[(int)child->type]);
+                    printf("ERROR: %s:%d:%d: unexpected node: %s!\n",child->token.file.name,child->token.file.line,child->token.file.column,NodeTypeMap[(int)child->type]);
                     return false;
             }
             child = child->nextSibling;
@@ -948,7 +948,7 @@ namespace Compiler {
                 }
 
             } else if (auto key = typedFunctions.find(f.name); key == typedFunctions.end()) {
-                printf("ERROR: %s:%d:%d: undefined function! function name: %s\n",f.node->token.file,f.node->token.line,f.node->token.column, f.name.c_str());
+                printf("ERROR: %s:%d:%d: undefined function! function name: %s\n",f.node->token.file.name,f.node->token.file.line,f.node->token.file.column, f.name.c_str());
                 error = true;
             }
         }
