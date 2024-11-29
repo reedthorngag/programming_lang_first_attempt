@@ -116,16 +116,28 @@ namespace Lexer {
         {"MAX",1}
     };
 
-    std::unordered_map<std::string, std::string> builtinTypes = {
+    std::unordered_map<std::string, std::string> builtinLiteralTypes = {
         {"true","1"},
         {"false","0"}
     };
 
-    std::vector<Token>* lexerParse(char* file, char* input) {
 
-        std::vector<Token>* tokens = new std::vector<Token>;
+    char* ptr = nullptr;
+
+    std::vector<Token>* tokens;
+
+    File file;
+
+    std::vector<Token>* parse(char* fileName, char* input) {
+
+        tokens = new std::vector<Token>;
+        ptr = input;
         
-        char* ptr = input;
+        file = File{fileName, 0, 0};
+
+
+
+
         int line = 1;
         int col = 1;
         int symbolLen = 0;
@@ -148,7 +160,7 @@ namespace Lexer {
         bool specialType = false; // currently only for '
 
         struct Context context = {
-            file,
+            fileName,
             input,
             &ptr,
             &line,
@@ -190,7 +202,7 @@ namespace Lexer {
             }
 
             if (commentLevel) {
-                printf("ERROR: %s:%d:0: unexpected EOF, expecting '*/'\n",file,line);
+                printf("ERROR: %s:%d:0: unexpected EOF, expecting '*/'\n",fileName,line);
                 return nullptr;
             }
 
@@ -254,7 +266,7 @@ namespace Lexer {
 
                     case ',':
                         if (!endSymbol(tokens,&context)) return nullptr;
-                        tokens->push_back(Token{TokenType::COMMA,{},file,line,col});
+                        tokens->push_back(Token{TokenType::COMMA,{},fileName,line,col});
                         break;
 
                     case ':':
@@ -264,19 +276,19 @@ namespace Lexer {
 
                     case ';':
                         if (!endSymbol(tokens,&context)) return nullptr;
-                        tokens->push_back(Token{TokenType::ENDLINE,{},file,line,col});
+                        tokens->push_back(Token{TokenType::ENDLINE,{},fileName,line,col});
                         break;
                     
                     case '(':
                     case ')':
                         if (!endSymbol(tokens,&context)) return nullptr;
-                        tokens->push_back(Token{*ptr=='('?TokenType::GROUPING_START:TokenType::GROUPING_END,{},file,line,col});
+                        tokens->push_back(Token{*ptr=='('?TokenType::GROUPING_START:TokenType::GROUPING_END,{},fileName,line,col});
                         break;
                     
                     case '{':
                     case '}':
                         if (!endSymbol(tokens,&context)) return nullptr;
-                        tokens->push_back(Token{*ptr=='{'?TokenType::SCOPE_START:TokenType::SCOPE_END,{},file,line,col});
+                        tokens->push_back(Token{*ptr=='{'?TokenType::SCOPE_START:TokenType::SCOPE_END,{},fileName,line,col});
                         break;
                     
                     case '\t':
@@ -285,12 +297,12 @@ namespace Lexer {
                         break;
 
                     case '\\':
-                        printf("ERROR: %s:%d:%d: unexpected backslash!\n",file,line,col);
+                        printf("ERROR: %s:%d:%d: unexpected backslash!\n",fileName,line,col);
                         return nullptr;
 
                     case '"':
                         if (symbolLen) {
-                            printf("ERROR: %s:%d:%d: unexpected string literal!\n",file,line,col);
+                            printf("ERROR: %s:%d:%d: unexpected string literal!\n",fileName,line,col);
                             return nullptr;
                         }
                         isInString = true;
@@ -307,7 +319,7 @@ namespace Lexer {
                                 isOperator = 0;
                                 if (!endSymbol(tokens,&context)) return nullptr;
                             }
-                            
+
                             if (symbolChar(*ptr,isSymbol)) {
                                 isSymbol++;
                             } else if (isSymbol == symbolLen) {
@@ -324,7 +336,7 @@ namespace Lexer {
                             }
                         }
                         if (symbolLen == MAX_SYMBOL_LEN) {
-                            printf("ERROR: %s:%d:%d: symbol too long!\n",file,line,col-MAX_SYMBOL_LEN);
+                            printf("ERROR: %s:%d:%d: symbol too long!\n",fileName,line,col-MAX_SYMBOL_LEN);
                             return nullptr;
                         }
                         symbolBuf[symbolLen++] = *ptr;
@@ -336,11 +348,11 @@ namespace Lexer {
         }
 
         if (symbolLen) {
-            printf("ERROR: %s:%d:0: unexpected EOF!\n",file,line+1);
+            printf("ERROR: %s:%d:0: unexpected EOF!\n",fileName,line+1);
             return nullptr;
         }
 
-        tokens->push_back(Token{TokenType::FILE_END,{},file,line+1,0});
+        tokens->push_back(Token{TokenType::FILE_END,{},fileName,line+1,0});
         return tokens;
     }
 
@@ -363,7 +375,7 @@ namespace Lexer {
             *context->isLiteral = 0;
             tokens->push_back(Token{TokenType::LITERAL,{.value={str}},context->file,*context->line,*context->column-len,false});
         }
-        else if (auto key = builtinTypes.find(str); key != builtinTypes.end()) {
+        else if (auto key = builtinLiteralTypes.find(str); key != builtinLiteralTypes.end()) {
             *context->isLiteral = 0;
             char* str = new char[key->second.size()+1];
             strcpy(str,key->second.c_str());

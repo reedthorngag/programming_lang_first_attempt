@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
 
     file.close();
 
-    std::vector<Lexer::Token>* tokens = Lexer::lexerParse(inputFile, buf);
+    std::vector<Lexer::Token>* tokens = Lexer::parse(inputFile, buf);
     if (!tokens) return 1;
 
     const char* TokenTypeMap[]{

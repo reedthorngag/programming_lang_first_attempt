@@ -72,6 +72,20 @@ namespace Lexer {
         int* isSymbol;
     };
 
+    struct File {
+        char* name;
+        int line;
+        int column;
+    };
+
+    extern File file;
+
+    extern char* ptr;
+
+    extern std::vector<Token>* tokens;
+
+    extern std::unordered_map<std::string,bool> operations;
+
     bool symbolChar(char c, int pos);
     inline bool validSymbol(char* c, int len);
     bool operatorChar(char c);
@@ -81,7 +95,7 @@ namespace Lexer {
     inline char* newString(char* c, int len);
     bool endSymbol(std::vector<Token>* tokens, Context* context);
     bool typeLexer(std::vector<Token>* tokens, Context* context);
-    std::vector<Token>* lexerParse(char* file, char* input);
+    std::vector<Token>* parse(char* file, char* input);
 
 }
 
