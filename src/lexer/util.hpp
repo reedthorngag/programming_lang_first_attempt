@@ -2,6 +2,13 @@
 
 namespace Lexer {
 
+    inline char* newString(char* c, int len) {
+        char* str = new char[len+1];
+        str[len] = 0;
+        while (len--) str[len] = c[len];
+        return str;
+    }
+
     bool isAlpha(char c) {
         return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
     }

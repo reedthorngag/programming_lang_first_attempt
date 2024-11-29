@@ -76,13 +76,26 @@ namespace Lexer {
         int* isSymbol;
     };
 
+    struct Number {
+        bool hasMinMax;
+        const char* minStr;
+        const char* maxStr;
+    };
+
+    extern const char* maxStr[];
+    extern const char* maxStr[];
+
     extern File file;
 
     extern char* ptr;
 
     extern std::vector<Token>* tokens;
 
+    extern std::unordered_map<std::string,Keyword> keywordMap;
     extern std::unordered_map<std::string,bool> operations;
+    extern std::unordered_map<std::string, std::string> builtinLiteralTypes;
+    extern std::unordered_map<std::string, int> literalTypesMap;
+    extern std::unordered_map<std::string, Number> numberTypes;
 
     bool symbolChar(char c, int pos);
     inline bool validSymbol(char* c, int len);

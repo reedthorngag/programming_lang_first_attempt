@@ -82,17 +82,13 @@ namespace Lexer {
     const char* maxStr[] {
         "127", "32_767", "2_147_483_647", "9_223_372_036_854_775_807",
         "255", "65_535","4_294_967_295", "18_446_744_073_709_551_615",
+        "0","0","0"
     };
 
     const char* minStr[] {
         "-127", "-32_768", "-2_147_483_648", "-9_223_372_036_854_775_808",
-        "0", "0", "0", "0"
-    };
-
-    struct Number {
-        bool hasMinMax;
-        const char* minStr;
-        const char* maxStr;
+        "0", "0", "0", "0",
+        "0","0","0"
     };
 
     std::unordered_map<std::string, Number> numberTypes = {
