@@ -48,7 +48,7 @@ namespace Lexer {
     struct File {
         char* name;
         int line;
-        int column;
+        int col;
     };
 
     struct Token {
@@ -97,7 +97,7 @@ namespace Lexer {
     extern std::unordered_map<std::string, int> literalTypesMap;
     extern std::unordered_map<std::string, Number> numberTypes;
 
-    bool symbolChar(char c, int pos);
+    bool isSymbolChar(char c, int pos);
     inline bool validSymbol(char* c, int len);
     bool operatorChar(char c);
     inline bool validOperation(char* c, int len);

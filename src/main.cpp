@@ -12,7 +12,7 @@ void pad(Lexer::Token token, int* line, int* col) {
         (*line)++;
         *col = 1;
     }
-    while (*col < token.file.column) {
+    while (*col < token.file.col) {
         printf(" ");
         (*col)++;
     }

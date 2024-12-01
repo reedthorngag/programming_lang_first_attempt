@@ -27,11 +27,11 @@ namespace Lexer {
                 c == '[' || c == ']';
     }
 
-    bool breakChar(char c) {
+    bool isBreakChar(char c) {
         return operatorChar(c) || bracketChar(c) || ' ' || '\n' || ';' || 0;
     }
 
-    bool symbolChar(char c, int pos) {
+    bool isSymbolChar(char c, int pos) {
         return isAlpha(c) || c == '_' || (pos && isNumber(c));
     }
 
@@ -50,12 +50,11 @@ namespace Lexer {
     }
 
     bool isOperator(char* c) {
-        char* str = new char[3];
+        char* str = new char[4]{};
         str[0] = *c;
-        str[1] = 0;
-        str[2] = 0;
 
         if (operatorChar(c[1])) str[1] = c[1];
+        if (operatorChar(c[2])) str[2] = c[2];
 
         if (auto key = operations.find(str); key != operations.end()) {
             return true;
@@ -63,7 +62,16 @@ namespace Lexer {
         return false;
     }
 
-
+    /**
+     * This being inline is important, as it stores the char array
+     * on the stack to avoid leaking memory (which probably wouldn't
+     * be a big deal anyway though).
+     */
+    inline char* toHexByte(char c) {
+        const char* hexDigits = "0123456789ABCDEF";
+        char out[]{hexDigits[c >> 4], hexDigits[c & 0xf], 0};
+        return out;
+    }
 }
 
 

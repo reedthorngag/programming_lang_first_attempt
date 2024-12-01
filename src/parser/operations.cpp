@@ -86,7 +86,7 @@ processNext:
                     if (token.type == TokenType::COMMA || token.type == TokenType::GROUPING_END) {
                         inGrouping = inGrouping && token.type != TokenType::GROUPING_END;
                         if (inGrouping) {
-                            printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.column,TokenTypeMap[token.type]);
+                            printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                             return nullptr;
                         }
                         appendChild(node,param);
@@ -95,7 +95,7 @@ processNext:
                     }
 
                     if (token.type != TokenType::OPERATOR) {
-                        printf("ERROR: %s:%d:%d: expecting operator, comma or close bracket, found %s!\n",token.file.name,token.file.line,token.file.column,TokenTypeMap[token.type]);
+                        printf("ERROR: %s:%d:%d: expecting operator, comma or close bracket, found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                         return nullptr;
                     }
 
@@ -107,7 +107,7 @@ processNext:
                         index -= 2;
                         break;
                     }
-                    printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.column,TokenTypeMap[token.type]);
+                    printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                     return nullptr;
             }
             token = tokens->at(index++);
@@ -123,7 +123,7 @@ processNext:
         if (global) token = tokens->at(index++);
 
         if (token.type != TokenType::SYMBOL) {
-            printf("ERROR: %s:%d:%d: expecting name, found %s!\n",token.file.name,token.file.line,token.file.column,TokenTypeMap[token.type]);
+            printf("ERROR: %s:%d:%d: expecting name, found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
             return nullptr;
         }
 
@@ -131,11 +131,11 @@ processNext:
 
         if (global) {
             if (!symbolDeclaredGlobal(token.value,&symbol)) {
-                printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file.name,token.file.line,token.file.column,token.value);
+                printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file.name,token.file.line,token.file.col,token.value);
                 return nullptr;
             }
         } else if (!symbolDeclaredInScope(token.value,parent,&symbol) && !symbolDeclaredGlobal(token.value,&symbol)) {
-            printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file.name,token.file.line,token.file.column,token.value);
+            printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file.name,token.file.line,token.file.col,token.value);
             return nullptr;
         }
         symbol->refCount++;
@@ -150,7 +150,7 @@ processNext:
         if (token.type == TokenType::ENDLINE) return lvalue;
         if (token.type == TokenType::GROUPING_START) {
             if (symbol->type != SymbolType::FUNC && (!symbolDeclaredGlobal(lvalue->token.value,&symbol) || symbol->type != SymbolType::FUNC)) {
-                printf("ERROR: %s:%d:%d: '%s' isn't a function!\n",lvalue->token.file.name,lvalue->token.file.line,lvalue->token.file.column,lvalue->token.value);
+                printf("ERROR: %s:%d:%d: '%s' isn't a function!\n",lvalue->token.file.name,lvalue->token.file.line,lvalue->token.file.col,lvalue->token.value);
                 return nullptr;
             }
             lvalue->symbol->refCount--;
@@ -160,7 +160,7 @@ processNext:
         }
 
         if (token.type != TokenType::OPERATOR) {
-            printf("ERROR: %s:%d:%d: expecting assignment or ';', found %s!\n",token.file.name,token.file.line,token.file.column,TokenTypeMap[token.type]);
+            printf("ERROR: %s:%d:%d: expecting assignment or ';', found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
             return nullptr;
         }
 
@@ -173,12 +173,12 @@ processNext:
             node->op = Operator{OpType::SINGLE_OP_POSTFIX, token.value};
 
             if (strlen(node->op.value) != 2) {
-                printf("ERROR: %s:%d:%d: unexpected operator '%s'!\n",lvalue->token.file.name,lvalue->token.file.line,lvalue->token.file.column,token.value);
+                printf("ERROR: %s:%d:%d: unexpected operator '%s'!\n",lvalue->token.file.name,lvalue->token.file.line,lvalue->token.file.col,token.value);
                 return nullptr;
             }
 
             if (lvalue->type != NodeType::SYMBOL) {
-                printf("ERROR: %s:%d:%d: operand must be a modifiable value! (aka a variable)\n",lvalue->token.file.name,lvalue->token.file.line,lvalue->token.file.column);
+                printf("ERROR: %s:%d:%d: operand must be a modifiable value! (aka a variable)\n",lvalue->token.file.name,lvalue->token.file.line,lvalue->token.file.col);
                 return nullptr;
             }
 
@@ -198,24 +198,24 @@ processNext:
                     return node;
 
                 default:
-                    printf("ERROR: %s:%d:%d: unexpected token %s!\n",token.file.name,token.file.line,token.file.column, TokenTypeMap[token.type]);
+                    printf("ERROR: %s:%d:%d: unexpected token %s!\n",token.file.name,token.file.line,token.file.col, TokenTypeMap[token.type]);
                     return nullptr;
             }
             return nullptr;
         }
 
         if (auto key = assignmentOps.find(token.value); key == assignmentOps.end()) {
-            printf("ERROR: %s:%d:%d: expecting assignment operator (=, +=, *=, etc), found '%s'!\n",token.file.name,token.file.line,token.file.column,token.value);
+            printf("ERROR: %s:%d:%d: expecting assignment operator (=, +=, *=, etc), found '%s'!\n",token.file.name,token.file.line,token.file.col,token.value);
             return nullptr;
         }
 
         if (symbol->type == SymbolType::FUNC && (!symbolDeclaredGlobal(lvalue->token.value,&symbol) || symbol->type == SymbolType::FUNC)) {
-            printf("ERROR: %s:%d:%d: '%s' is a function!\n",lvalue->token.file.name,lvalue->token.file.line,lvalue->token.file.column,lvalue->token.value);
+            printf("ERROR: %s:%d:%d: '%s' is a function!\n",lvalue->token.file.name,lvalue->token.file.line,lvalue->token.file.col,lvalue->token.value);
             return nullptr;
         }
 
         if (symbol->type == SymbolType::CONST && tokens->at(index-2).type != TokenType::TYPE) {
-            printf("ERROR: %s:%d:%d: '%s' is a constant and can't be assigned to!\n",token.file.name,token.file.line,token.file.column,lvalue->token.value);
+            printf("ERROR: %s:%d:%d: '%s' is a constant and can't be assigned to!\n",token.file.name,token.file.line,token.file.col,lvalue->token.value);
             return nullptr;
         }
 
@@ -224,7 +224,7 @@ processNext:
 
         token = tokens->at(index-1);
         if (token.type != TokenType::ENDLINE) {
-            printf("ERROR: %s:%d:%d: expecting ';', found %s!\n",token.file.name,token.file.line,token.file.column,token.type == TokenType::SYMBOL ? token.value : TokenTypeMap[token.type]);
+            printf("ERROR: %s:%d:%d: expecting ';', found %s!\n",token.file.name,token.file.line,token.file.col,token.type == TokenType::SYMBOL ? token.value : TokenTypeMap[token.type]);
             return nullptr;
         }
         return opNode;
@@ -240,7 +240,7 @@ processNext:
     Precedence getPrecedence(Token token) {
 
         if (token.type != TokenType::OPERATOR) {
-            printf("ERROR: %s:%d:%d: expecting operator, found %s!\n",token.file.name,token.file.line,token.file.column,TokenTypeMap[token.type]);
+            printf("ERROR: %s:%d:%d: expecting operator, found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
             return Precedence{};
         }
 
@@ -248,7 +248,7 @@ processNext:
         if (auto key = assignmentOps.find(token.value);key != assignmentOps.end()) return Precedence{RtoL,key->second};
         if (auto key = mathmaticalOps.find(token.value);key != mathmaticalOps.end()) return Precedence{LtoR,key->second};
         
-        printf("ERROR: %s:%d:%d: '%s' operator not yet implemented!\n",token.file.name,token.file.line,token.file.column,token.value);
+        printf("ERROR: %s:%d:%d: '%s' operator not yet implemented!\n",token.file.name,token.file.line,token.file.col,token.value);
         return Precedence{};
     }
 
@@ -292,7 +292,7 @@ processNext:
                     return node;
 
                 if (token.type != TokenType::OPERATOR) {
-                    printf("ERROR: %s:%d:%d: expecting operator or ')', found %s!\n",token.file.name,token.file.line,token.file.column,TokenTypeMap[token.type]);
+                    printf("ERROR: %s:%d:%d: expecting operator or ')', found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                     return nullptr;
                 }
 
@@ -301,7 +301,7 @@ processNext:
 
                 token = tokens->at(index-1);
                 if (token.type != TokenType::GROUPING_END) {
-                    printf("ERROR: %s:%d:%d: expecting operator or ')', found %s!\n",token.file.name,token.file.line,token.file.column,TokenTypeMap[token.type]);
+                    printf("ERROR: %s:%d:%d: expecting operator or ')', found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                     return nullptr;
                 }
 
@@ -309,7 +309,7 @@ processNext:
             }
             
             default:
-                printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.column,TokenTypeMap[token.type]);
+                printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                 return nullptr;
         }
         return nullptr;
@@ -329,12 +329,12 @@ processNext:
             node->op.type = OpType::SINGLE_OP_POSTFIX;
 
             if (strlen(node->op.value) != 2) {
-                printf("ERROR: %s:%d:%d: unexpected operator '%s'!\n",lvalue->token.file.name,lvalue->token.file.line,lvalue->token.file.column,op.value);
+                printf("ERROR: %s:%d:%d: unexpected operator '%s'!\n",lvalue->token.file.name,lvalue->token.file.line,lvalue->token.file.col,op.value);
                 return nullptr;
             }
 
             if (lvalue->type != NodeType::SYMBOL) {
-                printf("ERROR: %s:%d:%d: operand must be a modifiable value! (aka a variable)\n",lvalue->token.file.name,lvalue->token.file.line,lvalue->token.file.column);
+                printf("ERROR: %s:%d:%d: operand must be a modifiable value! (aka a variable)\n",lvalue->token.file.name,lvalue->token.file.line,lvalue->token.file.col);
                 return nullptr;
             }
 
@@ -352,7 +352,7 @@ processNext:
                     return node;
 
                 default:
-                    printf("ERROR: %s:%d:%d: unexpected token %s!\n",token.file.name,token.file.line,token.file.column, TokenTypeMap[token.type]);
+                    printf("ERROR: %s:%d:%d: unexpected token %s!\n",token.file.name,token.file.line,token.file.col, TokenTypeMap[token.type]);
                     return nullptr;
             }
             return nullptr;
@@ -403,7 +403,7 @@ processNext:
 
                 break;
             default:
-                printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.column,TokenTypeMap[token.type]);
+                printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                 return nullptr;
         }
         return nullptr;

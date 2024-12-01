@@ -241,14 +241,14 @@ namespace Parser {
 
             case TokenType::KEYWORD:
                 if (token.keyword != Keyword::GLOBAL) {
-                    printf("ERROR: %s:%d:%d: unexpected keyword!\n",token.file.name,token.file.line,token.file.column);
+                    printf("ERROR: %s:%d:%d: unexpected keyword!\n",token.file.name,token.file.line,token.file.col);
                     return nullptr;
                 }
                 global = true;
 
                 token = tokens->at(index++);
                 if (token.type != TokenType::SYMBOL) {
-                    printf("ERROR: %s:%d:%d: expecting name, found %s!\n",token.file.name,token.file.line,token.file.column,TokenTypeMap[token.type]);
+                    printf("ERROR: %s:%d:%d: expecting name, found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                     return nullptr;
                 }
 
@@ -261,7 +261,7 @@ namespace Parser {
                             || symbolDeclaredGlobal(token.value,&symbol)
                             || symbolBuiltin(token.value,&symbol)))
                         && !(global && (symbolDeclaredGlobal(token.value,&symbol) || symbolBuiltin(token.value, &symbol)))) {
-                    printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file.name,token.file.line,token.file.column,token.value);
+                    printf("ERROR: %s:%d:%d: '%s' undefined name!\n",token.file.name,token.file.line,token.file.col,token.value);
                     return nullptr;
                 }
                 symbol->refCount++;
@@ -286,7 +286,7 @@ namespace Parser {
                 break;
 
             default:
-                printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.column,TokenTypeMap[token.type]);
+                printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                 return nullptr;
         }
 
@@ -301,7 +301,7 @@ namespace Parser {
             Node* node = new Node{NodeType::OPERATION,nullptr,nullptr,nullptr,{.op = Operator{OpType::CAST,token.value}},token,nullptr};
 
             if (tokens->at(++index).type != TokenType::GROUPING_END) {
-                printf("ERROR: %s:%d:%d: expecting ')' to end type cast!\n",token.file.name,token.file.line,token.file.column);
+                printf("ERROR: %s:%d:%d: expecting ')' to end type cast!\n",token.file.name,token.file.line,token.file.col);
                 return nullptr;
             }
 
@@ -340,14 +340,14 @@ processNext:
                     }
 
                     if (token.type != TokenType::OPERATOR) {
-                        printf("ERROR: %s:%d:%d: expecting operator, comma or close bracket, found %s!\n",token.file.name,token.file.line,token.file.column,TokenTypeMap[token.type]);
+                        printf("ERROR: %s:%d:%d: expecting operator, comma or close bracket, found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                         return nullptr;
                     }
 
                     return operation(node,token);
 
                 default:
-                    printf("ERROR: %s:%d:%d: unexpected token %s!\n",token.file.name,token.file.line,token.file.column,TokenTypeMap[token.type]);
+                    printf("ERROR: %s:%d:%d: unexpected token %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                     return nullptr;
             }
 
@@ -366,7 +366,7 @@ processNext:
 
             case Keyword::IF:
                 if (!parent) {
-                    printf("ERROR: %s:%d:%d: only variable and function definitions allowed in global scope!\n",token.file.name,token.file.line,token.file.column);
+                    printf("ERROR: %s:%d:%d: only variable and function definitions allowed in global scope!\n",token.file.name,token.file.line,token.file.col);
                     depth++;
                     return nullptr;
                 }
@@ -375,7 +375,7 @@ processNext:
             
             case Keyword::ELSE:
                 if (!parent) {
-                    printf("ERROR: %s:%d:%d: only variable and function definitions allowed in global scope!\n",token.file.name,token.file.line,token.file.column);
+                    printf("ERROR: %s:%d:%d: only variable and function definitions allowed in global scope!\n",token.file.name,token.file.line,token.file.col);
                     depth++;
                     return nullptr;
                 }
@@ -384,7 +384,7 @@ processNext:
 
             case Keyword::WHILE:
                 if (!parent) {
-                    printf("ERROR: %s:%d:%d: only variable and function definitions allowed in global scope!\n",token.file.name,token.file.line,token.file.column);
+                    printf("ERROR: %s:%d:%d: only variable and function definitions allowed in global scope!\n",token.file.name,token.file.line,token.file.col);
                     depth++;
                     return nullptr;
                 }
@@ -394,7 +394,7 @@ processNext:
             
             case Keyword::GLOBAL: {
                 if (!parent) {
-                    printf("ERROR: %s:%d:%d: only variable and function definitions allowed in global scope!\n",token.file.name,token.file.line,token.file.column);
+                    printf("ERROR: %s:%d:%d: only variable and function definitions allowed in global scope!\n",token.file.name,token.file.line,token.file.col);
                     depth++;
                     return nullptr;
                 }
@@ -431,14 +431,14 @@ processNext:
 
                 token = tokens->at(index++);
                 if (token.type != TokenType::ENDLINE) {
-                    printf("ERROR: %s:%d:%d: unexpected %s, expecting ';'!\n",token.file.name,token.file.line,token.file.column,TokenTypeMap[token.type]);
+                    printf("ERROR: %s:%d:%d: unexpected %s, expecting ';'!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                     return nullptr;
                 }
                 return parent;
             }
 
             default:
-                printf("ERROR: %s:%d:%d: keyword not yet implemented!\n",token.file.name,token.file.line,token.file.column);
+                printf("ERROR: %s:%d:%d: keyword not yet implemented!\n",token.file.name,token.file.line,token.file.col);
                 return nullptr;
         }
     }
@@ -475,14 +475,14 @@ processNext:
         }
 
         if (node->op.type != OpType::SINGLE_OP_PREFIX) {
-            printf("ERROR: %s:%d:%d: invalid operation! Missing lvalue!\n",token.file.name,token.file.line,token.file.column);
+            printf("ERROR: %s:%d:%d: invalid operation! Missing lvalue!\n",token.file.name,token.file.line,token.file.col);
             return nullptr;
         }
 
         token = tokens->at(index++);
 
         if (token.type == TokenType::ENDLINE) {
-            printf("ERROR: %s:%d:%d: expecting value, found ';'!\n",token.file.name,token.file.line,token.file.column);
+            printf("ERROR: %s:%d:%d: expecting value, found ';'!\n",token.file.name,token.file.line,token.file.col);
             return nullptr;
         }
 
@@ -490,7 +490,7 @@ processNext:
         if (!value) return nullptr;
 
         if (strlen(node->op.value) == 2 && value->type != NodeType::SYMBOL) {
-            printf("ERROR: %s:%d:%d: operand must be a modifiable value! (aka a variable)\n",token.file.name,token.file.line,token.file.column);
+            printf("ERROR: %s:%d:%d: operand must be a modifiable value! (aka a variable)\n",token.file.name,token.file.line,token.file.col);
             return nullptr;
         }
 
@@ -509,7 +509,7 @@ nodeNegativeLiteral:
                 return operation(node, token);
 
             default:
-                printf("ERROR: %s:%d:%d: unexpected token %s!\n",token.file.name,token.file.line,token.file.column, TokenTypeMap[token.type]);
+                printf("ERROR: %s:%d:%d: unexpected token %s!\n",token.file.name,token.file.line,token.file.col, TokenTypeMap[token.type]);
                 return nullptr;
         }
 
@@ -577,7 +577,7 @@ nodeNegativeLiteral:
                     break;
                 case TokenType::SCOPE_END:
                     if (!depth-- || !parent) {
-                        printf("ERROR: %s:%d:%d: unexpected '}' %d %d\n",token.file.name,token.file.line,token.file.column,depth,!parent);
+                        printf("ERROR: %s:%d:%d: unexpected '}' %d %d\n",token.file.name,token.file.line,token.file.col,depth,!parent);
                         return nullptr;
                     }
                     parent = parent->parent;
@@ -585,7 +585,7 @@ nodeNegativeLiteral:
                 case TokenType::FILE_END:
                     break;
                 default:
-                    printf("ERROR: %s:%d:%d: unexpected %s\n",token.file.name,token.file.line,token.file.column,TokenTypeMap[token.type]);
+                    printf("ERROR: %s:%d:%d: unexpected %s\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                     return nullptr;
             }
 

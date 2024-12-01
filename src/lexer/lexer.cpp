@@ -316,7 +316,7 @@ namespace Lexer {
                                 if (!endSymbol(tokens,&context)) return nullptr;
                             }
 
-                            if (symbolChar(*ptr,isSymbol)) {
+                            if (isSymbolChar(*ptr,isSymbol)) {
                                 isSymbol++;
                             } else if (isSymbol == symbolLen) {
                                 isSymbol = 0;
@@ -455,14 +455,14 @@ namespace Lexer {
         return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
     }
 
-    inline bool symbolChar(char c, int pos) {
+    inline bool isSymbolChar(char c, int pos) {
         if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_') return true;
         if (isNumber(c) && pos) return true;
         return false;
     }
 
     inline bool validSymbol(char* c, int len) {
-        while (len--) if (!symbolChar(c[len],len)) return false;
+        while (len--) if (!isSymbolChar(c[len],len)) return false;
         return true;
     }
 

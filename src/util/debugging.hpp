@@ -24,12 +24,12 @@ void print(Node* node, const char* id) {
         default: 
             break;
     }
-    printf(" token: %s:%d:%d\n",node->token.file.name,node->token.file.line,node->token.file.column);
+    printf(" token: %s:%d:%d\n",node->token.file.name,node->token.file.line,node->token.file.col);
 }
 
 void print(Token token, const char* id) {
     if (id) printf("ID: %s ",id);
-    printf("Token state: %s:%d:%d %s",token.file.name,token.file.line,token.file.column,TokenTypeMap[token.type]);
+    printf("Token state: %s:%d:%d %s",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
     switch (token.type) {
         case TokenType::OPERATOR:
         case TokenType::LITERAL:

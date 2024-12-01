@@ -20,7 +20,7 @@ namespace TypeChecker {
     Type literalType(Node* node, Type parentType) {
         if (!parseLiteral(node, parentType)) return Type::error;
         if (!typesImplicitlyCompatible(parentType,node->literal.type)) {
-            printf("ERROR: %s:%d:%d: incompatible types! ('%s' and '%s')\n",node->token.file.name,node->token.file.line,node->token.file.column,TypeMap[parentType],TypeMap[node->literal.type]);
+            printf("ERROR: %s:%d:%d: incompatible types! ('%s' and '%s')\n",node->token.file.name,node->token.file.line,node->token.file.col,TypeMap[parentType],TypeMap[node->literal.type]);
             return Type::error;
         }
         return node->literal.type;
@@ -41,14 +41,14 @@ namespace TypeChecker {
                 Type type = processInvocation(node);
                 if (type == Type::error) return Type::error;
                 if (!typesImplicitlyCompatible(parentType,type)) {
-                    printf("ERROR: %s:%d:%d: incompatible types! ('%s' and '%s')\n",node->token.file.name,node->token.file.line,node->token.file.column,TypeMap[parentType],TypeMap[type]);
+                    printf("ERROR: %s:%d:%d: incompatible types! ('%s' and '%s')\n",node->token.file.name,node->token.file.line,node->token.file.col,TypeMap[parentType],TypeMap[type]);
                     return Type::error;
                 }
                 return type;
             }
             
             default:
-                printf("ERROR: %s:%d:%d: '%s' unexpected node!\n",node->token.file.name,node->token.file.line,node->token.file.column,NodeTypeMap[(int)node->type]);
+                printf("ERROR: %s:%d:%d: '%s' unexpected node!\n",node->token.file.name,node->token.file.line,node->token.file.col,NodeTypeMap[(int)node->type]);
                 return Type::error;
         }
     }
@@ -57,7 +57,7 @@ namespace TypeChecker {
 
         Node* lvalue = node->firstChild;
         if (!lvalue) {
-            printf("ERROR: %s:%d:%d: operation without child!\n",node->token.file.name,node->token.file.line,node->token.file.column);
+            printf("ERROR: %s:%d:%d: operation without child!\n",node->token.file.name,node->token.file.line,node->token.file.col);
         }
         Type ltype = getType(lvalue, parentType);
         if (ltype == Type::error) return Type::error;
@@ -70,12 +70,12 @@ namespace TypeChecker {
         if (rtype == Type::error) return Type::error;
 
         if (!typesImplicitlyCompatible(ltype,rtype)) {
-            printf("ERROR: %s:%d:%d: incompatible types! ('%s' and '%s')\n",rvalue->token.file.name,rvalue->token.file.line,rvalue->token.file.column,TypeMap[ltype],TypeMap[rtype]);
+            printf("ERROR: %s:%d:%d: incompatible types! ('%s' and '%s')\n",rvalue->token.file.name,rvalue->token.file.line,rvalue->token.file.col,TypeMap[ltype],TypeMap[rtype]);
             return Type::error;
         };
 
         if (!typesImplicitlyCompatible(parentType,ltype)) {
-            printf("ERROR: %s:%d:%d: incompatible types! ('%s' and '%s')\n",node->token.file.name,node->token.file.line,node->token.file.column,TypeMap[parentType],TypeMap[ltype]);
+            printf("ERROR: %s:%d:%d: incompatible types! ('%s' and '%s')\n",node->token.file.name,node->token.file.line,node->token.file.col,TypeMap[parentType],TypeMap[ltype]);
             return Type::error;
         };
         return ltype;
@@ -84,7 +84,7 @@ namespace TypeChecker {
     Type processInvocation(Node* node) {
 
         if (node->symbol->type != SymbolType::FUNC) {
-            printf("ERROR: %s:%d:%d: %s is not a function!\n",node->token.file.name,node->token.file.line,node->token.file.column,node->symbol->name);
+            printf("ERROR: %s:%d:%d: %s is not a function!\n",node->token.file.name,node->token.file.line,node->token.file.col,node->symbol->name);
             return Type::error;
         }
 
@@ -96,7 +96,7 @@ namespace TypeChecker {
         }
 
         if (paramNum != (int)node->symbol->func->params->size()) {
-            printf("ERROR: %s:%d:%d: expecting %d parameters, found %d\n",node->token.file.name,node->token.file.line,node->token.file.column,(int)node->symbol->func->params->size(),paramNum);
+            printf("ERROR: %s:%d:%d: expecting %d parameters, found %d\n",node->token.file.name,node->token.file.line,node->token.file.col,(int)node->symbol->func->params->size(),paramNum);
             return Type::error;
         }
 
@@ -106,7 +106,7 @@ namespace TypeChecker {
             Type type = getType(child,p.type);
             if (type == Type::error) return Type::error;
             if (!typesImplicitlyCompatible(p.type,type)) {
-                printf("ERROR: %s:%d:%d: incompatible type! (requires '%s', found '%s')\n",child->token.file.name,child->token.file.line,child->token.file.column,TypeMap[p.type],TypeMap[type]);
+                printf("ERROR: %s:%d:%d: incompatible type! (requires '%s', found '%s')\n",child->token.file.name,child->token.file.line,child->token.file.col,TypeMap[p.type],TypeMap[type]);
                 return Type::error;
             }
 
@@ -125,7 +125,7 @@ namespace TypeChecker {
         }
 
         if (func->symbol->func->returnType != Type::null) {
-            printf("ERROR: %s:%d:%d: Return value missing but required!\n",node->firstChild->token.file.name,node->firstChild->token.file.line,node->firstChild->token.file.column);
+            printf("ERROR: %s:%d:%d: Return value missing but required!\n",node->firstChild->token.file.name,node->firstChild->token.file.line,node->firstChild->token.file.col);
             return false;
         }
         return true;
@@ -166,7 +166,7 @@ namespace TypeChecker {
                     break;
 
                 default:
-                    printf("ERROR: %s:%d:%d: '%s' unexpected node!\n",child->token.file.name,child->token.file.line,child->token.file.column,NodeTypeMap[(int)child->type]);
+                    printf("ERROR: %s:%d:%d: '%s' unexpected node!\n",child->token.file.name,child->token.file.line,child->token.file.col,NodeTypeMap[(int)child->type]);
                     return false;
             }
 
@@ -188,7 +188,7 @@ namespace TypeChecker {
                     break;
 
                 default:
-                    printf("ERROR: %s:%d:%d: expecting declaration or function, found '%s'!\n",pair.second->token.file.name,pair.second->token.file.line,pair.second->token.file.column,NodeTypeMap[(int)pair.second->type]);
+                    printf("ERROR: %s:%d:%d: expecting declaration or function, found '%s'!\n",pair.second->token.file.name,pair.second->token.file.line,pair.second->token.file.col,NodeTypeMap[(int)pair.second->type]);
                     return false;
             }
         }
