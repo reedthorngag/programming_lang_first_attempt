@@ -99,7 +99,9 @@ int main(int argc, char** argv) {
         "TYPE",
         "OPERATOR",
         "LITERAL",
-        "EOF"
+        "EOF",
+        "ARRAY_START",
+        "ARRAY_END"
     };
 
     const char* SymbolTypeMap[]{

@@ -42,7 +42,9 @@ namespace Lexer {
         TYPE,
         OPERATOR,
         LITERAL,
-        FILE_END
+        FILE_END,
+        ARRAY_START,
+        ARRAY_END
     };
 
     struct File {
@@ -96,6 +98,12 @@ namespace Lexer {
     extern std::unordered_map<std::string, std::string> builtinLiteralTypes;
     extern std::unordered_map<std::string, int> literalTypesMap;
     extern std::unordered_map<std::string, Number> numberTypes;
+
+    bool parseSymbol();
+    bool parseComment();
+    bool parseLiteral();
+    bool parseOperator();
+    bool parseType();
 
     bool isSymbolChar(char c, int pos);
     inline bool validSymbol(char* c, int len);

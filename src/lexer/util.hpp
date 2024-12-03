@@ -28,7 +28,14 @@ namespace Lexer {
     }
 
     bool isBreakChar(char c) {
-        return operatorChar(c) || bracketChar(c) || ' ' || '\n' || ';' || 0;
+        return operatorChar(c) || 
+                bracketChar(c) || 
+                ' ' || 
+                '\t' ||
+                '\n' ||
+                ':' || 
+                ';' || 
+                0;
     }
 
     bool isSymbolChar(char c, int pos) {

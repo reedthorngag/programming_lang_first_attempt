@@ -8,6 +8,7 @@
 namespace Lexer {
 
     const char* minMaxLiteralStr(char* str) {
+        if (log) printf("Entered minMaxLiteral\n");
 
         int len = strlen(str);
 
@@ -31,10 +32,10 @@ namespace Lexer {
         }
 
         return nullptr;
-
     }
 
     bool parseSymbol() {
+        if (log) printf("Entered parseSymbol\n");
 
         char* ptr = Lexer::ptr;
         int len;
@@ -65,7 +66,7 @@ namespace Lexer {
                 Lexer::ptr += len;
                 file.col += len;
 
-                break;
+                return true;
             }
         } while (++len <= MAX_SYMBOL_LEN);
 
@@ -73,6 +74,7 @@ namespace Lexer {
     }
 
     bool parseComment() {
+        if (log) printf("Entered parseComment\n");
 
         char* ptr = Lexer::ptr;
         int len = 0;
@@ -81,10 +83,11 @@ namespace Lexer {
         int commentLevel;
 
 
-
+        return false;
     }
 
     bool parseStr() {
+        if (log) printf("Entered parseStr\n");
 
         char* ptr = Lexer::ptr;
 
@@ -100,7 +103,7 @@ namespace Lexer {
 
                 switch (*ptr) {
                     case 'x':
-                        if (!isHexNumber(*ptr) || !isHexNumber(ptr[1])) {
+                        if (!isHexNumber(*++ptr) || !isHexNumber(ptr[1])) {
                             printf("ERROR: %s:%d:%d: invalid escape sequence!\n",file.name,file.line,file.col);
                             exit(1);
                         }
@@ -123,7 +126,7 @@ namespace Lexer {
                         str << "\\x" << toHexByte(*ptr);
                         if (*ptr == '\n') {
                             f.line++;
-                            f.col = 0;
+                            f.col = -1; // gets incremented to 0 below switch
                         }
                         break;
                 }
@@ -148,24 +151,83 @@ namespace Lexer {
 
         Lexer::ptr = ptr;
         Lexer::file = f;
+
         tokens->push_back(Token{TokenType::LITERAL,{.value={new string(str.str()).c_str()}},file,false});
 
         return true;
     }
 
     bool parseChr() {
+        if (log) printf("Entered parseChr\n");
 
         char* ptr = Lexer::ptr;
         int len = 0;
+        
+        if (ptr[1] != '\\') {
+            if (ptr[2] != '\'') {
+                printf("ERROR: %s:%d:%d: expecting ', found '%c'!\n",file.name,file.line,file.col + 2, ptr[2]);
+                exit(1);
+            }
+
+            char* str = newString(Lexer::ptr, 3);
+            tokens->push_back(Token{TokenType::LITERAL,{.value = {str}},file,false});
+            Lexer::ptr += 3;
+            file.col += 3;
+            return true;
+        }
+
+        std::stringstream ss;
+        ss << '\'';
 
         ptr++;
-        
-        if (*ptr != '\\') {
-            
+        file.col++;
+
+        switch (*ptr) {
+            case 'x':
+                if (!isHexNumber(*++ptr) || !isHexNumber(ptr[1])) {
+                    printf("ERROR: %s:%d:%d: invalid escape sequence!\n",file.name,file.line,file.col);
+                    exit(1);
+                }
+                ss << *ptr << *++ptr;
+                file.col++;
+                break;
+            case 'n':
+                ss << "\\x" << toHexByte('\n');
+                break;
+            case 'b':
+                ss << "\\x" << toHexByte('\b');
+                break;
+            case 't':
+                ss << "\\x" << toHexByte('\t');
+                break;
+            case 'r':
+                ss << "\\x" << toHexByte('\r');
+                break;
+            default:
+                ss << "\\x" << toHexByte(*ptr);
+                if (*ptr == '\n') {
+                    file.line++;
+                    file.col = -1;
+                }
+                break;
         }
+
+        file.col++;
+        ptr++;
+
+        if (*ptr != '\'') {
+            printf("ERROR: %s:%d:%d: expecting ', found %c!\n",file.name,file.line,file.col,*ptr);
+            exit(1);
+        }
+
+        tokens->push_back(Token{TokenType::LITERAL,{.value = {(char*)new std::string(ss.str()).c_str()}},file,false});
+        Lexer::ptr = ptr;
+
+        return true;
     }
 
     bool parseLiteral() {
+        if (log) printf("Entered parseLiteral\n");
 
         char* ptr = Lexer::ptr;
         int len = 0;
@@ -174,14 +236,19 @@ namespace Lexer {
 
         if (ptr[0] == '\'') return parseChr();
 
+        if (isHexNumber(ptr[0]) && ptr[0] != '.') return false;
+
         bool hex = false;
 
         if (ptr[0] == '0') {
 
         }
+
+        return false;
     }
 
     bool parseOperator() {
+        if (log) printf("Entered parseOperator\n");
 
         char* ptr = Lexer::ptr;
         int len = 0;
@@ -203,6 +270,14 @@ namespace Lexer {
         }
 
         return false;
+    }
 
+    bool parseType() {
+        if (log) printf("Entered parseType\n");
+
+        char* ptr = Lexer::ptr;
+        int len = 0;
+
+        return false;
     }
 }
