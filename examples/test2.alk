@@ -1,5 +1,6 @@
 
 func main() {
-    0.005
-    var;
+    "hello";
+    '\x32'
+    var hello = "what?\n";
 }

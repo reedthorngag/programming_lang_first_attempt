@@ -400,7 +400,7 @@ processNext:
                 }
                 Token t = tokens->at(index);
                 if (t.type != TokenType::SYMBOL) {
-                    printf("ERROR: %s:%d:%d: expecting name, found %s!\n",t.file,t.line,t.column,TokenTypeMap[token.type]);
+                    printf("ERROR: %s:%d:%d: expecting name, found %s!\n",t.file.name,t.file.line,t.file.col,TokenTypeMap[token.type]);
                     return nullptr;
                 }
                 Node* node = assignment(token);

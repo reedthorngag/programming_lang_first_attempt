@@ -70,14 +70,13 @@ namespace Lexer {
     }
 
     /**
-     * This being inline is important, as it stores the char array
-     * on the stack to avoid leaking memory (which probably wouldn't
-     * be a big deal anyway though).
+     * Yes this leaks memory because the strings never get deleted,
+     * but it shouldn't matter as the user is doing something wrong
+     * if its called enough to matter.
      */
-    inline char* toHexByte(char c) {
+    char* toHexByte(char c) {
         const char* hexDigits = "0123456789ABCDEF";
-        char out[]{hexDigits[c >> 4], hexDigits[c & 0xf], 0};
-        return out;
+        return new char[3]{hexDigits[c >> 4], hexDigits[c & 0xf], 0};
     }
 }
 

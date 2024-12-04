@@ -205,6 +205,16 @@ int main(int argc, char** argv) {
                 col = 1;
                 line++;
                 break;
+            case Lexer::TokenType::ARRAY_START:
+                pad(token,&line,&col);
+                printf("[");
+                col++;
+                break;
+            case Lexer::TokenType::ARRAY_END:
+                pad(token,&line,&col);
+                printf("]");
+                col++;
+                break;
             case Lexer::TokenType::ENDLINE:
                 pad(token,&line,&col);
                 printf(";");

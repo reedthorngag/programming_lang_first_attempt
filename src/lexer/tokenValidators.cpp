@@ -1,6 +1,7 @@
 #include <sstream>
 #include <stdlib.h>
 #include <stdio.h>
+#include <cstring>
 
 #include "lexer.hpp"
 #include "util.hpp"
@@ -107,7 +108,8 @@ namespace Lexer {
                             printf("ERROR: %s:%d:%d: invalid escape sequence!\n",file.name,file.line,file.col);
                             exit(1);
                         }
-                        str << *ptr << *++ptr;
+                        str << *ptr << ptr[1];
+                        ptr++;
                         f.col++;
                         break;
                     case 'n':
@@ -152,7 +154,8 @@ namespace Lexer {
         Lexer::ptr = ptr;
         Lexer::file = f;
 
-        tokens->push_back(Token{TokenType::LITERAL,{.value={new string(str.str()).c_str()}},file,false});
+        char* s = newString((char*)str.str().c_str(),str.str().length());
+        tokens->push_back(Token{TokenType::LITERAL,{.value={s}},file,false});
 
         return true;
     }
@@ -188,7 +191,8 @@ namespace Lexer {
                     printf("ERROR: %s:%d:%d: invalid escape sequence!\n",file.name,file.line,file.col);
                     exit(1);
                 }
-                ss << *ptr << *++ptr;
+                ss << *ptr << ptr[1];
+                ptr++;
                 file.col++;
                 break;
             case 'n':
@@ -220,7 +224,8 @@ namespace Lexer {
             exit(1);
         }
 
-        tokens->push_back(Token{TokenType::LITERAL,{.value = {(char*)new std::string(ss.str()).c_str()}},file,false});
+        char* s = newString((char*)ss.str().c_str(),ss.str().length());
+        tokens->push_back(Token{TokenType::LITERAL,{.value = {s}},file,false});
         Lexer::ptr = ptr;
 
         return true;

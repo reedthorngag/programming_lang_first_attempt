@@ -509,7 +509,7 @@ processNext:
 
         Type t;
         if (auto type = typeMap.find(typeToken.value); type == typeMap.end()) {
-            printf("ERROR: %s:%d:%d: unknown type '%s'!\n",typetoken.file.name,typetoken.file.line,typetoken.file.column,typeToken.value);
+            printf("ERROR: %s:%d:%d: unknown type '%s'!\n",typeToken.file.name,typeToken.file.line,typeToken.file.col,typeToken.value);
             return false;
         } else {
             t = type->second;
