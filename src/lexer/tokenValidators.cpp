@@ -262,14 +262,13 @@ namespace Lexer {
         char* ptr = Lexer::ptr;
         int len = 0;
 
-        char* str = new char[4]{0,0,0,0};
+        char* str = new char[4]{};
         str[0] = *ptr;
 
-        if (operatorChar(ptr[1])) str[1] = ptr[1];
-        if (operatorChar(ptr[2])) str[2] = ptr[2];
-        if (operatorChar(ptr[3])) str[3] = ptr[3];
+        if (!operatorChar(*ptr)) return false;
 
-        printf("Operator: %s\n", str);
+        str[1] = operatorChar(ptr[1]) ? ptr[1] : 0;
+        str[2] = operatorChar(ptr[2]) ? ptr[2] : 0;
 
         len = strlen(str);
 
