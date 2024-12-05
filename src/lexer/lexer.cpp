@@ -134,8 +134,9 @@ namespace Lexer {
         while (*ptr) {
             switch (*ptr) {
 
-                case '\t':
                 case ' ':
+                case '\t':
+                case '\r':
                     break;
 
                 case '\n':

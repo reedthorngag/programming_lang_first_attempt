@@ -43,9 +43,12 @@ namespace Lexer {
 
         do {
             if (!isSymbolChar(ptr[len], len)) {
+                printf("here '%c' %d\n",ptr[len],(int)ptr[len]);
                 if (!len) return false;
 
+                printf("here\n");
                 if (!isBreakChar(ptr[len])) return false;
+                printf("here\n");
 
                 char* str = newString(ptr, len);
 
@@ -63,7 +66,7 @@ namespace Lexer {
                 else
                     tokens->push_back(Token{TokenType::SYMBOL,{.value={str}},file,false});
                 
-
+                len--;
                 Lexer::ptr += len;
                 file.col += len;
 
