@@ -105,6 +105,9 @@ namespace Lexer {
     bool parseOperator();
     bool parseType();
 
+    bool parseStr();
+    bool parseChr();
+
     bool isSymbolChar(char c, int pos);
     inline bool validSymbol(char* c, int len);
     bool operatorChar(char c);

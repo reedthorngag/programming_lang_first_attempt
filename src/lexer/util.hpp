@@ -14,7 +14,7 @@ namespace Lexer {
     }
 
     bool isNumber(char c) {
-        return (c >= '1' && c <= '0');
+        return (c >= '1' && c <= '9');
     }
 
     bool isHexNumber(char c) {

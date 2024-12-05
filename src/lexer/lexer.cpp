@@ -129,9 +129,10 @@ namespace Lexer {
         tokens = new std::vector<Token>;
         ptr = input;
         
-        file = File{fileName, 0, 0};
+        file = File{fileName, 1, 1};
 
         while (*ptr) {
+            if (log) printf("At %s:%d:%d: character: '%c' 0x%x\n",file.name,file.line,file.col,((*ptr >= 20) ? *ptr : '?'),*ptr);
             switch (*ptr) {
 
                 case ' ':
@@ -141,7 +142,7 @@ namespace Lexer {
 
                 case '\n':
                     file.line++;
-                    file.col = -1;
+                    file.col = 0;
                     break;
 
                 case ',':
@@ -173,6 +174,14 @@ namespace Lexer {
                     tokens->push_back(Token{TokenType::ARRAY_END,{.value = {nullptr}},file,false});
                     break;
 
+                case '"':
+                    if (!parseStr()) goto SyntaxError;
+                    break;
+
+                case '\'':
+                    if (!parseChr()) goto SyntaxError;
+                    break;
+
                 default:
                     if (!(
                         parseSymbol() ||
@@ -181,7 +190,8 @@ namespace Lexer {
                         parseLiteral() ||
                         parseType()
                     )) {
-                        printf("ERROR: %s:%d:%d: syntax error!\n",file.name,file.line,file.col);
+SyntaxError:
+                        printf("ERROR: %s:%d:%d: syntax error, unexpected token!\n",file.name,file.line,file.col);
                         return nullptr;
                     }
             }

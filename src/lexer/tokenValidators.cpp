@@ -6,6 +6,7 @@
 #include "lexer.hpp"
 #include "util.hpp"
 
+
 namespace Lexer {
 
     const char* minMaxLiteralStr(char* str) {
@@ -101,6 +102,7 @@ namespace Lexer {
 
         std::stringstream str;
 
+        ptr++;
         while (*ptr != '"' || escaped) {
             if (escaped) {
                 escaped = false;
@@ -131,7 +133,7 @@ namespace Lexer {
                         str << "\\x" << toHexByte(*ptr);
                         if (*ptr == '\n') {
                             f.line++;
-                            f.col = -1; // gets incremented to 0 below switch
+                            f.col = 0;
                         }
                         break;
                 }
@@ -140,6 +142,8 @@ namespace Lexer {
                 ptr++;
                 continue;
             }
+
+            if (*ptr == 0) return false;
 
             if (*ptr == '\\') {
                 escaped = true;
@@ -151,6 +155,7 @@ namespace Lexer {
             if (*ptr == '\n') f.line++;
 
             str << *ptr;
+            ptr++;
             f.col++;
         }
 
@@ -171,7 +176,7 @@ namespace Lexer {
         
         if (ptr[1] != '\\') {
             if (ptr[2] != '\'') {
-                printf("ERROR: %s:%d:%d: expecting ', found '%c'!\n",file.name,file.line,file.col + 2, ptr[2]);
+                printf("ERROR: %s:%d:%d: expecting ' found '%c'!\n",file.name,file.line,file.col + 2, ptr[2]);
                 exit(1);
             }
 
@@ -188,7 +193,7 @@ namespace Lexer {
         ptr++;
         file.col++;
 
-        switch (*ptr) {
+        switch (*++ptr) {
             case 'x':
                 if (!isHexNumber(*++ptr) || !isHexNumber(ptr[1])) {
                     printf("ERROR: %s:%d:%d: invalid escape sequence!\n",file.name,file.line,file.col);
@@ -214,7 +219,7 @@ namespace Lexer {
                 ss << "\\x" << toHexByte(*ptr);
                 if (*ptr == '\n') {
                     file.line++;
-                    file.col = -1;
+                    file.col = 0;
                 }
                 break;
         }
@@ -223,7 +228,7 @@ namespace Lexer {
         ptr++;
 
         if (*ptr != '\'') {
-            printf("ERROR: %s:%d:%d: expecting ', found %c!\n",file.name,file.line,file.col,*ptr);
+            printf("ERROR: %s:%d:%d: expecting ' found %c!\n",file.name,file.line,file.col,*ptr);
             exit(1);
         }
 
@@ -239,10 +244,6 @@ namespace Lexer {
 
         char* ptr = Lexer::ptr;
         int len = 0;
-
-        if (ptr[0] == '"') return parseStr();
-
-        if (ptr[0] == '\'') return parseChr();
 
         if (isHexNumber(ptr[0]) && ptr[0] != '.') return false;
 
@@ -261,11 +262,14 @@ namespace Lexer {
         char* ptr = Lexer::ptr;
         int len = 0;
 
-        char* str = new char[4]{};
+        char* str = new char[4]{0,0,0,0};
         str[0] = *ptr;
 
         if (operatorChar(ptr[1])) str[1] = ptr[1];
         if (operatorChar(ptr[2])) str[2] = ptr[2];
+        if (operatorChar(ptr[3])) str[3] = ptr[3];
+
+        printf("Operator: %s\n", str);
 
         len = strlen(str);
 
@@ -285,6 +289,18 @@ namespace Lexer {
 
         char* ptr = Lexer::ptr;
         int len = 0;
+
+        // slightly hacky, but we just use the parseSymbol 
+        if (!parseSymbol()) return false;
+
+        Token type = tokens->back();
+        
+        if (type.type != TokenType::SYMBOL) {
+            printf("ERROR: %s:%d:%d: invalid type '%s'!\n",type.file.name,type.file.line,type.file.col,type.value);
+            exit(1);
+        }
+
+        tokens->back().type = TokenType::TYPE;
 
         return false;
     }
