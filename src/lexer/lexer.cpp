@@ -132,7 +132,7 @@ namespace Lexer {
         file = File{fileName, 1, 1};
 
         while (*ptr) {
-            if (log) printf("At %s:%d:%d: character: '%c' 0x%x\n",file.name,file.line,file.col,((*ptr >= 20) ? *ptr : '?'),*ptr);
+            if (log && *ptr != ' ') printf("At %s:%d:%d: character: '%c' 0x%x\n",file.name,file.line,file.col,((*ptr >= 20) ? *ptr : '?'),*ptr);
             switch (*ptr) {
 
                 case ' ':
@@ -182,16 +182,20 @@ namespace Lexer {
                     if (!parseChr()) goto SyntaxError;
                     break;
 
+                case '/':
+                    if (!(parseComment() || parseOperator())) goto SyntaxError;
+                    break;
+
                 default:
+                    printf("\n");
                     if (!(
                         parseSymbol() ||
-                        parseComment() ||
                         parseOperator() ||
                         parseLiteral() ||
                         parseType()
                     )) {
 SyntaxError:
-                        printf("ERROR: %s:%d:%d: syntax error, unexpected token!\n",file.name,file.line,file.col);
+                        printf("\rERROR: %s:%d:%d: syntax error, unparsable token!\n",file.name,file.line,file.col);
                         return nullptr;
                     }
             }

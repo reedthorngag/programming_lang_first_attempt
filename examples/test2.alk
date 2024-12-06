@@ -1,7 +1,10 @@
 
 func main() {
-    "hello";
+    "hello"; 0.1
     '\x32'
+    'g'
+    '\f'
+'f'
     var hello = "what?\n";
 
     100
@@ -9,7 +12,7 @@ func main() {
     0o77
     0b0101_101_01
     0.1
-    100f
+    100
     0xff.ff
     0xffpff
     100.20e100
