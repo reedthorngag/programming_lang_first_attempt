@@ -13,4 +13,7 @@ func main() {
     0xff.ff
     0xffpff
     100.20e100
+    -0xff
+    0x.ff
+    .100
 }

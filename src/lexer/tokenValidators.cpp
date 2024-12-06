@@ -258,8 +258,8 @@ namespace Lexer {
         char* ptr = Lexer::ptr;
         int len = 0;
 
-        // only valid start chars are 0 - 9 or .
-        if (*ptr < '0' || *ptr > '9' || *ptr == '_') return false;
+        // only valid start chars are 0 - 9 or . (- is handled in the parser)
+        if ((*ptr < '0' || *ptr > '9') && *ptr != '.') return false;
 
         bool(*evalFunc)(char);
 
@@ -283,24 +283,32 @@ namespace Lexer {
             }
         } else evalFunc = isDecimal;
 
+        bool decimal = false;
+        bool exponent = false;
+
         while (true) {
-            char c = *++ptr;
+            char c = *ptr;
+            ptr++;
             len++;
 
             if (evalFunc(c)) continue;
 
             // decimal part
-            if (c == '.') continue;
+            if (!decimal && c == '.') {
+                decimal = true;
+                continue;
+            }
 
             // exponent
-            if (c == 'e' || c == 'p') continue;
+            if (!exponent && (c == 'e' || c == 'p')) {
+                exponent = true;
+                continue;
+            }
 
             if (isBreakChar(c) || isOperatorChar(c)) break;
 
             return false;
         }
-
-        if (*ptr == 'f') len++;
 
         char* str = newString(Lexer::ptr, len);
 
