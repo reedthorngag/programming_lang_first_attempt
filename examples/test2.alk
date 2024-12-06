@@ -3,4 +3,14 @@ func main() {
     "hello";
     '\x32'
     var hello = "what?\n";
+
+    100
+    0xfff
+    0o77
+    0b0101_101_01
+    0.1
+    100f
+    0xff.ff
+    0xffpff
+    100.20e100
 }

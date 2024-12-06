@@ -44,12 +44,9 @@ namespace Lexer {
 
         do {
             if (!isSymbolChar(ptr[len], len)) {
-                printf("here '%c' %d\n",ptr[len],(int)ptr[len]);
                 if (!len) return false;
 
-                printf("here\n");
                 if (!isBreakChar(ptr[len])) return false;
-                printf("here\n");
 
                 char* str = newString(ptr, len);
 
@@ -239,21 +236,83 @@ namespace Lexer {
         return true;
     }
 
+    bool isBinary(char c) {
+        return c == '0' || c == '1' || c == '_';
+    }
+
+    bool isOctal(char c) {
+        return (c >= '1' && c <= '7') || c == '0' || c == '_';
+    }
+
+    bool isDecimal(char c) {
+        return isNumber(c) || c == '_';
+    }
+
+    bool isHexadecimal(char c) {
+        return isHexNumber(c) || c == '_';
+    }
+
     bool parseLiteral() {
         if (log) printf("Entered parseLiteral\n");
 
         char* ptr = Lexer::ptr;
         int len = 0;
 
-        if (isHexNumber(ptr[0]) && ptr[0] != '.') return false;
+        // only valid start chars are 0 - 9 or .
+        if (*ptr < '0' || *ptr > '9' || *ptr == '_') return false;
 
-        bool hex = false;
+        bool(*evalFunc)(char);
 
-        if (ptr[0] == '0') {
+        if (*ptr == '0') {
+            len += 2;
+            switch (*++ptr) {
+                case 'b':
+                    evalFunc = isBinary;
+                    break;
+                case 'o':
+                    evalFunc = isOctal;
+                    break;
+                case 'x':
+                    evalFunc = isHexadecimal;
+                    break;
+                default:
+                    evalFunc = isDecimal;
+                    ptr--;
+                    len--;
+                    break;
+            }
+        } else evalFunc = isDecimal;
 
+        while (true) {
+            char c = *++ptr;
+            len++;
+
+            if (evalFunc(c)) continue;
+
+            // decimal part
+            if (c == '.') continue;
+
+            // exponent
+            if (c == 'e' || c == 'p') continue;
+
+            if (isBreakChar(c) || isOperatorChar(c)) break;
+
+            return false;
         }
 
-        return false;
+        if (*ptr == 'f') len++;
+
+        char* str = newString(Lexer::ptr, len);
+
+        tokens->push_back(Token{TokenType::LITERAL, {.value={str}},file, false});
+
+        file.col += len;
+
+        Lexer::ptr = ptr;
+
+        if (log) printf("Parsed Literal number: %d:%d: %s\n",file.line, file.col, str);
+
+        return true;
     }
 
     bool parseOperator() {
@@ -265,10 +324,10 @@ namespace Lexer {
         char* str = new char[4]{};
         str[0] = *ptr;
 
-        if (!operatorChar(*ptr)) return false;
+        if (!isOperatorChar(*ptr)) return false;
 
-        str[1] = operatorChar(ptr[1]) ? ptr[1] : 0;
-        str[2] = operatorChar(ptr[2]) ? ptr[2] : 0;
+        str[1] = isOperatorChar(ptr[1]) ? ptr[1] : 0;
+        str[2] = isOperatorChar(ptr[2]) ? ptr[2] : 0;
 
         len = strlen(str);
 

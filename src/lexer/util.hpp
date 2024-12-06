@@ -14,7 +14,7 @@ namespace Lexer {
     }
 
     bool isNumber(char c) {
-        return (c >= '1' && c <= '9');
+        return (c >= '0' && c <= '9');
     }
 
     bool isHexNumber(char c) {
@@ -28,7 +28,7 @@ namespace Lexer {
     }
 
     bool isBreakChar(char c) {
-        return operatorChar(c) || 
+        return isOperatorChar(c) || 
                 bracketChar(c) || 
                 ' ' || 
                 '\t' ||
@@ -46,7 +46,7 @@ namespace Lexer {
         return isHexNumber(c) || '_' || '.';
     }
 
-    bool operatorChar(char c) {
+    bool isOperatorChar(char c) {
         return c == '+' || c == '-' || c =='*' || c == '/' || c == '%' || 
                 c == '>' || c == '<' || 
                 c == '=' || 
@@ -60,8 +60,8 @@ namespace Lexer {
         char* str = new char[4]{};
         str[0] = *c;
 
-        if (operatorChar(c[1])) str[1] = c[1];
-        if (operatorChar(c[2])) str[2] = c[2];
+        if (isOperatorChar(c[1])) str[1] = c[1];
+        if (isOperatorChar(c[2])) str[2] = c[2];
 
         if (auto key = operations.find(str); key != operations.end()) {
             return true;

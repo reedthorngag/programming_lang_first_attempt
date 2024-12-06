@@ -110,7 +110,7 @@ namespace Lexer {
 
     bool isSymbolChar(char c, int pos);
     inline bool validSymbol(char* c, int len);
-    bool operatorChar(char c);
+    bool isOperatorChar(char c);
     inline bool validOperation(char* c, int len);
     inline bool validNumberLiteral(char c);
     bool validLiteral(char* c, int len);
