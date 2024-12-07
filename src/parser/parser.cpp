@@ -535,18 +535,7 @@ nodeNegativeLiteral:
 
         tokens = _tokens;
 
-        const char* SymbolTypeMap[]{
-            "FUNC",
-            "VAR",
-            "CONST",
-            "GLOBAL",
-            "IF",
-            "ELSE",
-            "WHILE",
-            "RETURN",
-            "BREAK",
-            "RETURN"
-        };
+        
         while (index < tokens->size()) {
             Token token = tokens->at(index++);
             print(token);

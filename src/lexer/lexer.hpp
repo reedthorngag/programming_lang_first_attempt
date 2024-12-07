@@ -30,6 +30,8 @@ namespace Lexer {
         CONTINUE
     };
 
+    extern const char* KeywordTypeMap[];
+
     enum TokenType {
         ENDLINE,
         COMMA,

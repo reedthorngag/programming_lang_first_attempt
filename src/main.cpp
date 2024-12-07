@@ -104,19 +104,6 @@ int main(int argc, char** argv) {
         "ARRAY_END"
     };
 
-    const char* SymbolTypeMap[]{
-        "FUNC",
-        "VAR",
-        "CONST",
-        "GLOBAL",
-        "IF",
-        "ELSE",
-        "WHILE",
-        "RETURN",
-        "BREAK",
-        "CONTINUE"
-    };
-
     printf("Input file: %s\n%s\n",inputFile,buf);
 
     printf("Tokens length: %d\n",(int)tokens->size());
@@ -127,7 +114,7 @@ int main(int argc, char** argv) {
         Lexer::Token token = tokens->at(i);
         printf("token: %s %s\n",TokenTypeMap[token.type], 
                 token.type == Lexer::TokenType::SYMBOL ? token.value : 
-                token.type == Lexer::TokenType::KEYWORD ? SymbolTypeMap[token.keyword] : 
+                token.type == Lexer::TokenType::KEYWORD ? Lexer::KeywordTypeMap[token.keyword] : 
                 token.type == Lexer::TokenType::LITERAL ? token.value : 
                 token.type == Lexer::TokenType::TYPE ? token.value : 
                 token.type == Lexer::TokenType::OPERATOR ? token.value : ""
@@ -140,7 +127,7 @@ int main(int argc, char** argv) {
         switch (token.type) {
             case Lexer::TokenType::KEYWORD:
                 pad(token,&line,&col);
-                token.value = (char*)SymbolTypeMap[token.keyword];
+                token.value = (char*)Lexer::KeywordTypeMap[token.keyword];
                 printVal(token,&col);
                 if (tokens->at(i+1).type != Lexer::TokenType::ENDLINE) {
                     printf(" ");

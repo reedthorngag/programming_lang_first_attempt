@@ -40,6 +40,19 @@ namespace Lexer {
         
     };
 
+    const char* KeywordTypeMap[]{
+        "FUNC",
+        "VAR",
+        "CONST",
+        "GLOBAL",
+        "IF",
+        "ELSE",
+        "WHILE",
+        "RETURN",
+        "BREAK",
+        "CONTINUE"
+    };
+
     std::unordered_map<std::string,bool> operations = {
         {"+",true},
         {"-",true},
@@ -185,14 +198,19 @@ namespace Lexer {
                 case '/':
                     if (!(parseComment() || parseOperator())) goto SyntaxError;
                     break;
+                
+                case ':':
+                    while (*++ptr==' ' || *ptr=='\n' || *ptr=='\t') file.col++;
+                    file.col++;
+                    if (!parseType()) goto SyntaxError;
+                    break;
 
                 default:
                     printf("\n");
                     if (!(
                         parseSymbol() ||
                         parseOperator() ||
-                        parseLiteral() ||
-                        parseType()
+                        parseLiteral()
                     )) {
 SyntaxError:
                         printf("\rERROR: %s:%d:%d: syntax error, unparsable token!\n",file.name,file.line,file.col);

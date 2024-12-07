@@ -28,13 +28,14 @@ namespace Lexer {
     }
 
     bool isBreakChar(char c) {
-        return isOperatorChar(c) || 
-                bracketChar(c) || 
-                c == ' ' || 
+        return isOperatorChar(c) ||
+                bracketChar(c) ||
+                c == ' ' ||
                 c == '\t' ||
                 c == '\n' ||
-                c == ':' || 
-                c == ';' || 
+                c == ':' ||
+                c == ';' ||
+                c == ',' ||
                 !c;
     }
 
@@ -43,7 +44,7 @@ namespace Lexer {
     }
 
     bool numberLiteralChar(char c) {
-        return isHexNumber(c) || '_' || '.';
+        return isHexNumber(c) || c == '_' || c == '.';
     }
 
     bool isOperatorChar(char c) {

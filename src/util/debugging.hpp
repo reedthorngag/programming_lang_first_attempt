@@ -4,9 +4,10 @@
 #define DEBUGGING
 
 #include "../parser/parser.hpp"
+#include "../lexer/lexer.hpp"
 
-void print(Node* node, const char* id) {
-    if (id) printf("ID: %s ",id);
+void print(Node* node, const char* src) {
+    if (src) printf("SRC: %s ",src);
     printf("Node state: %s",NodeTypeMap[(int)node->type]);
     switch (node->type) {
         case NodeType::FUNCTION:
@@ -38,7 +39,7 @@ void print(Token token, const char* id) {
             printf(" %s",token.value);
             break;
         case TokenType::KEYWORD:
-            printf(" %s",NodeTypeMap[token.keyword]);
+            printf(" %s",Lexer::KeywordTypeMap[token.keyword]);
             break;
         default:
             break;

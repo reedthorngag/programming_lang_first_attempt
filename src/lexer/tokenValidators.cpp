@@ -70,11 +70,11 @@ namespace Lexer {
                 Lexer::ptr += len;
                 file.col += len;
 
+                printf("\n");
                 return true;
             }
         } while (++len <= MAX_SYMBOL_LEN);
 
-        printf("\n");
         return false;
     }
 
@@ -195,7 +195,11 @@ namespace Lexer {
                         str << "\\x" << toHexByte('\r');
                         break;
                     default:
-                        if (*ptr == '\n') {
+                        if (*ptr == '\r' && ptr[1] == '\n') {
+                            f.line++;
+                            f.col = 0;
+                            ptr++;
+                        } else if (*ptr == '\n') {
                             f.line++;
                             f.col = 0;
                         } else
@@ -296,7 +300,11 @@ namespace Lexer {
                 break;
             default:
                 ss << "\\x" << toHexByte(*ptr);
-                if (*ptr == '\n') {
+                if (*ptr == '\r' && ptr[1] == '\n') {
+                    f.line++;
+                    f.col = 0;
+                    ptr++;
+                } else if (*ptr == '\n') {
                     f.line++;
                     f.col = -1;
                 }
@@ -456,8 +464,11 @@ namespace Lexer {
         char* ptr = Lexer::ptr;
         int len = 0;
 
-        // slightly hacky, but we just use the parseSymbol 
-        if (!parseSymbol()) return false;
+        // slightly bad, but we just use the parseSymbol function
+        if (!parseSymbol()) {
+            printf("darn!\n");
+            return false;
+        }
 
         Token type = tokens->back();
         
@@ -469,6 +480,6 @@ namespace Lexer {
         tokens->back().type = TokenType::TYPE;
 
         printf("\n");
-        return false;
+        return true;
     }
 }
