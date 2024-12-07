@@ -78,6 +78,8 @@ namespace Lexer {
         return false;
     }
 
+#define SHORT(x, y) (short)((y << 8) | (char)x)
+
     bool parseComment() {
         if (log) {
             printf("\rEntered parseComment      ");
@@ -85,14 +87,68 @@ namespace Lexer {
         }
 
         char* ptr = Lexer::ptr;
-        int len = 0;
+        File f = Lexer::file;
 
         bool multiline = false;
-        int commentLevel;
+        int commentLevel = 0;
 
+        switch (*++ptr) {
+            case '/':
+                break;
+            case '*':
+                multiline = true;
+                break;
+            default:
+                return false;
+        }
+
+        commentLevel++;
+        f.col += 2;
+
+        while (commentLevel) {
+            ptr++;
+            f.col++;
+
+            if (multiline && !*ptr) {
+                printf("\nERROR: %s:%d:%d: unexpected EOF, expecting '*/'!\n",f.name,f.line,f.col);
+                exit(1);
+            }
+
+            if (!multiline && (*ptr == '\n' || !*ptr)) break;
+
+            if (*ptr == '\n') {
+                f.line++;
+                f.col = 0;
+            }
+
+            switch (*(short*)ptr) {
+                case SHORT('/','/'):
+                    if (!multiline) commentLevel++;
+                    ptr++;
+                    break;
+                case SHORT('/','*'):
+                    commentLevel++;
+                    ptr++;
+                    break;
+                case SHORT('*','/'):
+                    commentLevel--;
+                    ptr++;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (*ptr == '\n') {
+            f.line++;
+            f.col = 0;
+        }
+
+        file = f;
+        Lexer::ptr = ptr;
 
         printf("\n");
-        return false;
+        return true;
     }
 
     bool parseStr() {
@@ -203,7 +259,7 @@ namespace Lexer {
 
             char* str = newString(Lexer::ptr, 3);
             tokens->push_back(Token{TokenType::LITERAL,{.value = {str}},file,false});
-            Lexer::ptr += 3;
+            Lexer::ptr += 2;
             file.col += 2;
 
             printf("\n");
@@ -253,7 +309,7 @@ namespace Lexer {
         ptr++;
 
         if (*ptr != '\'') {
-            printf("\nERROR: %s:%d:%d: expecting ' found %c (0x%x)!\n",file.name,file.line,file.col,*ptr,*ptr);
+            printf("\nERROR: %s:%d:%d: expecting ' found %c (0x%x)!\n",f.name,f.line,f.col,*ptr,*ptr);
             exit(1);
         }
 
@@ -345,15 +401,14 @@ namespace Lexer {
             return false;
         }
 
-        char* str = newString(Lexer::ptr, len);
+        char* str = newString(Lexer::ptr, --len);
 
         tokens->push_back(Token{TokenType::LITERAL, {.value={str}},file, false});
 
         if (log) printf("\nParsed Literal number: %d:%d: %s\n",file.line, file.col, str);
 
-        len--;
         file.col += len;
-        Lexer::ptr += len;
+        Lexer::ptr += --len;
 
         return true;
     }

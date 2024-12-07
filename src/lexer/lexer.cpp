@@ -200,6 +200,9 @@ SyntaxError:
                     }
             }
 
+            // EOF
+            if (!*ptr) break;
+
             ptr++;
             file.col++;
         }

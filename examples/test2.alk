@@ -3,12 +3,19 @@ func main() {
     "hello"; 0.1
     '\x32'
     'g'
-    '\f'
-'f'
+    '\
+'
     var hello = "what?\n";
 
+    /*
+    //test
+    /* */
+    */
+    // test
+    // test */ test
+
     100
-    0xfff
+    0xfff 
     0o77
     0b0101_101_01
     0.1
