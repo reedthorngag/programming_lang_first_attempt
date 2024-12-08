@@ -54,11 +54,13 @@ namespace Lexer {
 
                 char* minMaxStr = (char*)minMaxLiteralStr(str);
 
-                if (auto key = builtinLiteralTypes.find(str); key != builtinLiteralTypes.end())
+                if (auto key = builtinLiteralTypes.find(str); key != builtinLiteralTypes.end()) {
+                    delete str;
+                    str = newString((char*)key->second.c_str(),key->second.length());
                     tokens->push_back(Token{TokenType::LITERAL,{.value={str}},file,false});
-
-                else if (minMaxStr)
-                    tokens->push_back(Token{TokenType::LITERAL,{.value={(char*)str}},file,false});
+                
+                } else if (minMaxStr)
+                    tokens->push_back(Token{TokenType::LITERAL,{.value={str}},file,false});
                 
                 else if (auto key = keywordMap.find(str); key != keywordMap.end())
                     tokens->push_back(Token{TokenType::KEYWORD,{.keyword={key->second}},file,false});

@@ -89,11 +89,11 @@ func main(): null {
     printNum(15%3);
     printNum(10/2);
 
-    var f: f32 = 0.5;
-    var test5: i32 = -5;
+    //var f: f32 = 0.5;
+    var test5: i32 = 5;
 
     var test6: u64 = 0xff;
-    test5 = (:i32)test6;
+    //test5 = (:i32)test6;
 
     printNum(test5);
 }
