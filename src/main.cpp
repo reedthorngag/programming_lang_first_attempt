@@ -7,12 +7,12 @@
 #include "compiler/compiler.hpp"
 
 void pad(Lexer::Token token, int* line, int* col) {
-    while (*line < token.line) {
+    while (*line < token.file.line) {
         printf("\n");
         (*line)++;
         *col = 1;
     }
-    while (*col < token.column) {
+    while (*col < token.file.col) {
         printf(" ");
         (*col)++;
     }
@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
 
     file.close();
 
-    std::vector<Lexer::Token>* tokens = Lexer::lexerParse(inputFile, buf);
+    std::vector<Lexer::Token>* tokens = Lexer::parse(inputFile, buf);
     if (!tokens) return 1;
 
     const char* TokenTypeMap[]{
@@ -99,20 +99,9 @@ int main(int argc, char** argv) {
         "TYPE",
         "OPERATOR",
         "LITERAL",
-        "EOF"
-    };
-
-    const char* SymbolTypeMap[]{
-        "FUNC",
-        "VAR",
-        "CONST",
-        "GLOBAL",
-        "IF",
-        "ELSE",
-        "WHILE",
-        "RETURN",
-        "BREAK",
-        "CONTINUE"
+        "EOF",
+        "ARRAY_START",
+        "ARRAY_END"
     };
 
     printf("Input file: %s\n%s\n",inputFile,buf);
@@ -125,7 +114,7 @@ int main(int argc, char** argv) {
         Lexer::Token token = tokens->at(i);
         printf("token: %s %s\n",TokenTypeMap[token.type], 
                 token.type == Lexer::TokenType::SYMBOL ? token.value : 
-                token.type == Lexer::TokenType::KEYWORD ? SymbolTypeMap[token.keyword] : 
+                token.type == Lexer::TokenType::KEYWORD ? Lexer::KeywordTypeMap[token.keyword] : 
                 token.type == Lexer::TokenType::LITERAL ? token.value : 
                 token.type == Lexer::TokenType::TYPE ? token.value : 
                 token.type == Lexer::TokenType::OPERATOR ? token.value : ""
@@ -138,7 +127,7 @@ int main(int argc, char** argv) {
         switch (token.type) {
             case Lexer::TokenType::KEYWORD:
                 pad(token,&line,&col);
-                token.value = (char*)SymbolTypeMap[token.keyword];
+                token.value = (char*)Lexer::KeywordTypeMap[token.keyword];
                 printVal(token,&col);
                 if (tokens->at(i+1).type != Lexer::TokenType::ENDLINE) {
                     printf(" ");
@@ -202,6 +191,16 @@ int main(int argc, char** argv) {
                 printf("}\n");
                 col = 1;
                 line++;
+                break;
+            case Lexer::TokenType::ARRAY_START:
+                pad(token,&line,&col);
+                printf("[");
+                col++;
+                break;
+            case Lexer::TokenType::ARRAY_END:
+                pad(token,&line,&col);
+                printf("]");
+                col++;
                 break;
             case Lexer::TokenType::ENDLINE:
                 pad(token,&line,&col);

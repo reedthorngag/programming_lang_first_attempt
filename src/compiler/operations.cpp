@@ -259,7 +259,7 @@ namespace Compiler {
     Reg assignmentOp(Node* op, Reg lvalue, Reg rvalue) {
         auto pair = assignmentOps.find(op->op.value);
         if (pair == assignmentOps.end()) {
-            printf("ERROR: %s:%d:%d: unsupported op: '%s'!\n",op->token.file,op->token.line,op->token.column,op->op.value);
+            printf("ERROR: %s:%d:%d: unsupported op: '%s'!\n",op->token.file.name,op->token.file.line,op->token.file.col,op->op.value);
             return Reg::NUL;
         }
 
@@ -273,7 +273,7 @@ namespace Compiler {
     Reg mathmaticalOp(Node* op, Reg lvalue, Reg rvalue) {
         auto pair = mathmaticalOps.find(op->op.value);
         if (pair == mathmaticalOps.end()) {
-            printf("ERROR: %s:%d:%d: unsupported op: '%s'!\n",op->token.file,op->token.line,op->token.column,op->op.value);
+            printf("ERROR: %s:%d:%d: unsupported op: '%s'!\n",op->token.file.name,op->token.file.line,op->token.file.col,op->op.value);
             return Reg::NUL;
         }
 
@@ -288,7 +288,7 @@ namespace Compiler {
     Reg singleOperandOp(Node* op, Reg a) {
         auto pair = singleOperandOps.find(op->op.value);
         if (pair == singleOperandOps.end()) {
-            printf("ERROR: %s:%d:%d: unsupported op: '%s'!\n",op->token.file,op->token.line,op->token.column,op->op.value);
+            printf("ERROR: %s:%d:%d: unsupported op: '%s'!\n",op->token.file.name,op->token.file.line,op->token.file.col,op->op.value);
             return Reg::NUL;
         }
 
@@ -306,18 +306,23 @@ namespace Compiler {
                 return assignmentOp(op, a, b);
             case OpType::MATH:
                 return mathmaticalOp(op, a, b);
-            case OpType::SINGLE_OP_POSTFIX:
-            case OpType::SINGLE_OP_PREFIX: {
-                Reg reg = singleOperandOp(op, a);
-                if (OpType::SINGLE_OP_PREFIX) return reg;
+            case OpType::SINGLE_OP_POSTFIX: {
 
-                Reg reg2 = findFreeReg();
+                Reg reg = findFreeReg();
                 registers[reg].value = Value{ValueType::INTERMEDIATE,{.symbol={nullptr}},false,false,false};
                 registers[reg].position = position++;
 
-                assign(reg2, reg);
-                return reg2;
+                assign(reg, a);
+                singleOperandOp(op, a);
+
+                return reg;
             }
+
+            case OpType::SINGLE_OP_PREFIX:
+                return singleOperandOp(op, a);
+            
+            case OpType::CAST:
+                printf("need to implement cast support in compiler operations\n");
         }
 
         return Reg::NUL;

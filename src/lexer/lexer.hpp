@@ -7,6 +7,8 @@
 
 namespace Lexer {
 
+    extern bool log;
+
     const int MAX_SYMBOL_LEN = 64;
 
     enum NumberType {
@@ -28,6 +30,8 @@ namespace Lexer {
         CONTINUE
     };
 
+    extern const char* KeywordTypeMap[];
+
     enum TokenType {
         ENDLINE,
         COMMA,
@@ -40,7 +44,15 @@ namespace Lexer {
         TYPE,
         OPERATOR,
         LITERAL,
-        FILE_END
+        FILE_END,
+        ARRAY_START,
+        ARRAY_END
+    };
+
+    struct File {
+        char* name;
+        int line;
+        int col;
     };
 
     struct Token {
@@ -49,9 +61,8 @@ namespace Lexer {
             char* value;
             Keyword keyword;
         };
-        char* file;
-        int line;
-        int column;
+        File file;
+        bool negative;
     };
 
     struct Context {
@@ -69,16 +80,46 @@ namespace Lexer {
         int* isSymbol;
     };
 
-    bool symbolChar(char c, int pos);
+    struct Number {
+        bool hasMinMax;
+        const char* minStr;
+        const char* maxStr;
+    };
+
+    extern const char* maxStr[];
+    extern const char* maxStr[];
+
+    extern File file;
+
+    extern char* ptr;
+
+    extern std::vector<Token>* tokens;
+
+    extern std::unordered_map<std::string,Keyword> keywordMap;
+    extern std::unordered_map<std::string,bool> operations;
+    extern std::unordered_map<std::string, std::string> builtinLiteralTypes;
+    extern std::unordered_map<std::string, int> literalTypesMap;
+    extern std::unordered_map<std::string, Number> numberTypes;
+
+    bool parseSymbol();
+    bool parseComment();
+    bool parseLiteral();
+    bool parseOperator();
+    bool parseType();
+
+    bool parseStr();
+    bool parseChr();
+
+    bool isSymbolChar(char c, int pos);
     inline bool validSymbol(char* c, int len);
-    bool operatorChar(char c);
+    bool isOperatorChar(char c);
     inline bool validOperation(char* c, int len);
     inline bool validNumberLiteral(char c);
     bool validLiteral(char* c, int len);
     inline char* newString(char* c, int len);
     bool endSymbol(std::vector<Token>* tokens, Context* context);
     bool typeLexer(std::vector<Token>* tokens, Context* context);
-    std::vector<Token>* lexerParse(char* file, char* input);
+    std::vector<Token>* parse(char* file, char* input);
 
 }
 

@@ -66,7 +66,7 @@ namespace TypeChecker {
             if (c[n] != '_') {
                 int num = parseNum(c[n]);
                 if (num >= base) { // this is currently unecessary, but good to have in case the tokenizer changes and stops verifying literals
-                    printf("ERROR: %s:%d:%d: literal '%s' invalid!\n",node->token.file,node->token.line,node->token.column,c);
+                    printf("ERROR: %s:%d:%d: literal '%s' invalid!\n",node->token.file.name,node->token.file.line,node->token.file.col,c);
                     exit(1);
                 }
                 out += num * pow(base,len++);
@@ -82,27 +82,27 @@ namespace TypeChecker {
         if (value[0] == '0') {
             switch (value[1]) {
                 case 'x':
-                    node->literal.i = parseNum(node->literal.value+2,16, node);
+                    node->literal._int = parseNum(node->literal.value+2,16, node);
                     break;
 
                 case 'b':
-                    node->literal.i = parseNum(node->literal.value+2,2, node);
+                    node->literal._int = parseNum(node->literal.value+2,2, node);
                     break;
 
                 case 'o':
-                    node->literal.i = parseNum(node->literal.value+2,8, node);
+                    node->literal._int = parseNum(node->literal.value+2,8, node);
                     break;
 
                 default:
-                    node->literal.i = parseNum(node->literal.value,10, node);
+                    node->literal._int = parseNum(node->literal.value,10, node);
                     break;
             }
         } else {
-            node->literal.i = parseNum(node->literal.value,10, node);
+            node->literal._int = parseNum(node->literal.value,10, node);
         }
-        node->literal.type = smallestNumType(node->literal.i,parent);
+        node->literal.type = smallestNumType(node->literal._int,parent);
         if (node->literal.type == Type::error) {
-            printf("ERROR: %s:%d:%d: literal '%s' doesn't fit in required type! ('%s')\n",node->token.file,node->token.line,node->token.column,value,TypeMap[parent]);
+            printf("ERROR: %s:%d:%d: literal '%s' doesn't fit in required type! ('%s')\n",node->token.file.name,node->token.file.line,node->token.file.col,value,TypeMap[parent]);
             return false;
         }
 
@@ -167,7 +167,7 @@ namespace TypeChecker {
                 return parseNumber(node,parent);
 
             default:
-                printf("ERROR: %s:%d:%d: '%s' invalid literal!\n",node->token.file,node->token.line,node->token.column,node->literal.value);
+                printf("ERROR: %s:%d:%d: '%s' invalid literal!\n",node->token.file.name,node->token.file.line,node->token.file.col,node->literal.value);
                 return false;
         }
     }

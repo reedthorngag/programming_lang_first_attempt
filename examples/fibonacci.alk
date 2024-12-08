@@ -15,9 +15,9 @@ func iterative_fibonacci(n: i64) {
         printNum(a+b);
 
         // alternate between which is assigned to
-        if (i % 2) {
+        if (i % 2)
             a = a + b;
-        } else {
+        else {
             b = a + b;
         }
     }

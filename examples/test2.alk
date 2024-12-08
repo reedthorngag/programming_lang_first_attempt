@@ -1,0 +1,29 @@
+
+func main() {
+    "hello"; 0.1
+    '\x32'
+    'g'
+    '\
+'
+    var hello = "what?\n";
+
+    /*
+    //test
+    /* */
+    */
+    // test
+    // test */ test
+
+    100
+    0xfff 
+    0o77
+    0b0101_101_01
+    0.1
+    100
+    0xff.ff
+    0xffpff
+    100.20e100
+    -0xff
+    0x.ff
+    .100
+}

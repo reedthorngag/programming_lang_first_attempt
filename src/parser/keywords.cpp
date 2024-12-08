@@ -19,12 +19,12 @@ namespace Parser {
 
         Token token = tokens->at(index++);
         if (token.type != TokenType::SYMBOL) {
-            printf("ERROR: %s:%d:%d: expecting function name, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+            printf("ERROR: %s:%d:%d: expecting function name, found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
             return nullptr;
         }
 
         if (symbolDeclared(token.value, parent, nullptr)) {
-            printf("ERROR: %s:%d:%d: function name ('%s') already in use!\n",token.file,token.line,token.column,token.value);
+            printf("ERROR: %s:%d:%d: function name ('%s') already in use!\n",token.file.name,token.file.line,token.file.col,token.value);
             return nullptr;
         }
 
@@ -32,7 +32,7 @@ namespace Parser {
 
         token = tokens->at(index++);
         if (token.type != TokenType::GROUPING_START) {
-            printf("ERROR: %s:%d:%d: expecting '(' found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+            printf("ERROR: %s:%d:%d: expecting '(' found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
             return nullptr;
         }
 
@@ -41,19 +41,19 @@ namespace Parser {
             
             if (token.type == TokenType::COMMA) {
                 if (node->symbol->func->params->size() == 0) {
-                    printf("ERROR: %s:%d:%d: expecting paramater name, found ','!\n",token.file,token.line,token.column);
+                    printf("ERROR: %s:%d:%d: expecting paramater name, found ','!\n",token.file.name,token.file.line,token.file.col);
                     return nullptr;
                 } else
                     token = tokens->at(index++);
             }
 
             if (token.type != TokenType::SYMBOL) {
-                printf("ERROR: %s:%d:%d: expecting paramater name, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                printf("ERROR: %s:%d:%d: expecting paramater name, found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                 return nullptr;
             }
 
             if (symbolDeclared(token.value, node, nullptr)) {
-                printf("ERROR: %s:%d:%d: paramater name ('%s') already in use!\n",token.file,token.line,token.column,token.value);
+                printf("ERROR: %s:%d:%d: paramater name ('%s') already in use!\n",token.file.name,token.file.line,token.file.col,token.value);
                 return nullptr;
             }
 
@@ -61,12 +61,12 @@ namespace Parser {
 
             token = tokens->at(index++);
             if (token.type != TokenType::TYPE) {
-                printf("ERROR: %s:%d:%d: expecting paramater type, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                printf("ERROR: %s:%d:%d: expecting paramater type, found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                 return nullptr;
             }
 
             if (auto type = typeMap.find(token.value); type == typeMap.end()) {
-                printf("ERROR: %s:%d:%d: unknown type '%s'!\n",token.file,token.line,token.column,token.value);
+                printf("ERROR: %s:%d:%d: unknown type '%s'!\n",token.file.name,token.file.line,token.file.col,token.value);
                 return nullptr;
             } else {
                 node->symbol->func->params->push_back(Param{paramName,type->second,Reg::NUL});
@@ -80,11 +80,11 @@ namespace Parser {
 
         token = tokens->at(index++);
         if (token.type == TokenType::TYPE) {
-            // printf("ERROR: %s:%d:%d: expecting return type, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+            // printf("ERROR: %s:%d:%d: expecting return type, found %s!\n",token.file.name,token.file.line,token.file.column,TokenTypeMap[token.type]);
             // return nullptr;
         
             if (auto type = typeMap.find(token.value); type == typeMap.end()) {
-                printf("ERROR: %s:%d:%d: unknown type '%s'!\n",token.file,token.line,token.column,token.value);
+                printf("ERROR: %s:%d:%d: unknown type '%s'!\n",token.file.name,token.file.line,token.file.col,token.value);
                 return nullptr;
             } else
                 node->symbol->func->returnType = type->second;
@@ -96,7 +96,7 @@ namespace Parser {
         }
 
         if (token.type != TokenType::SCOPE_START) {
-            printf("ERROR: %s:%d:%d: expecting '{', found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+            printf("ERROR: %s:%d:%d: expecting '{', found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
             return nullptr;
         }
 
@@ -121,7 +121,7 @@ namespace Parser {
 
         Token token = tokens->at(index++);
         if (token.type != TokenType::GROUPING_START) {
-            printf("ERROR: %s:%d:%d: expecting '(' found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+            printf("ERROR: %s:%d:%d: expecting '(' found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
             return nullptr;
         }
 
@@ -137,11 +137,12 @@ namespace Parser {
             // TODO: test this code properly to check its working with parentheses properly
             switch (token.type) {
                 case TokenType::COMMA:
-                    printf("ERROR: %s:%d:%d: unexpected comma!\n",token.file,token.line,token.column);
+                    printf("ERROR: %s:%d:%d: unexpected comma!\n",token.file.name,token.file.line,token.file.col);
                     return nullptr;
                 case TokenType::GROUPING_START:
-                    inGrouping = true;
-                    break;
+                    param = processGrouping();
+                    if (!param) return nullptr;
+                    goto processNext;
 
                 case TokenType::OPERATOR:
                     param = processPrefixOperator(token);
@@ -161,7 +162,7 @@ processNext:
                     if (token.type == TokenType::COMMA || token.type == TokenType::GROUPING_END) {
                         inGrouping = inGrouping && token.type != TokenType::GROUPING_END;
                         if (inGrouping) {
-                            printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                            printf("ERROR: %s:%d:%d: unexpected2 %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                             return nullptr;
                         }
                         appendChild(node,param);
@@ -170,11 +171,12 @@ processNext:
                     }
 
                     if (token.type != TokenType::OPERATOR) {
-                        printf("ERROR: %s:%d:%d: expecting operator, comma or close bracket, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                        printf("ERROR: %s:%d:%d: expecting operator, comma or close bracket, found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                         return nullptr;
                     }
 
                     appendChild(node,operation(param,token));
+                    index--;
                     break;
                 }
                 default:
@@ -182,7 +184,7 @@ processNext:
                         index -= 2;
                         break;
                     }
-                    printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                    printf("ERROR: %s:%d:%d: unexpected1 %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                     return nullptr;
             }
             token = tokens->at(index++);
@@ -190,26 +192,111 @@ processNext:
 
         appendChild(parent, node);
 
-        return parent;
+        Node* body = new Node{};
+        body->type = NodeType::SCOPE;
+        body->symbolMap = new std::unordered_map<std::string, Symbol*>;
+
+        appendChild(parent, body);
+
+        Node* oldParent = parent;
+        parent = body;
+
+        token = tokens->at(index++);
+        if (token.type != TokenType::SCOPE_START) {
+            switch (token.type) {
+                case TokenType::ENDLINE:
+                    break;
+                case TokenType::KEYWORD:
+                    printf("%d\n",depth);
+                    parent = processKeyword(token);
+                    printf("%d\n",depth);
+                    break;
+                case TokenType::SYMBOL:
+                    parent = processSymbol(token);
+                    break;
+                case TokenType::OPERATOR: {
+                    Node* node = processPrefixOperator(token);
+                    if (!node) {
+                        parent = nullptr;
+                        break;
+                    }
+                    appendChild(parent, node);
+                    break;
+                }
+                case TokenType::FILE_END:
+                    printf("ERROR: %s:%d:%d: unexpected EOF!\n",token.file.name,token.file.line,token.file.col);
+                    return nullptr;
+                default:
+                    printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
+                    return nullptr;
+            }
+
+            token = tokens->at(index-1);
+            if (token.type != TokenType::ENDLINE) {
+                printf("ERROR: %s:%d:%d: expected ';', found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
+                return nullptr;
+            }
+
+            if (!parent) return nullptr;
+            depth--;
+            return oldParent;
+        }
+
+        return body;
     }
 
     Node* buildElseNode() {
-        Node* node = new Node{};
-        node->type = NodeType::ELSE;
-        node->token = tokens->at(index);
-        node->parent = parent;
+        Node* body = new Node{};
+        body->type = NodeType::ELSE;
+        body->token = tokens->at(index);
+        body->symbolMap = new std::unordered_map<std::string, Symbol*>;
+
+        appendChild(parent, body);
+
+        Node* oldParent = parent;
+        parent = body;
 
         Token token = tokens->at(index++);
         if (token.type != TokenType::SCOPE_START) {
-            printf("ERROR: %s:%d:%d: expecting '{', found '%s'!\n",token.file,token.line,token.column, token.value);
-            return nullptr;
+            switch (token.type) {
+                case TokenType::ENDLINE:
+                    break;
+                case TokenType::KEYWORD:
+                    parent = processKeyword(token);
+                    break;
+                case TokenType::SYMBOL:
+                    parent = processSymbol(token);
+                    index++;
+                    break;
+                case TokenType::OPERATOR: {
+                    Node* node = processPrefixOperator(token);
+                    if (!node) {
+                        parent = nullptr;
+                        break;
+                    }
+                    appendChild(parent, node);
+                    break;
+                }
+                case TokenType::FILE_END:
+                    printf("ERROR: %s:%d:%d: unexpected EOF!\n",token.file.name,token.file.line,token.file.col);
+                    return nullptr;
+                default:
+                    printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
+                    return nullptr;
+            }
+
+            token = tokens->at(index-1);
+            if (token.type != TokenType::ENDLINE) {
+                printf("ERROR: %s:%d:%d: expected ';', found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
+                return nullptr;
+            }
+
+            if (!parent) return nullptr;
+            depth--;
+            return oldParent;
         }
 
-        node->symbolMap = new std::unordered_map<std::string, Symbol*>;
-
-        appendChild(parent, node);
-
-        return node;
+        return body;
     }
 
     Node* buildWhileNode() {
@@ -221,7 +308,7 @@ processNext:
 
         Token token = tokens->at(index++);
         if (token.type != TokenType::GROUPING_START) {
-            printf("ERROR: %s:%d:%d: expecting '(' found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+            printf("ERROR: %s:%d:%d: expecting '(' found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
             return nullptr;
         }
 
@@ -237,7 +324,7 @@ processNext:
             // TODO: test this code properly to check its working with parentheses properly
             switch (token.type) {
                 case TokenType::COMMA:
-                    printf("ERROR: %s:%d:%d: unexpected comma!\n",token.file,token.line,token.column);
+                    printf("ERROR: %s:%d:%d: unexpected comma!\n",token.file.name,token.file.line,token.file.col);
                     return nullptr;
                 case TokenType::GROUPING_START:
                     param = processGrouping();
@@ -262,7 +349,7 @@ processNext:
                     if (token.type == TokenType::COMMA || token.type == TokenType::GROUPING_END) {
                         inGrouping = inGrouping && token.type != TokenType::GROUPING_END;
                         if (inGrouping) {
-                            printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                            printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                             return nullptr;
                         }
                         appendChild(node,param);
@@ -271,11 +358,12 @@ processNext:
                     }
 
                     if (token.type != TokenType::OPERATOR) {
-                        printf("ERROR: %s:%d:%d: expecting operator or close bracket, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                        printf("ERROR: %s:%d:%d: expecting operator or close bracket, found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                         return nullptr;
                     }
 
                     appendChild(node,operation(param,token));
+                    index--;
                     break;
                 }
                 default:
@@ -283,7 +371,7 @@ processNext:
                         index -= 2;
                         break;
                     }
-                    printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                    printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                     return nullptr;
             }
             token = tokens->at(index++);
@@ -291,23 +379,52 @@ processNext:
 
         appendChild(parent, node);
 
-        token = tokens->at(index++);
-
-        if (token.type != TokenType::SCOPE_START) {
-            printf("ERROR: %s:%d:%d: unexpected %s, expecting '{'!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
-            return nullptr;
-        }
-
         Node* body = new Node{};
         body->type = NodeType::SCOPE;
-
         body->symbolMap = new std::unordered_map<std::string, Symbol*>;
 
         appendChild(node, body);
 
         // appendChild sets parent to the first arg, so need to change it after
         body->parent = parent;
-        
+
+        parent = body;
+
+        token = tokens->at(index++);
+
+        if (token.type != TokenType::SCOPE_START) {
+
+            switch (token.type) {
+                case TokenType::ENDLINE:
+                    break;
+                case TokenType::KEYWORD:
+                    parent = processKeyword(token);
+                    break;
+                case TokenType::SYMBOL:
+                    parent = processSymbol(token);
+                    break;
+                case TokenType::OPERATOR: {
+                    Node* node = processPrefixOperator(token);
+                    if (!node) {
+                        parent = nullptr;
+                        break;
+                    }
+                    appendChild(parent, node);
+                    break;
+                }
+                case TokenType::FILE_END:
+                    printf("ERROR: %s:%d:%d: unexpected EOF!\n",token.file.name,token.file.line,token.file.col);
+                    return nullptr;
+                default:
+                    printf("ERROR: %s:%d:%d: unexpected %s\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
+                    return nullptr;
+            }
+
+            if (!parent) return nullptr;
+            depth--;
+            return parent->parent;
+        }
+
         return body;
     }
 
@@ -328,6 +445,7 @@ processNext:
         switch (token.type) {
             case TokenType::GROUPING_START: {
                 param = processGrouping();
+                if (!param) return false;
                 goto processNext;
             }
             
@@ -346,7 +464,7 @@ processNext:
                 }
 
                 if (token.type != TokenType::OPERATOR) {
-                    printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                    printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                     return false;
                 }
 
@@ -354,13 +472,13 @@ processNext:
                 break;
             }
             default:
-                printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+                printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                 return false;
         }
 
         if (tokens->at(index-1).type != TokenType::ENDLINE) {
             Token token = tokens->at(index-1);
-            printf("ERROR: %s:%d:%d: expecting ';', found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+            printf("ERROR: %s:%d:%d: expecting ';', found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
             return false;
         }
 
@@ -374,24 +492,24 @@ processNext:
 
         Token token = tokens->at(index++);
         if (token.type != TokenType::SYMBOL) {
-            printf("ERROR: %s:%d:%d: expecting %s name, found %s!\n",token.file,token.line,token.column,typeStr,TokenTypeMap[token.type]);
+            printf("ERROR: %s:%d:%d: expecting %s name, found %s!\n",token.file.name,token.file.line,token.file.col,typeStr,TokenTypeMap[token.type]);
             return false;
         }
 
         if ((parent && symbolDeclaredInScope(token.value, parent, nullptr)) || (!parent && symbolDeclaredGlobal(token.value,nullptr))) {
-            printf("ERROR: %s:%d:%d: name '%s' already in use!\n",token.file,token.line,token.column,token.value);
+            printf("ERROR: %s:%d:%d: name '%s' already in use!\n",token.file.name,token.file.line,token.file.col,token.value);
             return false;
         }
 
         Token typeToken = tokens->at(index++);
         if (typeToken.type != TokenType::TYPE) {
-            printf("ERROR: %s:%d:%d: expecting type, found %s!\n",token.file,token.line,token.column,TokenTypeMap[token.type]);
+            printf("ERROR: %s:%d:%d: expecting type, found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
             return false;
         }
 
         Type t;
         if (auto type = typeMap.find(typeToken.value); type == typeMap.end()) {
-            printf("ERROR: %s:%d:%d: unknown type '%s'!\n",typeToken.file,typeToken.line,typeToken.column,typeToken.value);
+            printf("ERROR: %s:%d:%d: unknown type '%s'!\n",typeToken.file.name,typeToken.file.line,typeToken.file.col,typeToken.value);
             return false;
         } else {
             t = type->second;
