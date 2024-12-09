@@ -193,7 +193,7 @@ namespace Parser {
                 int len;
             } str;
             char chr;
-            uint64_t uint;
+            uint64_t _uint;
             int64_t _int;
         };
     };

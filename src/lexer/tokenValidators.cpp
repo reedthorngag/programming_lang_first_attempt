@@ -57,16 +57,16 @@ namespace Lexer {
                 if (auto key = builtinLiteralTypes.find(str); key != builtinLiteralTypes.end()) {
                     delete str;
                     str = newString((char*)key->second.c_str(),key->second.length());
-                    tokens->push_back(Token{TokenType::LITERAL,{.value={str}},file,false});
+                    tokens->push_back(Token{TokenType::LITERAL,{.value={str}},file});
                 
                 } else if (minMaxStr)
-                    tokens->push_back(Token{TokenType::LITERAL,{.value={str}},file,false});
+                    tokens->push_back(Token{TokenType::LITERAL,{.value={str}},file});
                 
                 else if (auto key = keywordMap.find(str); key != keywordMap.end())
-                    tokens->push_back(Token{TokenType::KEYWORD,{.keyword={key->second}},file,false});
+                    tokens->push_back(Token{TokenType::KEYWORD,{.keyword={key->second}},file});
                 
                 else
-                    tokens->push_back(Token{TokenType::SYMBOL,{.value={str}},file,false});
+                    tokens->push_back(Token{TokenType::SYMBOL,{.value={str}},file});
                 
                 len--;
                 Lexer::ptr += len;
@@ -240,7 +240,7 @@ namespace Lexer {
         str << '"';
 
         char* s = newString((char*)str.str().c_str(),str.str().length());
-        tokens->push_back(Token{TokenType::LITERAL,{.value={s}},file,false});
+        tokens->push_back(Token{TokenType::LITERAL,{.value={s}},file});
 
         Lexer::ptr = ptr;
         Lexer::file = f;
@@ -264,7 +264,7 @@ namespace Lexer {
             }
 
             char* str = newString(Lexer::ptr, 3);
-            tokens->push_back(Token{TokenType::LITERAL,{.value = {str}},file,false});
+            tokens->push_back(Token{TokenType::LITERAL,{.value = {str}},file});
             Lexer::ptr += 2;
             file.col += 2;
 
@@ -324,7 +324,7 @@ namespace Lexer {
         }
 
         char* s = newString((char*)ss.str().c_str(),ss.str().length());
-        tokens->push_back(Token{TokenType::LITERAL,{.value = {s}},file,false});
+        tokens->push_back(Token{TokenType::LITERAL,{.value = {s}},file});
         Lexer::ptr = ptr;
 
         file = f;
@@ -335,6 +335,10 @@ namespace Lexer {
 
     bool isBinary(char c) {
         return c == '0' || c == '1' || c == '_';
+    }
+
+    bool isTernary(char c) {
+        return c == '0' || c == '1' || c == '2' || c == '_';
     }
 
     bool isOctal(char c) {
@@ -362,26 +366,36 @@ namespace Lexer {
         if ((*ptr < '0' || *ptr > '9') && *ptr != '.') return false;
 
         bool(*evalFunc)(char);
+        unsigned char base = 10;
 
         if (*ptr == '0') {
             len += 2;
             switch (*++ptr) {
                 case 'b':
                     evalFunc = isBinary;
+                    base = 2;
+                    break;
+                case 't':
+                    evalFunc = isTernary;
+                    base = 3;
                     break;
                 case 'o':
                     evalFunc = isOctal;
+                    base = 8;
                     break;
                 case 'x':
                     evalFunc = isHexadecimal;
+                    base = 16;
                     break;
                 default:
                     evalFunc = isDecimal;
                     ptr--;
                     len--;
+                    Lexer::ptr -= 2;
                     break;
             }
             ptr++;
+            Lexer::ptr += 2;
         } else evalFunc = isDecimal;
 
         bool decimal = false;
@@ -413,7 +427,7 @@ namespace Lexer {
 
         char* str = newString(Lexer::ptr, --len);
 
-        tokens->push_back(Token{TokenType::LITERAL, {.value={str}},file, false});
+        tokens->push_back(Token{TokenType::LITERAL, {.literal={str,base,decimal,exponent,false}},file});
 
         if (log) printf("\nParsed Literal number: %d:%d: %s\n",file.line, file.col, str);
 

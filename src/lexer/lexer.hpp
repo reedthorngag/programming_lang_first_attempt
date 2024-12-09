@@ -59,10 +59,16 @@ namespace Lexer {
         TokenType type;
         union {
             char* value;
+            struct {
+                char* str;
+                unsigned char base;
+                bool decimal;
+                bool exponent;
+                bool negative;
+            } literal;
             Keyword keyword;
         };
         File file;
-        bool negative;
     };
 
     struct Context {

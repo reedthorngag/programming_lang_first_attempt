@@ -9,20 +9,20 @@ using namespace Parser;
 
 namespace TypeChecker {
 
-    Type smallestNumType(uint64_t num, Type parent) {
+    Type smallestNumType(uint64_t num, Type parent, bool negative) {
         if (parent == Type::error) {
             if (!num) return Type::u8;
-            if (num > 0) {
+            if (negative) {
+                for (int i = Type::i8; i <= Type::i64; i++)
+                    if (num >= TypeConstraints[i].min) return TypeConstraints[i].type;
+            } else {
                 for (int i = Type::i8; i <= Type::u64; i++)
                     if (num <= TypeConstraints[i].max) return TypeConstraints[i].type;
-                
-            } else {
-                // TODO: support negative literals
             }
         }
 
         if (parent >= Type::f16 && parent <= Type::f64) return parent; // TODO: handle floats properly
-        if (parent == Type::string) return Type::u64;
+        if (parent == Type::string) return Type::u64; // size of the ptr to it
         if (parent > Type::f64) return Type::error;
 
         if (num > TypeConstraints[parent].max || (int64_t)num < TypeConstraints[parent].min) {
@@ -51,9 +51,10 @@ namespace TypeChecker {
 
     inline int parseNum(char c) {
         if (isNumber(c)) return c-'0';
-        if (c >= 'a' && c <= 'f') return c-'a';
-        if (c >= 'F' && c <= 'F') return c-'A';
-        return 9999999; // make it obvious there was an error, this shouldnt happen tho
+        if (c >= 'a' && c <= 'f') return (c-'a') + 10;
+        if (c >= 'F' && c <= 'F') return (c-'A') + 10;
+        printf("ERROR: an error occurred in TypeChecker::parseNum that shouldn't have been possible!\n");
+        exit(1);
     }
 
     uint64_t parseNum(char* c, int base, Node* node) {
@@ -65,7 +66,7 @@ namespace TypeChecker {
         while (n--) {
             if (c[n] != '_') {
                 int num = parseNum(c[n]);
-                if (num >= base) { // this is currently unecessary, but good to have in case the tokenizer changes and stops verifying literals
+                if (num >= base) {
                     printf("ERROR: %s:%d:%d: literal '%s' invalid!\n",node->token.file.name,node->token.file.line,node->token.file.col,c);
                     exit(1);
                 }
@@ -82,25 +83,27 @@ namespace TypeChecker {
         if (value[0] == '0') {
             switch (value[1]) {
                 case 'x':
-                    node->literal._int = parseNum(node->literal.value+2,16, node);
+                    node->literal._uint = parseNum(node->literal.value+2, 16, node);
                     break;
 
                 case 'b':
-                    node->literal._int = parseNum(node->literal.value+2,2, node);
+                    node->literal._uint = parseNum(node->literal.value+2, 2, node);
                     break;
 
                 case 'o':
-                    node->literal._int = parseNum(node->literal.value+2,8, node);
+                    node->literal._uint = parseNum(node->literal.value+2, 8, node);
                     break;
 
                 default:
-                    node->literal._int = parseNum(node->literal.value,10, node);
+                    node->literal._uint = parseNum(node->literal.value, 10, node);
                     break;
             }
         } else {
-            node->literal._int = parseNum(node->literal.value,10, node);
+            node->literal._uint = parseNum(node->literal.value, 10, node);
         }
-        node->literal.type = smallestNumType(node->literal._int,parent);
+
+        node->literal.type = smallestNumType(node->literal._uint, parent, node->token.negative);
+        
         if (node->literal.type == Type::error) {
             printf("ERROR: %s:%d:%d: literal '%s' doesn't fit in required type! ('%s')\n",node->token.file.name,node->token.file.line,node->token.file.col,value,TypeMap[parent]);
             return false;

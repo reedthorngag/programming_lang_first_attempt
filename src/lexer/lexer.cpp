@@ -159,32 +159,32 @@ namespace Lexer {
                     break;
 
                 case ',':
-                    tokens->push_back(Token{TokenType::COMMA,{.value = {nullptr}},file,false});
+                    tokens->push_back(Token{TokenType::COMMA,{.value = {nullptr}},file});
                     break;
 
                 case ';':
-                    tokens->push_back(Token{TokenType::ENDLINE,{.value = {nullptr}},file,false});
+                    tokens->push_back(Token{TokenType::ENDLINE,{.value = {nullptr}},file});
                     break;
                 
                 case '(':
-                    tokens->push_back(Token{TokenType::GROUPING_START,{.value = {nullptr}},file,false});
+                    tokens->push_back(Token{TokenType::GROUPING_START,{.value = {nullptr}},file});
                     break;
                 case ')':
-                    tokens->push_back(Token{TokenType::GROUPING_END,{.value = {nullptr}},file,false});
+                    tokens->push_back(Token{TokenType::GROUPING_END,{.value = {nullptr}},file});
                     break;
 
                 case '{':
-                    tokens->push_back(Token{TokenType::SCOPE_START,{.value = {nullptr}},file,false});
+                    tokens->push_back(Token{TokenType::SCOPE_START,{.value = {nullptr}},file});
                     break;
                 case '}':
-                    tokens->push_back(Token{TokenType::SCOPE_END,{.value = {nullptr}},file,false});
+                    tokens->push_back(Token{TokenType::SCOPE_END,{.value = {nullptr}},file});
                     break;
 
                 case '[':
-                    tokens->push_back(Token{TokenType::ARRAY_START,{.value = {nullptr}},file,false});
+                    tokens->push_back(Token{TokenType::ARRAY_START,{.value = {nullptr}},file});
                     break;
                 case ']':
-                    tokens->push_back(Token{TokenType::ARRAY_END,{.value = {nullptr}},file,false});
+                    tokens->push_back(Token{TokenType::ARRAY_END,{.value = {nullptr}},file});
                     break;
 
                 case '"':
@@ -225,7 +225,7 @@ SyntaxError:
             file.col++;
         }
 
-        tokens->push_back(Token{TokenType::FILE_END,{.value = {nullptr}},file,false});
+        tokens->push_back(Token{TokenType::FILE_END,{.value = {nullptr}},file});
         return tokens;
     }
 
