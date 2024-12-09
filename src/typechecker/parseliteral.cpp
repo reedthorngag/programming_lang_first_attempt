@@ -57,59 +57,109 @@ namespace TypeChecker {
         exit(1);
     }
 
-    uint64_t parseNum(char* c, int base, Node* node) {
+    uint64_t parseNum(Lexer::Token token) {
+        char* c = token.literal.str;
         uint64_t out = 0;
+        uint64_t oldOut = 0;
         int len = 0;
         int n = 0;
         while (c[++n]);
 
+        uint64_t exponent = 0;
+
         while (n--) {
+            if (c[n] == 'e' || c[n] == 'E' || c[n] == 'p' || c[n] == 'P') {
+                exponent = out;
+                out = 0;
+                continue;
+            }
+
             if (c[n] != '_') {
                 int num = parseNum(c[n]);
-                if (num >= base) {
-                    printf("ERROR: %s:%d:%d: literal '%s' invalid!\n",node->token.file.name,node->token.file.line,node->token.file.col,c);
+                if (num >= token.literal.base) {
+                    printf("ERROR: %s:%d:%d: literal '%s' invalid!\n",token.file.name, token.file.line, token.file.col,c);
                     exit(1);
                 }
-                out += num * pow(base,len++);
+
+                // detect wrap around by the new value being smaller than the old value
+                if (out < oldOut) {
+                    printf("ERROR: %s:%d:%d: literal '%s' too large!\n",token.file.name, token.file.line, token.file.col,c);
+                    exit(1);
+                }
+                out += num * pow(token.literal.base, len++);
+                oldOut = out;
             }
+        }
+
+        while (exponent--) {
+            if (out < oldOut) {
+                printf("ERROR: %s:%d:%d: literal '%s' too large!\n",token.file.name, token.file.line, token.file.col,c);
+                exit(1);
+            }
+            out *= token.literal.base;
+            oldOut = out;
         }
 
         return out;
     }
 
-    bool parseNumber(Node* node, Type parent) {
+    uint64_t parseFloat(Lexer::Token token) {
+        char* c = token.literal.str;
+        
+        int len = 0;
+        int n = 0;
+        while (c[++n]);
 
-        char* value = node->literal.value;
-        if (value[0] == '0') {
-            switch (value[1]) {
-                case 'x':
-                    node->literal._uint = parseNum(node->literal.value+2, 16, node);
-                    break;
+        uint64_t out = 0;
+        uint64_t exponent = 0;
+        int decimalPlace = 0;
 
-                case 'b':
-                    node->literal._uint = parseNum(node->literal.value+2, 2, node);
-                    break;
+        char signBit = 0;
+        uint64_t exponentPart = 0x3ff;
+        uint64_t mantissa = 0;
 
-                case 'o':
-                    node->literal._uint = parseNum(node->literal.value+2, 8, node);
-                    break;
-
-                default:
-                    node->literal._uint = parseNum(node->literal.value, 10, node);
-                    break;
+        while (n--) {
+            if (c[n] == 'e' || c[n] == 'E' || c[n] == 'p' || c[n] == 'P') {
+                exponent = out;
+                out = 0;
+                continue;
             }
-        } else {
-            node->literal._uint = parseNum(node->literal.value, 10, node);
+
+            if (c[n] != '_') {
+                int num = parseNum(c[n]);
+                if (num >= token.literal.base) {
+                    printf("ERROR: %s:%d:%d: literal '%s' invalid!\n",token.file.name, token.file.line, token.file.col,c);
+                    exit(1);
+                }
+
+                // detect wrap around by the new value being smaller than the old value
+                if (out < oldOut) {
+                    printf("ERROR: %s:%d:%d: literal '%s' too large!\n",token.file.name, token.file.line, token.file.col,c);
+                    exit(1);
+                }
+                out += num * pow(token.literal.base, len++);
+                oldOut = out;
+            }
         }
 
-        node->literal.type = smallestNumType(node->literal._uint, parent, node->token.negative);
-        
+
+    }
+
+    bool parseNumber(Node* node, Type parent) {
+
+        if (node->token.literal.floatingPoint) {
+            node->literal._uint = parseFloat(node->token);
+        } else
+            node->literal._uint = parseNum(node->token);
+
+        node->literal.type = smallestNumType(node->literal._uint, parent, node->literal.negative);
+
         if (node->literal.type == Type::error) {
-            printf("ERROR: %s:%d:%d: literal '%s' doesn't fit in required type! ('%s')\n",node->token.file.name,node->token.file.line,node->token.file.col,value,TypeMap[parent]);
+            printf("ERROR: %s:%d:%d: literal '%s' doesn't fit in required type! ('%s')\n",node->token.file.name,node->token.file.line,node->token.file.col,node->token.literal.str,TypeMap[parent]);
             return false;
         }
 
-        delete[] value;
+        delete[] node->token.literal.str;
         
         return true;
     }

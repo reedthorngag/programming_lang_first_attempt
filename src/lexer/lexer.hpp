@@ -62,8 +62,9 @@ namespace Lexer {
             struct {
                 char* str;
                 unsigned char base;
-                bool decimal;
+                bool floatingPoint;
                 bool exponent;
+                bool negativeExponent;
                 bool negative;
             } literal;
             Keyword keyword;

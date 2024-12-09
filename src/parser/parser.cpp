@@ -281,7 +281,7 @@ namespace Parser {
 
             case TokenType::LITERAL:
                 node->type = NodeType::LITERAL;
-                node->literal = Literal{Type::null,token.value,token.negative,{._int = 0}};
+                node->literal = Literal{Type::null,token.value,token.literal.negative,{._uint = 0}};
                 node->token = token;
                 break;
 

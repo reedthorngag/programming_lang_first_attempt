@@ -57,7 +57,7 @@ namespace Lexer {
                 if (auto key = builtinLiteralTypes.find(str); key != builtinLiteralTypes.end()) {
                     delete str;
                     str = newString((char*)key->second.c_str(),key->second.length());
-                    tokens->push_back(Token{TokenType::LITERAL,{.value={str}},file});
+                    tokens->push_back(Token{TokenType::LITERAL,{.literal={str,2,false,false,false,false}},file});
                 
                 } else if (minMaxStr)
                     tokens->push_back(Token{TokenType::LITERAL,{.value={str}},file});
@@ -398,8 +398,9 @@ namespace Lexer {
             Lexer::ptr += 2;
         } else evalFunc = isDecimal;
 
-        bool decimal = false;
+        bool floatingPoint = false;
         bool exponent = false;
+        bool negativeExponent = false;
 
         while (true) {
             char c = *ptr;
@@ -409,14 +410,21 @@ namespace Lexer {
             if (evalFunc(c)) continue;
 
             // decimal part
-            if (!decimal && c == '.') {
-                decimal = true;
+            if (!floatingPoint && c == '.') {
+                floatingPoint = true;
                 continue;
             }
 
             // exponent
-            if (!exponent && (c == 'e' || c == 'p')) {
+            if (!exponent && (c == 'e' || c == 'E' || c == 'p' || c == 'P')) {
                 exponent = true;
+                if (ptr[1] == '-') {
+                    negativeExponent = true;
+                    floatingPoint = true;
+                    ptr++;
+                    len++;
+                    continue;
+                }
                 continue;
             }
 
@@ -427,7 +435,7 @@ namespace Lexer {
 
         char* str = newString(Lexer::ptr, --len);
 
-        tokens->push_back(Token{TokenType::LITERAL, {.literal={str,base,decimal,exponent,false}},file});
+        tokens->push_back(Token{TokenType::LITERAL, {.literal={str,base,floatingPoint,exponent,negativeExponent,false}},file});
 
         if (log) printf("\nParsed Literal number: %d:%d: %s\n",file.line, file.col, str);
 
