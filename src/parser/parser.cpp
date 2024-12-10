@@ -468,8 +468,9 @@ processNext:
             if (tokens->at(index).type == TokenType::LITERAL) {
                 token = tokens->at(index++);
                 node->type = NodeType::LITERAL;
-                node->literal = Literal{Type::null,token.value,true,{._int = 0}};
+                node->literal = Literal{Type::null,token.value,true,{._uint = 0}};
                 node->token = token;
+                node->token.literal.negative = true;
                 goto nodeNegativeLiteral;
             }
         }
@@ -503,6 +504,7 @@ nodeNegativeLiteral:
             case TokenType::COMMA:
             case TokenType::ENDLINE:
             case TokenType::GROUPING_END:
+                index--;
                 return node;
 
             case TokenType::OPERATOR:

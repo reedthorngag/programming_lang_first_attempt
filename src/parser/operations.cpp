@@ -399,9 +399,9 @@ processNext:
                 }
             }
             case TokenType::OPERATOR:
-                processPrefixOperator(token);
+                rvalue = processPrefixOperator(token);
+                goto processNext;
 
-                break;
             default:
                 printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                 return nullptr;

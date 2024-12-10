@@ -38,7 +38,7 @@ void printNode(Parser::Node* node, int depth) {
             printf(": %s\n",node->symbol->name);
             break;
         case Parser::NodeType::LITERAL:
-            printf(": %s\n",node->literal.value);
+            printf(": %s%s\n",(node->literal.negative ? "-": ""),node->literal.value);
             break;
         case Parser::NodeType::OPERATION:
             printf(": %s %s\n",node->op.value, Parser::OpTypeMap[node->op.type]);

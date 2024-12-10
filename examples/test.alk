@@ -96,5 +96,7 @@ func main(): null {
     //test5 = (:i32)test6;
 
     printNum(test5);
+
+    test6 = 0.5;
 }
 

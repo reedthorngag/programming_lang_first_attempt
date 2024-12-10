@@ -392,10 +392,12 @@ namespace Lexer {
                     ptr--;
                     len--;
                     Lexer::ptr -= 2;
+                    len += 2;
                     break;
             }
             ptr++;
             Lexer::ptr += 2;
+            len -= 2;
         } else evalFunc = isDecimal;
 
         bool floatingPoint = false;
@@ -466,7 +468,7 @@ namespace Lexer {
 
         if (auto key = operations.find(str); key != operations.end()) {
 
-            tokens->push_back(Token{TokenType::OPERATOR, {.value = {str}}, file, false});
+            tokens->push_back(Token{TokenType::OPERATOR, {.value = {str}}, file});
 
             len--;
             file.col += len;
