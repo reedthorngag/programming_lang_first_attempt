@@ -118,6 +118,8 @@ namespace TypeChecker {
         uint64_t decimalPart = 0;
         uint64_t integerPart = 0;
 
+        uint8_t decimalPartLen = 0;
+
         while (n--) {
             if (c[n] == '-') {
                 continue;
@@ -134,6 +136,7 @@ namespace TypeChecker {
             if (c[n] == '.') {
                 printf("Fractional part found! value: %d (0x%lx)\n",(int)out, out);
                 decimalPart = out;
+                decimalPartLen = len;
                 out = 0;
                 len = 0;
                 continue;
@@ -176,7 +179,7 @@ namespace TypeChecker {
 
         printf("Integer part num bits: %d, decimal part allowance: %d\n",integerPartNumBits,decimalAllowance);
 
-        while (decimalThreshold < decimalPart) decimalThreshold *= 10;
+        while (decimalPartLen--) decimalThreshold *= 10;
 
         printf("Decimal threshold: %lu\n",decimalThreshold);
 
@@ -199,8 +202,13 @@ namespace TypeChecker {
         if (!out) {
             n = decimalAllowance;
             while (!((decimal >> --n) & 1));
-            implicitExponent = n-decimalAllowance;
-            decimal <<= --n;
+            printf("n: %d %d\n",n,decimalAllowance);
+            if (n) {
+                implicitExponent = n-decimalAllowance;
+                decimal <<= decimalAllowance-n;
+            } else {
+                implicitExponent = 0;
+            }
         } else {
             implicitExponent = integerPartNumBits - 1;
         }
