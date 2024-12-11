@@ -12,6 +12,8 @@ using namespace Lexer;
 
 namespace Parser {
 
+    extern bool log;
+
     enum class NodeType {
         FUNCTION,
         SCOPE,

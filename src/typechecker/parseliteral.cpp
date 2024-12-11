@@ -107,7 +107,7 @@ namespace TypeChecker {
     uint64_t parseFloat(Lexer::Token token) {
         char* c = token.literal.str;
 
-        printf("Parsing float: '%s'\n",c);
+        if (Parser::log) printf("Parsing float: '%s'\n",c);
         
         int len = 0;
         int n = 0;
@@ -126,7 +126,7 @@ namespace TypeChecker {
             }
 
             if (c[n] == 'e' || c[n] == 'E' || c[n] == 'p' || c[n] == 'P') {
-                printf("Exponent part found! value: %d (0x%lx)\n",(int)out, out);
+                if (Parser::log) printf("Exponent part found! value: %d (0x%lx)\n",(int)out, out);
                 specificExponent = out;
                 out = 0;
                 len = 0;
@@ -134,7 +134,7 @@ namespace TypeChecker {
             }
 
             if (c[n] == '.') {
-                printf("Fractional part found! value: %d (0x%lx)\n",(int)out, out);
+                if (Parser::log) printf("Fractional part found! value: %d (0x%lx)\n",(int)out, out);
                 decimalPart = out;
                 decimalPartLen = len;
                 out = 0;
@@ -158,7 +158,7 @@ namespace TypeChecker {
             }
         }
 
-        printf("Float integer part: %d (0x%lx)\n",(int)out, out);
+        if (Parser::log) printf("Float integer part: %d (0x%lx)\n",(int)out, out);
 
         char signBit = token.literal.negative;
         int64_t exponentPart = 0x3ff;
@@ -177,11 +177,11 @@ namespace TypeChecker {
 
         uint8_t decimalAllowance = 53-integerPartNumBits;
 
-        printf("Integer part num bits: %d, decimal part allowance: %d\n",integerPartNumBits,decimalAllowance);
+        if (Parser::log) printf("Integer part num bits: %d, decimal part allowance: %d\n",integerPartNumBits,decimalAllowance);
 
         while (decimalPartLen--) decimalThreshold *= 10;
 
-        printf("Decimal threshold: %lu\n",decimalThreshold);
+        if (Parser::log) printf("Decimal threshold: %lu\n",decimalThreshold);
 
         uint8_t allowance = decimalAllowance + 1;
 
@@ -194,7 +194,7 @@ namespace TypeChecker {
             }
         }
 
-        printf("decimal before padding: 0x%lx allowance: %d\n",decimal,allowance);
+        if (Parser::log) printf("decimal before padding: 0x%lx, allowance: %d\n",decimal,allowance);
 
         // pad with trailing zeros
         decimal <<= allowance;
@@ -202,10 +202,10 @@ namespace TypeChecker {
         if (!out) {
             n = decimalAllowance;
             while (!((decimal >> --n) & 1));
-            printf("n: %d %d\n",n,decimalAllowance);
+            if (Parser::log) printf("n: %d %d\n",n,decimalAllowance);
             if (n) {
-                implicitExponent = n-decimalAllowance;
-                decimal <<= decimalAllowance-n;
+                implicitExponent = n - decimalAllowance;
+                decimal <<= decimalAllowance - n - 1;
             } else {
                 implicitExponent = 0;
             }
@@ -213,17 +213,17 @@ namespace TypeChecker {
             implicitExponent = integerPartNumBits - 1;
         }
 
-        printf("Decimal part: 0x%lx\n",decimal);
+        if (Parser::log) printf("Decimal part: 0x%lx\n",decimal);
 
-        mantissa = ((out << decimalAllowance) | decimal) & ~(1LL << 53);
+        mantissa = ((out << decimalAllowance) | decimal) & ~(1LL << 52);
 
-        printf("Mantissa part: 0x%lx\n",mantissa);
+        if (Parser::log) printf("Mantissa part: 0x%lx\n",mantissa);
 
         if (token.literal.negativeExponent) specificExponent = -specificExponent;
 
         exponentPart += specificExponent + implicitExponent;
 
-        printf("Exponent part: %ld (0x%lx) (specific exponent: %d (0x%x) implicit exponent: %d (0x%x))\n",exponentPart,exponentPart,specificExponent,specificExponent,implicitExponent,implicitExponent);
+        if (Parser::log) printf("Exponent part: %ld (0x%lx) (specific exponent: %d (0x%x) implicit exponent: %d (0x%x))\n",exponentPart,exponentPart,specificExponent,specificExponent,implicitExponent,implicitExponent);
 
         if (exponentPart >= (1<<12)) {
             printf("ERROR: %s:%d:%d: double exponent too large!\n",token.file.name,token.file.line,token.file.col);
@@ -233,9 +233,9 @@ namespace TypeChecker {
         out = ((uint64_t)signBit << 63) | exponentPart << 52 | mantissa;
 
 
-        printf("Sign: %d %d (0x%lx)\n",token.literal.negative,signBit,(uint64_t)signBit << 63);
+        if (Parser::log) printf("Sign: %d %d (0x%lx)\n",token.literal.negative,signBit,(uint64_t)signBit << 63);
 
-        printf("Final double: 0x%lx\n",out);
+        if (Parser::log) printf("Final double: 0x%lx\n",out);
 
         return out;
     }

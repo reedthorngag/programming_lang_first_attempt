@@ -8,6 +8,8 @@ using namespace Lexer;
 
 namespace Parser {
 
+    bool log = false;
+
     const char* TokenTypeMap[]{
         "';'", // ENDLINE
         "','", // COMMA

@@ -1,4 +1,4 @@
 
 func main() {
-    var test: u64 = 0.001;
+    var test: u64 = -10.05;
 }

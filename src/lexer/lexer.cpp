@@ -4,7 +4,7 @@
 
 namespace Lexer {
 
-    bool log = true;
+    bool log = false;
 
     std::unordered_map<std::string,Keyword> keywordMap = {
         {
