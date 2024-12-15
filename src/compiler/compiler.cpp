@@ -41,7 +41,7 @@ namespace Compiler {
     };
 
     std::vector<dataString> strings;
-    std::vector<Symbol*> globalSymbols;
+    std::vector<Node*> globalSymbols;
 
     unsigned int position = 0;
     unsigned int labelNum = 0;
@@ -70,6 +70,32 @@ namespace Compiler {
         return nullptr;
     }
 
+    void writeRegValue(Reg reg) {
+        if (reg >= Reg::XMM0 && reg < Reg::STACK) {
+            std::stringstream fmt;
+
+            // TODO: finish this
+            switch (registers[reg].value.symbol->t) {
+                case Type::f16:
+                    fmt << "    movups";
+                    break;
+                default:
+                    break;
+            }
+            
+
+        } else {
+            std::stringstream fmt;
+            fmt << "[" << registers[reg].value.symbol->name << "]";
+            out("mov",
+                fmt.str(),
+                registers[reg].subRegs[TypeSizeMap[registers[reg].value.symbol->t]]
+            );
+        }
+
+        registers[reg].value.modified = false;
+    }
+
     bool freeReg(Reg reg, bool dontEmpty) {
 
         //printf("attempting to free %d %s, %d %d\n",dontEmpty, registers[reg].subRegs[Size::QWORD],registers[reg].value.type,(int)registers[reg].value.modified);
@@ -83,18 +109,13 @@ namespace Compiler {
 
             case ValueType::GLOBAL:
                 if (value.modified && value.preserveModified) {
-                    std::stringstream fmt;
-                    fmt << "[" << value.symbol->name << "]";
-                    out("mov",
-                            fmt.str(),
-                            registers[reg].subRegs[TypeSizeMap[value.symbol->t]]
-                        );
+                    writeRegValue(reg);
                 }
+
                 if (dontEmpty) {
-                    if (value.preserveModified)
-                        registers[reg].value.modified = false;
                     break;
                 }
+
                 value.symbol->location = (Parser::Reg)Reg::NUL;
                 registers[reg].value = Value{};
                 break;
@@ -131,10 +152,18 @@ namespace Compiler {
         return freeReg(reg, false);
     }
 
-    Reg findFreeReg() {
+    Reg findFreeReg(bool AvxReg) {
+
+        Reg startReg = Reg::RAX;
+        Reg stopReg = Reg::RBP;
+
+        if (AvxReg) {
+            startReg = Reg::XMM0;
+            stopReg = Reg::STACK;
+        }
 
         // return first empty or no longer used intermediate reg
-        for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
+        for (Reg reg = startReg; reg != stopReg; reg = (Reg)(reg+1)) {
             if (registers[reg].value.type == ValueType::EMPTY) return reg;
             if (registers[reg].value.type == ValueType::INTERMEDIATE && !registers[reg].value.locked) {
                 registers[reg].value = Value{};
@@ -145,7 +174,7 @@ namespace Compiler {
         unsigned int minRegPosition = UINT_MAX;
         Reg firstInReg = Reg::NUL;
 
-        for (Reg reg = Reg::RAX; reg != Reg::NUL; reg = (Reg)(reg-1)) {
+        for (Reg reg = startReg; reg != stopReg; reg = (Reg)(reg+1)) {
             Value value = registers[reg].value;
 
             if (value.locked) continue;
@@ -159,6 +188,10 @@ namespace Compiler {
         freeReg(firstInReg);
 
         return firstInReg;
+    }
+
+    Reg findFreeReg() {
+        return findFreeReg(false);
     }
 
     Reg operation(Node* node, Context* context) {
@@ -886,16 +919,82 @@ namespace Compiler {
         out("BITS 64");
         out("section .text");
 
-        (*output) << "global _start\n_start:\n";
+        out("global _start\n");
 
-        std:: stringstream ss;
-
+        // check a main function exists
         auto key = Parser::globals.find(std::string("main"));
 
         if (key == Parser::globals.end()) {
             printf("ERROR: no main function!\n");
             return false;
         }
+
+        for (auto& pair : *tree) {
+            Node* node = pair.second;
+            switch (node->type) {
+                case NodeType::FUNCTION:
+                    if (!createFunction(node)) return false;
+                    break;
+
+                case NodeType::SYMBOL:
+                    if (node->symbol->type == SymbolType::FUNC) {
+                        printf("ERROR: %s:%d:%d: unexpected function call!\n",node->token.file.name,node->token.file.line,node->token.file.col);
+                        return false;
+                    }
+                    globalSymbols.push_back(node);
+                    break;
+
+                default:
+                    // this can't happen
+                    break;
+            }
+        }
+
+        // have the _start label/function after the main code so we can include the code
+        // to assign initial values to global vars.
+        out("_start:\n");
+
+        Node globalNode = Node{
+                NodeType::SCOPE,
+                nullptr,
+                nullptr,
+                nullptr,
+                {.symbol={nullptr}},
+                Token{
+                    TokenType::SCOPE_START,
+                    {.value={nullptr}},
+                    File{key->second->token.file.name,0,0}
+                },
+                new std::unordered_map<std::string, Symbol*>
+        };
+
+        Context* context = new Context{&globalNode,nullptr,new std::unordered_map<std::string, Local*>,0};
+
+        for (Node* node : globalSymbols) {
+            std::stringstream ss;
+            ss << SizeTypeMap[TypeSizeMap[node->symbol->t]] << " [" << node->symbol->name << "], ";
+
+            if (node->firstChild) {
+                Reg reg = evaluate(node->firstChild, context);
+                ss << registers[reg].subRegs[TypeSizeMap[node->symbol->t]];
+
+            } else {
+                ss << '0';
+            }
+
+            out("mov", ss.str());
+        }
+
+        // unlock all registers
+        for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {
+            if (!freeReg(reg)) {
+                printf("ERROR: %s:%d:%d: register locked when it shouldn't be! can't free %s!\n",globalNode.token.file.name,globalNode.token.file.line,globalNode.token.file.col,registers[reg].subRegs[Size::QWORD]);
+                return false;
+            }
+        }
+
+
+        std:: stringstream ss;
 
         ss << "main";
         for (Param p : *key->second->symbol->func->params) {
@@ -910,21 +1009,7 @@ namespace Compiler {
 
         out("    mov rax, 60\n    syscall\n"); // exit syscall
 
-        for (auto& pair : *tree) {
-            switch (pair.second->type) {
-                case NodeType::FUNCTION:
-                    if (!createFunction(pair.second)) return false;
-                    break;
 
-                case NodeType::SYMBOL:
-                    globalSymbols.push_back(pair.second->symbol);
-                    break;
-
-                default:
-                    // this can't happen (yet)
-                    break;
-            }
-        }
 
         for (auto& pair : Parser::builtins) {
             std::stringstream ss2;
@@ -977,6 +1062,39 @@ namespace Compiler {
             ss << buf << "\",0";
 
             out(ss.str());
+        }
+
+        const char* sizes[] {
+            "db",
+            "dw",
+            "dd",
+            "dq"
+        };
+
+        std::vector<Symbol*> constants;
+
+        for (Node* node : globalSymbols) {
+            Symbol* s = node->symbol;
+
+            if (s->type == SymbolType::CONST) {
+                constants.push_back(s);
+                continue;
+            }
+
+            std::stringstream ss;
+            ss << s->name << ": " << sizes[TypeSizeMap[s->t]] << " 0";
+            out(ss.str());
+        }
+
+        // constants aren't stored in rodata yet because their value is currently set at runtime (needs fixing)
+        if (constants.size()) {
+            //out("\nsection .rodata");
+
+            for (Symbol* s : constants) {
+                std::stringstream ss;
+                ss << s->name << ": " << sizes[TypeSizeMap[s->t]] << " 0";
+                out(ss.str());
+            }
         }
 
         return true;

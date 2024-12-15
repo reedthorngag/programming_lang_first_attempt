@@ -14,7 +14,10 @@ namespace Compiler {
         BYTE,
         WORD,
         DWORD,
-        QWORD
+        QWORD,
+        XMM = BYTE,
+        YMM = WORD,
+        ZMM = DWORD,
     };
 
     const int SizeByteMap[] {
@@ -22,6 +25,12 @@ namespace Compiler {
         2,
         4,
         8
+    };
+
+    const int AvxByteMap[] {
+        16,
+        32,
+        64
     };
 
     const Size TypeSizeMap[] {
@@ -67,7 +76,6 @@ namespace Compiler {
         RDI,
         RBP,
         RSP,
-        STACK, // simplifies stuff for what reg params use
         XMM0,
         XMM1,
         XMM2,
@@ -83,7 +91,8 @@ namespace Compiler {
         XMM12,
         XMM13,
         XMM14,
-        XMM15
+        XMM15,
+        STACK, // simplifies stuff for what reg params use
     };
 
     struct Local {

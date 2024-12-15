@@ -1,4 +1,8 @@
 
+var hello:u64 = 5;
+
+const hello2:u64 = hello + 3;
+
 func main() {
     var test: u64 = -10.05;
 }

@@ -62,7 +62,15 @@
         "stack": "cpp",
         "algorithm": "cpp",
         "optional": "cpp",
-        "random": "cpp"
+        "random": "cpp",
+        "*.tcc": "cpp",
+        "cstdarg": "cpp",
+        "cwctype": "cpp",
+        "functional": "cpp",
+        "memory_resource": "cpp",
+        "numeric": "cpp",
+        "string_view": "cpp",
+        "numbers": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled",
     "todo-tree.tree.scanMode": "workspace",
