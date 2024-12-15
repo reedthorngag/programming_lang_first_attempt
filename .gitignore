@@ -5,3 +5,4 @@ examples/*.asm
 !*.alk
 builtins.o
 bin/
+*.py
