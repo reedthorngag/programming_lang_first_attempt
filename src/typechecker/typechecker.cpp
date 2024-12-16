@@ -175,7 +175,7 @@ namespace TypeChecker {
         return true;
     }
 
-    bool process(std::unordered_map<std::string, Parser::Node*>* tree) {
+    bool process(std::unordered_map<std::string, Node*>* tree) {
 
         for (auto& pair : *tree) {
             switch (pair.second->type) {

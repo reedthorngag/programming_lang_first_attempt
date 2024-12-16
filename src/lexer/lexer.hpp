@@ -2,6 +2,8 @@
 #include <unordered_map>
 #include <string>
 
+#include "../types.hpp"
+
 #ifndef _LEXER
 #define _LEXER
 
@@ -10,67 +12,6 @@ namespace Lexer {
     extern bool log;
 
     const int MAX_SYMBOL_LEN = 64;
-
-    enum NumberType {
-        i8, i16, i32, i64,
-        u8, u16, u32, u64,
-        f16, f32, f64
-    };
-
-    enum Keyword {
-        FUNC,
-        VAR,
-        CONST,
-        GLOBAL,
-        IF,
-        ELSE,
-        WHILE,
-        RETURN,
-        BREAK,
-        CONTINUE
-    };
-
-    extern const char* KeywordTypeMap[];
-
-    enum TokenType {
-        ENDLINE,
-        COMMA,
-        SCOPE_START,
-        SCOPE_END,
-        GROUPING_START,
-        GROUPING_END,
-        KEYWORD,
-        SYMBOL,
-        TYPE,
-        OPERATOR,
-        LITERAL,
-        FILE_END,
-        ARRAY_START,
-        ARRAY_END
-    };
-
-    struct File {
-        char* name;
-        int line;
-        int col;
-    };
-
-    struct Token {
-        TokenType type;
-        union {
-            char* value;
-            struct {
-                char* str;
-                unsigned char base;
-                bool floatingPoint;
-                bool exponent;
-                bool negativeExponent;
-                bool negative;
-            } literal;
-            Keyword keyword;
-        };
-        File file;
-    };
 
     struct Context {
         char* file;
@@ -99,8 +40,6 @@ namespace Lexer {
     extern File file;
 
     extern char* ptr;
-
-    extern std::vector<Token>* tokens;
 
     extern std::unordered_map<std::string,Keyword> keywordMap;
     extern std::unordered_map<std::string,bool> operations;

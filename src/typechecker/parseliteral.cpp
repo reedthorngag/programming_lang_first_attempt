@@ -9,6 +9,31 @@ using namespace Parser;
 
 namespace TypeChecker {
 
+    struct Number {
+        const Type type;
+        const int64_t min;
+        const uint64_t max;
+    };
+
+    enum NumberType {
+        i8, i16, i32, i64,
+        u8, u16, u32, u64,
+        f16, f32, f64
+    };
+
+    const Number TypeConstraints[] {
+        Number{},
+        Number{Type::i8,NumTypeMin[NumberType::i8],NumTypeMax[NumberType::i8]},
+        Number{Type::i16,NumTypeMin[NumberType::i16],NumTypeMax[NumberType::i16]},
+        Number{Type::i32,NumTypeMin[NumberType::i32],NumTypeMax[NumberType::i32]},
+        Number{Type::i64,NumTypeMin[NumberType::i64],NumTypeMax[NumberType::i64]},
+
+        Number{Type::u8,NumTypeMin[NumberType::u8],NumTypeMax[NumberType::u8]},
+        Number{Type::u16,NumTypeMin[NumberType::u16],NumTypeMax[NumberType::u16]},
+        Number{Type::u32,NumTypeMin[NumberType::u32],NumTypeMax[NumberType::u32]},
+        Number{Type::u64,NumTypeMin[NumberType::u64],NumTypeMax[NumberType::u64]},
+    };
+
     Type smallestNumType(uint64_t num, Type parent, bool negative) {
         if (parent == Type::error) {
             if (!num) return Type::u8;
@@ -57,7 +82,7 @@ namespace TypeChecker {
         exit(1);
     }
 
-    uint64_t parseNum(Lexer::Token token) {
+    uint64_t parseNum(Token token) {
         char* c = token.literal.str;
         uint64_t out = 0;
         uint64_t oldOut = 0;
@@ -104,7 +129,7 @@ namespace TypeChecker {
         return out;
     }
 
-    uint64_t parseFloat(Lexer::Token token) {
+    uint64_t parseFloat(Token token) {
         char* c = token.literal.str;
 
         if (Parser::log) printf("Parsing float: '%s'\n",c);

@@ -114,7 +114,7 @@ namespace Compiler {
                     break;
                 }
 
-                value.symbol->location = (Parser::Reg)Reg::NUL;
+                value.symbol->location = Reg::NUL;
                 registers[reg].value = Value{};
                 break;
             
@@ -131,7 +131,7 @@ namespace Compiler {
                         registers[reg].value.modified = false;
                     break;
                 }
-                value.local->symbol->location = (Parser::Reg)Reg::NUL;
+                value.local->symbol->location = Reg::NUL;
                 registers[reg].value = Value{};
                 break;
 

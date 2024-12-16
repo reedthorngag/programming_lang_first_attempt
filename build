@@ -7,6 +7,7 @@ g++ -Wall -g -W -Werror -Wno-unused-parameter -Wno-unused-variable -Wno-missing-
     src/parser/*.cpp \
     src/typechecker/*.cpp \
     src/compiler/*.cpp \
+    src/util/*.cpp \
     -o bin/output.exe && ./bin/output.exe $1 || echo boo
 
 rm bin/*.o

@@ -6,7 +6,7 @@
 #include "typechecker/typechecker.hpp"
 #include "compiler/compiler.hpp"
 
-void pad(Lexer::Token token, int* line, int* col) {
+void pad(Token token, int* line, int* col) {
     while (*line < token.file.line) {
         printf("\n");
         (*line)++;
@@ -18,7 +18,7 @@ void pad(Lexer::Token token, int* line, int* col) {
     }
 }
 
-void printVal(Lexer::Token token, int* col) {
+void printVal(Token token, int* col) {
     char* ptr = token.value;
     while (*ptr) {
         printf("%c",*(ptr++));
@@ -26,31 +26,31 @@ void printVal(Lexer::Token token, int* col) {
     }
 }
 
-void printNode(Parser::Node* node, int depth) {
+void printNode(Node* node, int depth) {
     int d = depth;
     while (d--) printf(" | ");
-    printf("%s",Parser::NodeTypeMap[(int)node->type]);
+    printf("%s",NodeTypeMap[(int)node->type]);
     switch (node->type) {
-        case Parser::NodeType::SYMBOL:
-            printf(": %s: %s\n",node->symbol->name,Parser::TypeMap[node->symbol->t]);
+        case NodeType::SYMBOL:
+            printf(": %s: %s\n",node->symbol->name,TypeMap[node->symbol->t]);
             break;
-        case Parser::NodeType::FUNCTION:
+        case NodeType::FUNCTION:
             printf(": %s\n",node->symbol->name);
             break;
-        case Parser::NodeType::LITERAL:
+        case NodeType::LITERAL:
             printf(": %s%s\n",(node->literal.negative ? "-": ""),node->literal.value);
             break;
-        case Parser::NodeType::OPERATION:
-            printf(": %s %s\n",node->op.value, Parser::OpTypeMap[node->op.type]);
+        case NodeType::OPERATION:
+            printf(": %s %s\n",node->op.value, OpTypeMap[node->op.type]);
             break;
-        case Parser::NodeType::INVOCATION:
+        case NodeType::INVOCATION:
             printf(": %s %lld\n",node->symbol->name,(long long)node->symbol->func);
             break;
         default:
             printf("\n");
             break;
     }
-    Parser::Node* child = node->firstChild;
+    Node* child = node->firstChild;
     while (child) {
         printNode(child,depth+1);
         child = child->nextSibling;
@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
 
     file.close();
 
-    std::vector<Lexer::Token>* tokens = Lexer::parse(inputFile, buf);
+    std::vector<Token>* tokens = Lexer::parse(inputFile, buf);
     if (!tokens) return 1;
 
     const char* TokenTypeMap[]{
@@ -111,115 +111,115 @@ int main(int argc, char** argv) {
     int line = 0;
     int col = 1;
     for (int i = 0; i < (int)tokens->size(); i++) {
-        Lexer::Token token = tokens->at(i);
+        Token token = tokens->at(i);
         printf("token: %s %s\n",TokenTypeMap[token.type], 
-                token.type == Lexer::TokenType::SYMBOL ? token.value : 
-                token.type == Lexer::TokenType::KEYWORD ? Lexer::KeywordTypeMap[token.keyword] : 
-                token.type == Lexer::TokenType::LITERAL ? token.value : 
-                token.type == Lexer::TokenType::TYPE ? token.value : 
-                token.type == Lexer::TokenType::OPERATOR ? token.value : ""
+                token.type == TokenType::SYMBOL ? token.value : 
+                token.type == TokenType::KEYWORD ? KeywordTypeMap[token.keyword] : 
+                token.type == TokenType::LITERAL ? token.value : 
+                token.type == TokenType::TYPE ? token.value : 
+                token.type == TokenType::OPERATOR ? token.value : ""
             );
     }
 
     for (int i = 0; i < (int)tokens->size(); i++) {
-        Lexer::Token token = tokens->at(i);
+        Token token = tokens->at(i);
 
         switch (token.type) {
-            case Lexer::TokenType::KEYWORD:
+            case TokenType::KEYWORD:
                 pad(token,&line,&col);
-                token.value = (char*)Lexer::KeywordTypeMap[token.keyword];
+                token.value = (char*)KeywordTypeMap[token.keyword];
                 printVal(token,&col);
-                if (tokens->at(i+1).type != Lexer::TokenType::ENDLINE) {
+                if (tokens->at(i+1).type != TokenType::ENDLINE) {
                     printf(" ");
                     col++;
                 }
                 break;
-            case Lexer::TokenType::SYMBOL:
+            case TokenType::SYMBOL:
                 pad(token,&line,&col);
                 printVal(token,&col);
-                if (tokens->at(i+1).type != Lexer::TokenType::ENDLINE && 
-                    tokens->at(i+1).type != Lexer::TokenType::GROUPING_START &&
-                    tokens->at(i+1).type != Lexer::TokenType::GROUPING_END &&
-                    tokens->at(i+1).type != Lexer::TokenType::TYPE) {
+                if (tokens->at(i+1).type != TokenType::ENDLINE && 
+                    tokens->at(i+1).type != TokenType::GROUPING_START &&
+                    tokens->at(i+1).type != TokenType::GROUPING_END &&
+                    tokens->at(i+1).type != TokenType::TYPE) {
                     printf(" ");
                     col++;
                 }
                 break;
-            case Lexer::TokenType::LITERAL:
+            case TokenType::LITERAL:
                 pad(token,&line,&col);
                 printVal(token,&col);
-                if (tokens->at(i+1).type != Lexer::TokenType::ENDLINE &&
-                    tokens->at(i+1).type != Lexer::TokenType::GROUPING_END) {
+                if (tokens->at(i+1).type != TokenType::ENDLINE &&
+                    tokens->at(i+1).type != TokenType::GROUPING_END) {
                     printf(" ");
                     col++;
                 }
                 break;
-            case Lexer::TokenType::TYPE:
+            case TokenType::TYPE:
                 printf(":");
                 col++;
                 pad(token,&line,&col);
                 printVal(token,&col);
-                if (tokens->at(i+1).type != Lexer::TokenType::ENDLINE &&
-                    tokens->at(i+1).type != Lexer::TokenType::GROUPING_END) {
+                if (tokens->at(i+1).type != TokenType::ENDLINE &&
+                    tokens->at(i+1).type != TokenType::GROUPING_END) {
                     printf(" ");
                     col++;
                 }
                 break;
-            case Lexer::TokenType::OPERATOR:
+            case TokenType::OPERATOR:
                 pad(token,&line,&col);
                 printVal(token,&col);
                 printf(" ");
                 col++;
                 break;
-            case Lexer::TokenType::GROUPING_START:
+            case TokenType::GROUPING_START:
                 pad(token,&line,&col);
                 printf("(");
                 col++;
                 break;
-            case Lexer::TokenType::GROUPING_END:
+            case TokenType::GROUPING_END:
                 pad(token,&line,&col);
                 printf(")");
                 col++;
                 break;
-            case Lexer::TokenType::SCOPE_START:
+            case TokenType::SCOPE_START:
                 pad(token,&line,&col);
                 printf("{");
                 col++;
                 break;
-            case Lexer::TokenType::SCOPE_END:
+            case TokenType::SCOPE_END:
                 pad(token,&line,&col);
                 printf("}\n");
                 col = 1;
                 line++;
                 break;
-            case Lexer::TokenType::ARRAY_START:
+            case TokenType::ARRAY_START:
                 pad(token,&line,&col);
                 printf("[");
                 col++;
                 break;
-            case Lexer::TokenType::ARRAY_END:
+            case TokenType::ARRAY_END:
                 pad(token,&line,&col);
                 printf("]");
                 col++;
                 break;
-            case Lexer::TokenType::ENDLINE:
+            case TokenType::ENDLINE:
                 pad(token,&line,&col);
                 printf(";");
                 col++;
                 break;
-            case Lexer::TokenType::COMMA:
+            case TokenType::COMMA:
                 pad(token,&line,&col);
                 printf(",");
                 col++;
                 break;
-            case Lexer::TokenType::FILE_END:
+            case TokenType::FILE_END:
                 break;
         }
 
     }
     fflush(stdout);
 
-    std::unordered_map<std::string, Parser::Node*>* tree = Parser::parseTokens(tokens);
+    std::unordered_map<std::string, Node*>* tree = Parser::parseTokens(tokens);
     if (!tree) return 1;
 
     printf("syntax tree:\n");
@@ -239,16 +239,16 @@ int main(int argc, char** argv) {
 
     if (auto key = tree->find("main");key != tree->end()) {
         switch (key->second->symbol->func->returnType) {
-                case Parser::Type::i8:
-                case Parser::Type::i16:
-                case Parser::Type::i32:
-                case Parser::Type::i64:
-                case Parser::Type::u8:
-                case Parser::Type::u16:
-                case Parser::Type::u32:
-                case Parser::Type::u64:
-                case Parser::Type::null:
-                case Parser::Type::boolean:
+                case Type::i8:
+                case Type::i16:
+                case Type::i32:
+                case Type::i64:
+                case Type::u8:
+                case Type::u16:
+                case Type::u32:
+                case Type::u64:
+                case Type::null:
+                case Type::boolean:
                     break;
                 default:
                     printf("ERROR: Main function return type invalid!\n");

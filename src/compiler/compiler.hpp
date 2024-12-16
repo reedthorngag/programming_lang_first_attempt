@@ -1,5 +1,7 @@
 #include <unordered_map>
 
+#include "../types.hpp"
+
 #ifndef _COMPILER
 #define _COMPILER
 
@@ -58,51 +60,14 @@ namespace Compiler {
 
     extern const char* SizeString[];
 
-    enum Reg {
-        NUL, // so functions that generally return a value in a register can return nothing
-        RAX,
-        RBX,
-        RCX,
-        RDX,
-        R8,
-        R9,
-        R10,
-        R11,
-        R12,
-        R13,
-        R14,
-        R15,
-        RSI,
-        RDI,
-        RBP,
-        RSP,
-        XMM0,
-        XMM1,
-        XMM2,
-        XMM3,
-        XMM4,
-        XMM5,
-        XMM6,
-        XMM7,
-        XMM8,
-        XMM9,
-        XMM10,
-        XMM11,
-        XMM12,
-        XMM13,
-        XMM14,
-        XMM15,
-        STACK, // simplifies stuff for what reg params use
-    };
-
     struct Local {
-        Parser::Symbol* symbol;
+        Symbol* symbol;
         int offset; // total offset. to get the value: mov reg, size [rbp - offset]
         Size size;
     };
 
     struct Global {
-        Parser::Symbol* symbol;
+        Symbol* symbol;
     };
 
     enum ValueType {
@@ -118,7 +83,7 @@ namespace Compiler {
         union {
             Local* local;
             Symbol* symbol;
-            Parser::Node* parent;
+            Node* parent;
         };
         bool modified = false;
         bool preserveModified = true;
@@ -137,7 +102,7 @@ namespace Compiler {
     extern Register registers[];
 
     struct Context {
-        Parser::Node* node;
+        Node* node;
         Context* parent;
         std::unordered_map<std::string, Local*>* locals;
         int spaceReq;
@@ -148,7 +113,7 @@ namespace Compiler {
     bool freeReg(Reg reg);
     Reg findFreeReg();
 
-    bool compile(std::unordered_map<std::string, Parser::Node*>* tree, std::ofstream* out);
+    bool compile(std::unordered_map<std::string, Node*>* tree, std::ofstream* out);
 };
 
 #endif

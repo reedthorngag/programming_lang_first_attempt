@@ -9,6 +9,8 @@
 
 namespace Lexer {
 
+    extern std::vector<Token>* tokens;
+
     const char* minMaxLiteralStr(char* str) {
 
         int len = strlen(str);

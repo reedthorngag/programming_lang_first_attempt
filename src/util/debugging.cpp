@@ -1,7 +1,6 @@
-#include "debugging.hpp"
+#include <stdio.h>
 
-#include "../parser/parser.hpp"
-#include "../lexer/lexer.hpp"
+#include "debugging.hpp"
 
 void print(Node* node, const char* src) {
     if (src) printf("%s: ",src);
@@ -36,11 +35,19 @@ void print(Token token, const char* id) {
             printf(" %s",token.value);
             break;
         case TokenType::KEYWORD:
-            printf(" %s",Lexer::KeywordTypeMap[token.keyword]);
+            printf(" %s", KeywordTypeMap[token.keyword]);
             break;
         default:
             break;
     }
     printf("\n");
+}
+
+void print(Node* node) {
+    print(node, nullptr);
+}
+
+void print(Token token) {
+    print(token, nullptr);
 }
 

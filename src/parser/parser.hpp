@@ -4,62 +4,17 @@
 
 #include "../lexer/lexer.hpp"
 #include "../compiler/compiler.hpp"
+#include "../types.hpp"
+#include "../util/debugging.hpp"
 
 #ifndef _PARSER
 #define _PARSER
-
-#include "../util/debugging.hpp"
 
 using namespace Lexer;
 
 namespace Parser {
 
     extern bool log;
-
-    enum class NodeType {
-        FUNCTION,
-        SCOPE,
-        SYMBOL,
-        LITERAL,
-        OPERATION,
-        INVOCATION,
-        IF,
-        ELSE,
-        RETURN,
-        WHILE,
-        BREAK,
-        CONTINUE
-    };
-
-    extern const char* NodeTypeMap[];
-
-    extern const char* TypeMap[];
-
-    extern const char* OpTypeMap[];
-
-    extern const char* SizeTypeMap[];
-
-    enum Type {
-        error, // used to indicate there is a type error, not used as a type
-        i8,
-        i16,
-        i32,
-        i64,
-
-        u8,
-        u16,
-        u32,
-        u64,
-
-        f16,
-        f32,
-        f64,
-        chr, // c++ wont let me use 'char' and it seems there is no way to fix 
-           // it smh, *this* is the sort of thing that makes me want to write my own language
-        string,
-        boolean,
-        null
-    };
 
     const long long TypeMask[] {
         0,
@@ -112,126 +67,10 @@ namespace Parser {
         0, 0, 0, 0, 0
     };
 
-    struct Number {
-        const Type type;
-        const int64_t min;
-        const uint64_t max;
-    };
-
-    const Number TypeConstraints[] {
-        Number{},
-        Number{i8,NumTypeMin[NumberType::i8],NumTypeMax[NumberType::i8]},
-        Number{i16,NumTypeMin[NumberType::i16],NumTypeMax[NumberType::i16]},
-        Number{i32,NumTypeMin[NumberType::i32],NumTypeMax[NumberType::i32]},
-        Number{i64,NumTypeMin[NumberType::i64],NumTypeMax[NumberType::i64]},
-
-        Number{u8,NumTypeMin[NumberType::u8],NumTypeMax[NumberType::u8]},
-        Number{u16,NumTypeMin[NumberType::u16],NumTypeMax[NumberType::u16]},
-        Number{u32,NumTypeMin[NumberType::u32],NumTypeMax[NumberType::u32]},
-        Number{u64,NumTypeMin[NumberType::u64],NumTypeMax[NumberType::u64]},
-    };
-
-    extern std::unordered_map<std::string, Type> typeMap;
-
     extern std::unordered_map<std::string, bool> assignmentOps;
     extern std::unordered_map<std::string, int> mathmaticalOps; // boolean and bitwise too
 
-    enum Reg {
-        NUL,
-        RAX,
-        RBX,
-        RCX,
-        RDX,
-        R8,
-        R9,
-        R10,
-        R11,
-        R12,
-        R13,
-        R14,
-        R15,
-        RSI,
-        RDI,
-        RBP,
-        RSP,
-        STACK // simplifies stuff for what reg params use
-    };
-
-    struct Param {
-        char* name;
-        Type type;
-        Reg reg;
-    };
-
-    struct Function {
-        std::vector<Param>* params;
-        Type returnType;
-    };
-
-    // think of a more accurate name
-    enum class SymbolType {
-        FUNC,
-        VAR,
-        CONST,
-    };
-
-    // think of a better name
-    struct Symbol {
-        SymbolType type;
-        char* name;
-        union {
-            Type t;
-            Function* func;
-        };
-        int refCount;
-        Reg location;
-    };
-
-    struct Literal {
-        Type type;
-        char* value;
-        bool negative;
-        union {
-            struct {
-                char* str;
-                int len;
-            } str;
-            char chr;
-            uint64_t _uint;
-            int64_t _int;
-        };
-    };
-
-    enum OpType {
-        ASSIGNMENT,
-        SINGLE_OP_PREFIX,
-        SINGLE_OP_POSTFIX,
-        MATH,
-        CAST
-    };
-
-    struct Operator {
-        OpType type;
-        char* value;
-    };
-
-    struct Node {
-        NodeType type;
-        Node* parent;
-        Node* firstChild;
-        Node* nextSibling;
-        union {
-            Symbol* symbol;
-            Literal literal;
-            Operator op;
-        };
-        Token token;
-        std::unordered_map<std::string, Symbol*>* symbolMap;
-    };
-
     extern std::unordered_map<std::string, Symbol*> builtins;
-
-    extern const char* TokenTypeMap[];
 
     extern std::unordered_map<std::string, Node*>* globals;
 

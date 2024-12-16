@@ -40,19 +40,6 @@ namespace Lexer {
         
     };
 
-    const char* KeywordTypeMap[]{
-        "FUNC",
-        "VAR",
-        "CONST",
-        "GLOBAL",
-        "IF",
-        "ELSE",
-        "WHILE",
-        "RETURN",
-        "BREAK",
-        "CONTINUE"
-    };
-
     std::unordered_map<std::string,bool> operations = {
         {"+",true},
         {"-",true},
@@ -102,6 +89,12 @@ namespace Lexer {
         "-127", "-32_768", "-2_147_483_648", "-9_223_372_036_854_775_808",
         "0", "0", "0", "0",
         "0","0","0"
+    };
+
+    enum NumberType {
+        i8, i16, i32, i64,
+        u8, u16, u32, u64,
+        f16, f32, f64
     };
 
     std::unordered_map<std::string, Number> numberTypes = {
