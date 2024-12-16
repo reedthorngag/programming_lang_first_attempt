@@ -367,7 +367,6 @@ processNext:
     }
 
     Node* processPrefixOperator(Token token) {
-        printf("in process prefix operator\n");
         
         Node* node = new Node{};
         node->type = NodeType::OPERATION;
@@ -403,6 +402,7 @@ processNext:
         value = evaluateValue(token);
         if (!value) return nullptr;
 
+        // the only prefix operators that are 2 chars are ++ and --
         if (strlen(node->op.value) == 2 && value->type != NodeType::SYMBOL) {
             printf("ERROR: %s:%d:%d: operand must be a modifiable value! (aka a variable)\n",token.file.name,token.file.line,token.file.col);
             return nullptr;
@@ -411,7 +411,6 @@ processNext:
         appendChild(node, value);
 
 nodeNegativeLiteral:
-        printf("here\n");
         token = tokens->at(index++);
 
         switch (token.type) {

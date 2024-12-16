@@ -313,7 +313,6 @@ processNext:
             return nullptr;
         }
 
-        bool inGrouping = false;
         bool global = false;
 
         token = tokens->at(index++);
@@ -333,10 +332,8 @@ processNext:
                     goto processNext;
 
                 case TokenType::OPERATOR:
-                    print(token, "what?");
                     param = processPrefixOperator(token);
                     if (!param) return nullptr;
-                    index--;
                     goto processNext;
                     
                 case TokenType::KEYWORD:
@@ -348,12 +345,7 @@ processNext:
 processNext:
                     token = tokens->at(index++);
 
-                    if (token.type == TokenType::COMMA || token.type == TokenType::GROUPING_END) {
-                        inGrouping = inGrouping && token.type != TokenType::GROUPING_END;
-                        if (inGrouping) {
-                            printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
-                            return nullptr;
-                        }
+                    if (token.type == TokenType::GROUPING_END) {
                         appendChild(node,param);
                         index--;
                         break;
