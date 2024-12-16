@@ -1,6 +1,7 @@
 
 #include "parser.hpp"
 #include "../compiler/compiler.hpp"
+#include "../util/debugging.hpp"
 
 using namespace Lexer;
 
@@ -104,7 +105,7 @@ namespace Parser {
         if (parent) {
             appendChild(parent,node);
         } else {
-            globals.insert(std::make_pair(node->symbol->name,node));
+            globals->insert(std::make_pair(node->symbol->name,node));
         }
 
         generateParamMapping(node);
@@ -332,6 +333,7 @@ processNext:
                     goto processNext;
 
                 case TokenType::OPERATOR:
+                    print(token, "what?");
                     param = processPrefixOperator(token);
                     if (!param) return nullptr;
                     index--;
@@ -525,7 +527,7 @@ processNext:
             global->symbol = symbol;
             global->token = token;
 
-            globals.insert(std::make_pair(token.value,global));
+            globals->insert(std::make_pair(token.value,global));
         }
 
         Node* node = assignment(token);

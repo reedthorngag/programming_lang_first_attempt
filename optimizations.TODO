@@ -6,6 +6,8 @@ add initial value to symbols which is set to that value instead of zero
  at allocation (either on stack or in global vars) (this will also fix 
  global constants not being able to be in rodata)
 
+precompute deterministic code paths
+
 
 
 

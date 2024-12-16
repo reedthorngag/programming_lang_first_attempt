@@ -20,8 +20,6 @@ namespace Compiler {
 
     std::ofstream* output;
 
-    const std::unordered_map<std::string,Symbol*> globals;
-
     std::unordered_map<std::string, Node*> typedFunctions;
     std::unordered_map<std::string, Symbol*> typedBuiltins;
 
@@ -48,9 +46,9 @@ namespace Compiler {
 
     inline bool symbolDeclaredGlobal(char* name, Symbol** symbol) {
         if (symbolBuiltin(name, symbol)) return true;
-        auto key = globals.find(name);
-        if (key != globals.end()) {
-            if (symbol) *symbol = key->second;
+        auto key = Parser::globals->find(name);
+        if (key != Parser::globals->end()) {
+            if (symbol) *symbol = key->second->symbol;
             return true;
         }
         return false;
@@ -922,9 +920,9 @@ namespace Compiler {
         out("global _start\n");
 
         // check a main function exists
-        auto key = Parser::globals.find(std::string("main"));
+        auto key = Parser::globals->find(std::string("main"));
 
-        if (key == Parser::globals.end()) {
+        if (key == Parser::globals->end()) {
             printf("ERROR: no main function!\n");
             return false;
         }
@@ -954,6 +952,9 @@ namespace Compiler {
         // to assign initial values to global vars.
         out("_start:\n");
 
+        // evaluate function requires a context, which requires a node
+        // a possible fix for this is to make a context optional for evaluate
+        // but it doesn't matter much currently
         Node globalNode = Node{
                 NodeType::SCOPE,
                 nullptr,
@@ -970,6 +971,9 @@ namespace Compiler {
 
         Context* context = new Context{&globalNode,nullptr,new std::unordered_map<std::string, Local*>,0};
 
+        std::unordered_map<std::string, Node*>* globalsTmp = Parser::globals;
+        Parser::globals = new std::unordered_map<std::string, Node*>;
+
         for (Node* node : globalSymbols) {
             std::stringstream ss;
             ss << SizeTypeMap[TypeSizeMap[node->symbol->t]] << " [" << node->symbol->name << "], ";
@@ -982,8 +986,13 @@ namespace Compiler {
                 ss << '0';
             }
 
+            globals->insert(std::make_pair(node->symbol->name,node));
+
             out("mov", ss.str());
         }
+
+        delete Parser::globals;
+        Parser::globals = globalsTmp;
 
         // unlock all registers
         for (Reg reg = Reg::RAX; reg != Reg::RBP; reg = (Reg)(reg+1)) {

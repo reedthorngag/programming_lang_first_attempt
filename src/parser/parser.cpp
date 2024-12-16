@@ -2,7 +2,6 @@
 #include <cstring>
 
 #include "parser.hpp"
-#include "../util/debugging.hpp"
 
 using namespace Lexer;
 
@@ -99,9 +98,7 @@ namespace Parser {
 
     std::unordered_map<std::string, Symbol*> builtins;
 
-    std::unordered_map<std::string, Node*> globals;
-
-    //std::vector<Node*> unresolvedReferences(1024);
+    std::unordered_map<std::string, Node*>* globals = new std::unordered_map<std::string, Node*>;
 
     Node* parent = nullptr;
     int depth = 0;
@@ -226,8 +223,8 @@ namespace Parser {
 
     inline bool symbolDeclaredGlobal(char* name, Symbol** symbol) {
         if (symbolBuiltin(name, symbol)) return true;
-        auto key = globals.find(name); 
-        if (key != globals.end()) {
+        auto key = globals->find(name); 
+        if (key != globals->end()) {
             if (symbol) *symbol = key->second->symbol;
             return true;
         }
@@ -457,6 +454,7 @@ processNext:
     }
 
     Node* processPrefixOperator(Token token) {
+        printf("in process prefix operator\n");
         
         Node* node = new Node{};
         node->type = NodeType::OPERATION;
@@ -466,7 +464,7 @@ processNext:
 
         Node* value;
 
-        if (token.value[0] == '-' && strlen(token.value) == 1) {
+        if (token.value[0] == '-' && !token.value[1]) {
             if (tokens->at(index).type == TokenType::LITERAL) {
                 token = tokens->at(index++);
                 node->type = NodeType::LITERAL;
@@ -500,6 +498,7 @@ processNext:
         appendChild(node, value);
 
 nodeNegativeLiteral:
+        printf("here\n");
         token = tokens->at(index++);
 
         switch (token.type) {
@@ -542,10 +541,6 @@ nodeNegativeLiteral:
         
         while (index < tokens->size()) {
             Token token = tokens->at(index++);
-            print(token);
-            //printf("token: %s",TokenTypeMap[token.type]);
-            // if (token.type == TokenType::KEYWORD) printf(" %d\n",token.keyword);
-            // else printf("\n");
             
             switch (token.type) {
                 case TokenType::ENDLINE:
@@ -587,7 +582,7 @@ nodeNegativeLiteral:
             }
         }
 
-        return &globals;
+        return globals;
     }
 
 }

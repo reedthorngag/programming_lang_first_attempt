@@ -5,4 +5,6 @@ const hello2:u64 = hello + 3;
 
 func main() {
     var test: u64 = -10.05;
+    printNum(hello2);
+    while (!false) break;
 }

@@ -8,6 +8,8 @@
 #ifndef _PARSER
 #define _PARSER
 
+#include "../util/debugging.hpp"
+
 using namespace Lexer;
 
 namespace Parser {
@@ -231,7 +233,7 @@ namespace Parser {
 
     extern const char* TokenTypeMap[];
 
-    extern std::unordered_map<std::string, Node*> globals;
+    extern std::unordered_map<std::string, Node*>* globals;
 
     extern std::vector<Node*> unresolvedReferences;
 
