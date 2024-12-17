@@ -7,4 +7,10 @@ func main() {
     var test: u64 = -10.05;
     printNum(hello2);
     while (!false) break;
+
+    if (true) {
+
+    } else {
+        
+    }
 }
