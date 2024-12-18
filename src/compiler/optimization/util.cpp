@@ -13,7 +13,10 @@ namespace Compiler {
     }
 
     std::unordered_map<std::string, Node*>* getDependencies(Node* node, Node* parent, std::unordered_map<std::string, Node*>* externalDependencies) {
-        
+    
+        Node* oldParent = parent;
+        bool newScope = false;
+
         switch (node->type) {
             case NodeType::SYMBOL:
             case NodeType::INVOCATION: {
@@ -29,6 +32,9 @@ namespace Compiler {
             case NodeType::IF:
             case NodeType::ELSE:
             case NodeType::WHILE:
+                parent = node;
+                newScope = true;
+                break;
 
             default:
                 break;
@@ -37,7 +43,12 @@ namespace Compiler {
 
         if (node->firstChild) getDependencies(node->firstChild, parent, externalDependencies);
 
+        if (newScope) {
+            parent = oldParent;
+        }
+
         if (node->nextSibling) getDependencies(node->nextSibling, parent, externalDependencies);
+
 
         return externalDependencies;
     }
