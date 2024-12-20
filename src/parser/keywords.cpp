@@ -222,6 +222,7 @@ processNext:
                         break;
                     }
                     appendChild(parent, node);
+                    index++;
                     break;
                 }
                 case TokenType::FILE_END:

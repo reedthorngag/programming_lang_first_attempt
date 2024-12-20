@@ -270,7 +270,7 @@ namespace TypeChecker {
         if (node->token.literal.floatingPoint) {
             node->literal._uint = parseFloat(node->token);
 
-            node->literal.type = Type::u64;
+            node->literal.type = Type::f64;
         } else {
             node->literal._uint = parseNum(node->token);
 
