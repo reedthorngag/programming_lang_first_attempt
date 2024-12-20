@@ -5,10 +5,12 @@
 #include <sstream>
 #include <vector>
 #include <climits>
+#include <queue>
 
 #include "compiler.hpp"
 #include "../parser/parser.hpp"
 #include "operations.hpp"
+#include "./optimization/util.hpp"
 
 using namespace Parser;
 
@@ -973,6 +975,84 @@ namespace Compiler {
 
         std::unordered_map<std::string, Node*>* globalsTmp = Parser::globals;
         Parser::globals = new std::unordered_map<std::string, Node*>;
+
+        std::deque<Node*> toInit1;
+        std::deque<Node*> toInit2;
+        bool toInit1Active = true;
+
+        for (Node* node : globalSymbols) toInit1.push_back(node);
+
+        while (true) {
+            bool modified = false;
+
+            std::deque<Node*>* src;
+            std::deque<Node*>* dest;
+
+            if (toInit1Active) {
+                src = &toInit1;
+                dest = &toInit2;
+            } else {
+                src = &toInit2;
+                dest = &toInit1;
+            }
+            toInit1Active = !toInit1Active;
+
+            while (src->size()) {
+                Node* node = src->front();
+                src->pop_front();
+
+                std::stringstream ss;
+                ss << SizeTypeMap[TypeSizeMap[node->symbol->t]] << " [" << node->symbol->name << "], ";
+                
+                if (node->firstChild) {
+                    if (node->firstChild->type != NodeType::OPERATION || node->firstChild->op.type != OpType::ASSIGNMENT) {
+                        printf("ERROR: %s:%d:%d: unexpected token, expecting '='!\n",node->firstChild->token.file.name,node->firstChild->token.file.line,node->firstChild->token.file.col);
+                        return false;
+                    }
+
+                    // we need to get the second child of the assignment node, as
+                    // the first child is the variable itself, which getDependencies would
+                    // then add to the list of dependencies and mess it up.
+                    std::unordered_map<std::string, Node*>* dependencies = getDependencies(node->firstChild->firstChild->nextSibling);
+                    bool uninitializedDependency = false;
+                    for (auto& dependency : *dependencies) {
+                        if (auto key = globals->find(dependency.first); key == globals->end()) {
+                            dest->push_back(node);
+                            uninitializedDependency = true;
+                            break;
+                        }
+                    }
+                    if (uninitializedDependency) continue;
+
+                    Reg reg = evaluate(node->firstChild, context);
+                    ss << registers[reg].subRegs[TypeSizeMap[node->symbol->t]];
+
+                } else {
+                    ss << '0';
+                }
+
+                globals->insert(std::make_pair(node->symbol->name,node));
+
+                out("mov", ss.str());
+                modified = true;
+            }
+
+            if (!modified) {
+                if (!dest->size())
+                    break;
+
+                printf("ERROR: One or more interdependencies! The variables they occur in are:\n");
+                for (Node* n : *dest) {
+                    printf("%s:%d:%d %s %s\n",
+                            n->token.file.name,
+                            n->token.file.line,
+                            n->token.file.col,
+                            NodeTypeMap[(int)n->type],
+                            n->symbol->name);
+                }
+                return false;
+            }
+        }
 
         for (Node* node : globalSymbols) {
             std::stringstream ss;

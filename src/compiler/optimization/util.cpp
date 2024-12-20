@@ -8,10 +8,6 @@
 
 namespace Compiler {
 
-    std::unordered_map<std::string, Node*>* getDependencies(Node* node) {
-        return getDependencies(node, nullptr, new std::unordered_map<std::string, Node*>);
-    }
-
     std::unordered_map<std::string, Node*>* getDependencies(Node* node, Node* parent, std::unordered_map<std::string, Node*>* externalDependencies) {
     
         Node* oldParent = parent;
@@ -51,6 +47,10 @@ namespace Compiler {
 
 
         return externalDependencies;
+    }
+
+    std::unordered_map<std::string, Node*>* getDependencies(Node* node) {
+        return getDependencies(node, nullptr, new std::unordered_map<std::string, Node*>);
     }
 
 }
