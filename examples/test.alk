@@ -97,6 +97,6 @@ func main(): null {
 
     printNum(test5);
 
-    test6 = 0.5;
+    test6 = (:u64)0.5;
 }
 

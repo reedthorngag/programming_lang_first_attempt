@@ -209,61 +209,48 @@ namespace Parser {
 
         Token token = tokens->at(index);
         if (token.type == TokenType::TYPE) {
+            index++;
 
             Node* node = new Node{NodeType::OPERATION,nullptr,nullptr,nullptr,{.op = Operator{OpType::CAST,token.value}},token,nullptr};
 
-            if (tokens->at(++index).type != TokenType::GROUPING_END) {
+            if (tokens->at(index++).type != TokenType::GROUPING_END) {
                 printf("ERROR: %s:%d:%d: expecting ')' to end type cast!\n",token.file.name,token.file.line,token.file.col);
                 return nullptr;
             }
 
-            index++;
-
             token = tokens->at(index++);
 
             Node* param;
-            switch (token.type) {
-                case TokenType::OPERATOR:
-                    param = processPrefixOperator(token);
-                    if (!param) return nullptr;
-                    appendChild(node,param);
-                    goto processNext;
 
+            switch (token.type) {
                 case TokenType::GROUPING_START:
                     param = processGrouping();
                     if (!param) return nullptr;
-                    appendChild(node,param);
-                    goto processNext;
+                    appendChild(node, param);
+                    return node;
 
-                case TokenType::LITERAL:
-                case TokenType::SYMBOL:
+                case TokenType::OPERATOR:
+                    param = processPrefixOperator(token);
+                    index--;
+                    if (!param) return nullptr;
+                    appendChild(node, param);
+                    return node;
+
                 case TokenType::KEYWORD:
+                case TokenType::SYMBOL:
+                case TokenType::LITERAL:
                     param = evaluateValue(token);
                     if (!param) return nullptr;
-                    appendChild(node,param);
-
-processNext:
-                    token = tokens->at(index++);
-
-                    if (token.type == TokenType::COMMA || token.type == TokenType::GROUPING_END || token.type == TokenType::ENDLINE || token.type == TokenType::GROUPING_END) {
-                        return node;
-                        index--;
-                        break;
-                    }
-
-                    if (token.type != TokenType::OPERATOR) {
-                        printf("ERROR: %s:%d:%d: expecting operator, comma or close bracket, found %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
-                        return nullptr;
-                    }
-
-                    return operation(node,token);
+                    appendChild(node, param);
+                    return node;
 
                 default:
-                    printf("ERROR: %s:%d:%d: unexpected token %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
+                    printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                     return nullptr;
             }
 
-            return node;
+            printf("This shouldn't be possible (in processCast in parser.cpp)\n");
+            return nullptr;
         }
 
         return parent;

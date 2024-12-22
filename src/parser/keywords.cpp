@@ -185,7 +185,7 @@ processNext:
                         index -= 2;
                         break;
                     }
-                    printf("ERROR: %s:%d:%d: unexpected1 %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
+                    printf("ERROR: %s:%d:%d: unexpected %s!\n",token.file.name,token.file.line,token.file.col,TokenTypeMap[token.type]);
                     return nullptr;
             }
             token = tokens->at(index++);
@@ -208,9 +208,7 @@ processNext:
                 case TokenType::ENDLINE:
                     break;
                 case TokenType::KEYWORD:
-                    printf("%d\n",depth);
                     parent = processKeyword(token);
-                    printf("%d\n",depth);
                     break;
                 case TokenType::SYMBOL:
                     parent = processSymbol(token);
